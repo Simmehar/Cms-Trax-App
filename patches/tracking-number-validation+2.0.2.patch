@@ -1,0 +1,17 @@
+diff --git a/node_modules/tracking-number-validation/index.js b/node_modules/tracking-number-validation/index.js
+index b64bd36..1f5ea94 100644
+--- a/node_modules/tracking-number-validation/index.js
++++ b/node_modules/tracking-number-validation/index.js
+@@ -2,7 +2,11 @@
+ 
+ var courier_info = {
+   amazon: {
+-    patterns: [new RegExp(/^TB[A-D][0-9]{12}/)]
++    patterns: [
++      new RegExp(/^TB[A-D][0-9]{12}/i), // Original pattern
++      new RegExp(/^TBADD$/i)   ,
++      new RegExp(/^TBADD[0-9]+$/i)         // New pattern for "TBADD"
++    ]
+   },
+   ups: {
+     patterns: [new RegExp(/\b(1Z ?[0-9A-Z]{3} ?[0-9A-Z]{3} ?[0-9A-Z]{2} ?[0-9A-Z]{4} ?[0-9A-Z]{3} ?[0-9A-Z]|T\d{3} ?\d{4} ?\d{3})\b/i)],

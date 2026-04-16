@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   leftTxt: {
     fontSize: isIPad ? 25 : 16,
     fontFamily: FONTS.PoppinsMedium,
-    color: '#61B3E4',
+    color: '#223890',
   },
   rightTxt: {
     fontSize: isIPad ? 27 : 16,

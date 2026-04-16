@@ -3,6 +3,7 @@ import { View, Image, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { FONTS } from '../assets';
 import { isIPad } from '../utilities/securestorage';
 import { getCustomerList } from '../utilities/ApiCalls';
+import LinearGradient from 'react-native-linear-gradient';
 
 interface checkProps {
   nextClick: () => void;
@@ -36,12 +37,12 @@ const CheckoutBottom: React.FC<checkProps> = ({
   }, [disValue]);
 
   const discountValue = (Number(disValue * 100) / payable_amount).toFixed(0);
-__DEV__ && console.log('disValue', disValue)
+  __DEV__ && console.log('disValue', disValue)
   return (
     <View style={styles.bottomView}>
       <>
         <View style={styles.greyView}>
-        <View style={styles.rowView}>
+          <View style={styles.rowView}>
             <Text style={styles.label}>Unpaid Packages:</Text>
             <Text style={styles.amount}>
               $ {Number(unpaid_packages).toFixed(2)}
@@ -54,17 +55,17 @@ __DEV__ && console.log('disValue', disValue)
             </Text>
           </View> */}
 
-          <View style={[styles.rowView, { marginTop: isIPad?10:10 }]}>
+          <View style={[styles.rowView, { marginTop: isIPad ? 10 : 10 }]}>
             <Text style={styles.label}>Other Purchases:</Text>
             <Text style={styles.amount}>
               $ {Number(other_purchases).toFixed(2)}
             </Text>
           </View>
-          <View style={[styles.rowView, { marginTop: isIPad?10:10}]}>
+          <View style={[styles.rowView, { marginTop: isIPad ? 10 : 10 }]}>
             <Text style={styles.label}>Credit:</Text>
             <Text style={styles.amount}>$ {Number(credit).toFixed(2)}</Text>
           </View>
-         {payable_amount > 0 && <View style={[styles.rowView, { marginTop: isIPad?10:10}]}>
+          {payable_amount > 0 && <View style={[styles.rowView, { marginTop: isIPad ? 10 : 10 }]}>
             <Text style={styles.label}>
               Discount:{'  '}
               {disValue > 0 && (
@@ -85,18 +86,29 @@ __DEV__ && console.log('disValue', disValue)
         </View>
       </>
       <View style={styles.blueView}>
-  <View style={styles.rowView}>
-    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-      <Text style={styles.doller}>
-        $ {Number(totalPayableAmount).toFixed(2)}
-      </Text>
-      <Text style={styles.total}> Total</Text>
-    </View>
-    <TouchableOpacity style={styles.nextBtn} onPress={nextClick}>
-      <Text style={styles.nxtTxt}>Next</Text>
-    </TouchableOpacity>
-  </View>
-</View>
+        {/* Gradient background for the bottom view */}
+        <LinearGradient
+          colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFill, {
+            borderTopLeftRadius: 15,
+            borderTopRightRadius: 15
+          }]}
+        />
+
+        <View style={styles.rowView}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.doller}>
+              $ {Number(totalPayableAmount).toFixed(2)}
+            </Text>
+            <Text style={styles.total}> Total</Text>
+          </View>
+          <TouchableOpacity style={styles.nextBtn} onPress={nextClick}>
+            <Text style={styles.nxtTxt}>Next</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 };
@@ -136,7 +148,7 @@ const styles = StyleSheet.create({
   disTxt: {
     fontSize: isIPad ? 23 : 18,
     fontFamily: FONTS.PoppinsSemiBold,
-    color: '#61B3E4',
+    color: '#223890',
   },
   blueView: {
     backgroundColor: '#00303E',
@@ -144,8 +156,8 @@ const styles = StyleSheet.create({
     paddingBottom: isIPad ? 15 : 15,
     flexDirection: 'row',
     alignItems: 'center',
-    borderTopRightRadius:15,
-    borderTopLeftRadius:15,
+    borderTopRightRadius: 15,
+    borderTopLeftRadius: 15,
     // borderRadius: 15,
     paddingHorizontal: 15,
     bottom: 0

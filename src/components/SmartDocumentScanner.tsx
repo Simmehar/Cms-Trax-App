@@ -505,7 +505,7 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
 
   if (!hasPermission) return (
     <View style={styles.fullScreen}>
-      <ActivityIndicator size="large" color="#61B3E4" />
+      <ActivityIndicator size="large" color="#223890" />
       <Text style={styles.permText}>Requesting camera permission…</Text>
     </View>
   );
@@ -520,7 +520,7 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
 
   const isLocking = scanState.phase === 'locking';
   const isBusy = scanState.phase === 'capturing';
-  const pColor = isLocking ? '#00FF88' : '#61B3E4';
+  const pColor = isLocking ? '#00FF88' : '#223890';
 
   return (
     <View style={styles.fullScreen}>

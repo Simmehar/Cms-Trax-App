@@ -22,6 +22,7 @@ import { useAuth } from '../contexts';
 import { Package } from '../db/db.crud';
 import { recipientSearchApi } from '../utilities/ApiCalls';
 import { useKeepAwake } from '@sayem314/react-native-keep-awake';
+import LinearGradient from 'react-native-linear-gradient';
 
 const sortList = [
   'Ship',
@@ -357,7 +358,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
                       <TouchableOpacity
                         style={{ flexDirection: 'row', alignItems: 'center' }}
                         onPress={() => onItemClick(item)}>
-                        <Text style={[styles.itemText, { color: item?.isSelect ? '#61B3E4' : 'black' }]}>
+                        <Text style={[styles.itemText, { color: item?.isSelect ? '#223890' : 'black' }]}>
                           {activeTab === 'Recipient' ? `${item?.first_name} ${item?.last_name}` : item?.name}
                         </Text>
                         <TouchableOpacity style={styles.radioButton} onPress={() => onItemClick(item)}>
@@ -371,7 +372,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
                 />
               ) : (
                 <View style={{ justifyContent: 'center', alignItems: 'center', zIndex: 1111, position: 'absolute', alignSelf: 'center', top: '50%' }}>
-                  <ActivityIndicator size="large" color="#1B77AC" />
+                  <ActivityIndicator size="large" color="#223890" />
                   <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#000', marginTop: 12 }}>Please wait, data is loading...</Text>
                 </View>
               )}
@@ -383,8 +384,24 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
               {filterType === '2' && activeTab === 'Ship' && isOnline ? (
                 <TouchableOpacity
                   disabled={isLoadingData || selectedItem == ''}
-                  style={[styles.applyButton, { backgroundColor: '#1B77AC', opacity: isLoadingData || selectedItem == '' ? 0.5 : 1 }]}
+                  style={[
+                    styles.applyButton,
+                    {
+                      // Background color hata diya hai
+                      opacity: isLoadingData || selectedItem == '' ? 0.5 : 1,
+                      overflow: 'hidden' // Radius barqarar rakhne ke liye
+                    }
+                  ]}
                   onPress={() => onDownloadPress({ user, shipId: selectedShip })}>
+
+                  {/* Gradient Background */}
+                  <LinearGradient
+                    colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+
                   <Text style={styles.applyButtonText}>Download</Text>
                 </TouchableOpacity>
               ) : null}
@@ -552,7 +569,7 @@ const styles = StyleSheet.create({
     width: isIPad ? 30 : 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#61B3E4',
+    borderColor: '#223890',
     alignItems: 'center',
     justifyContent: 'center',
     marginEnd: isIPad ? 15 : 0
@@ -561,9 +578,9 @@ const styles = StyleSheet.create({
     height: isIPad ? 20 : 12,
     width: isIPad ? 20 : 12,
     borderRadius: 10,
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
   },
-  clear:{ width: '20%', borderColor: 'grey', borderWidth: 2, alignItems: 'center', padding: 5, borderRadius: 5 }
+  clear: { width: '20%', borderColor: 'grey', borderWidth: 2, alignItems: 'center', padding: 5, borderRadius: 5 }
 });
 
 export default FiltersModal;

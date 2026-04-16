@@ -42,7 +42,7 @@ setup_permissions([
 
 $RNFirebaseAsStaticFramework = true
 
-target 'CMS' do
+target 'CMSTrax' do
   config = use_native_modules!
  
   
@@ -83,7 +83,7 @@ target 'CMS' do
   # pod 'Permission-PhotoLibrary', :path => "#{permissions_path}/PhotoLibrary"
 
   
-  target 'CMSTests' do
+  target 'CMSTraxTests' do
     inherit! :complete
     # Pods for testing
   end

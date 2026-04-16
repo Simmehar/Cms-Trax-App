@@ -198,7 +198,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
               </TouchableOpacity>
               <TouchableOpacity
             style={{
-              backgroundColor: "#61B3E4",
+              backgroundColor: "#223890",
               padding: isIPad ? 14 : 7,
               borderRadius: isIPad ? 14 : 8,
               alignSelf: "center",
@@ -255,8 +255,8 @@ const styles = StyleSheet.create({
   selectAllContainer: { flexDirection: 'row', alignItems: 'center' },
   checkbox: { width: 22, height: 22, borderWidth: 1, borderColor: '#D6D6D6', borderRadius: 4 },
   checkboxI: { width: 26, height: 26, borderWidth: 1, borderColor: '#D6D6D6', borderRadius: 4 },
-  selectcheckbox: { width: 22, height: 22, backgroundColor: '#61B3E4', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
-  selectcheckboxI: { width: 28, height: 28, backgroundColor: '#61B3E4', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
+  selectcheckbox: { width: 22, height: 22, backgroundColor: '#223890', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
+  selectcheckboxI: { width: 28, height: 28, backgroundColor: '#223890', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
   selectAllText: { color: 'black', fontFamily: FONTS.PoppinsRegular, marginLeft: 10, fontWeight: '600' },
   actionsContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   actionButton: { width: 90, height: 40, borderRadius: 20, marginRight: 5, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 1.84 },
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   tick: { height: 9, width: 13, tintColor: 'white' },
   tickI: { height: 12, width: 17, tintColor: 'white' },
   countNu: { fontSize: 14, color: 'black', fontFamily: FONTS.PoppinsSemiBold, flex: 1 },
-  clear: { fontSize: 14, color: '#1B77AC', fontFamily: FONTS.PoppinsRegular },
+  clear: { fontSize: 14, color: '#223890', fontFamily: FONTS.PoppinsRegular },
   network: { height: 25, width: 25, tintColor: 'green', marginRight: 10 },
   networkI: { height: isIPad?40:20, width: isIPad?40:20, tintColor: '#c93a3a', marginRight: 10 },
   actionButtonCheck: { paddingHorizontal: 10, height: 40, borderRadius: 30, marginEnd: 5, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 1.84 },

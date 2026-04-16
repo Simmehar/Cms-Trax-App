@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   blueTxt: {
     fontSize: 14,
     fontFamily: FONTS.PoppinsRegular,
-    color: '#61B3E4',
+    color: '#223890',
   },
   trckId: {
     color: 'black',

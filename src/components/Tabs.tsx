@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   activeTab: {
-    backgroundColor: "#008998",
+    backgroundColor: "#223890",
   },
 
   icon: {

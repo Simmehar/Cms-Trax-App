@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   },
   simTitle: {
     fontSize: isIPad ? 35 : 20,
-    color: '#61B3E4',
+    color: '#223890',
     fontFamily: FONTS.PoppinsSemiBold,
 
   },
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     fontSize: isIPad ? 25 : 16,
     textAlign: 'center',
     marginVertical: isIPad ? 10 : 3,
-    color: '#61B3E4',
+    color: '#223890',
     marginHorizontal: 10,
     fontFamily: FONTS.PoppinsSemiBold,
   },

@@ -33,6 +33,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from "react-native-fs";
 import { AdvancedForms as AdvancedFormsDB } from '../db/db.crud';
 import { useRoute } from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
 
 
 const Search = () => {
@@ -277,7 +278,7 @@ const Search = () => {
   useEffect(() => {
     const backAction = () => {
       __DEV__ && console.log('backpressed');
-      onClear();
+      // onClear();
 
       return true;
     };
@@ -730,18 +731,37 @@ const Search = () => {
         <></>
       )}
 
-      <View style={[styles.drawerContainer]}>
+      <View style={styles.drawerContainer}>
+        {/* Gradient background for the whole footer area */}
+        <LinearGradient
+          colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFill, {
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20
+          }]}
+        />
+
         {isOnline && (
           <TouchableOpacity
             disabled={selectedArr.length == 0}
             style={[
               isIPad ? styles.buttonI : styles.button,
               {
-                backgroundColor: '#1B77AC',
                 opacity: selectedArr.length <= 0 ? 0.5 : 1,
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.2)' // Optional: halka border for depth
               },
             ]}
             onPress={() => setVisible(!visible)}>
+            <LinearGradient
+              colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
             <Text style={[styles.buttonText, { fontSize: isIPad ? 27 : 16 }]}>
               Update Package
             </Text>

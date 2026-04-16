@@ -165,7 +165,7 @@ const TotalReceive = ({ navigation }: any) => {
         </View>
 
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1B77AC" />
+          <ActivityIndicator size="large" color="#223890" />
           <Text style={styles.loadingText}>Loading data...</Text>
         </View>
       </SafeAreaView>
@@ -188,7 +188,7 @@ const TotalReceive = ({ navigation }: any) => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1B77AC" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#223890" />}
       >
         {/* TOP STATS CARD (Two Columns) */}
         <View style={styles.summaryCard}>
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   },
   timeValue: {
     fontWeight: '600',
-    color: '#1B77AC',
+    color: '#223890',
   },
   filterBtn: {
     flexDirection: 'row',

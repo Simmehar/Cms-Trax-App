@@ -442,7 +442,7 @@ const detectCarrierFromId = (id: string): CarrierObj | undefined => {
             {/* ── Background processing banner ──────────────────── */}
             {isBackgroundProcessing && (
               <View style={styles.processingBanner}>
-                <ActivityIndicator size="small" color="#1B77AC" style={{ marginRight: 8 }} />
+                <ActivityIndicator size="small" color="#223890" style={{ marginRight: 8 }} />
                 <Text style={styles.processingTxt}>Extracting label data in background…</Text>
               </View>
             )}
@@ -514,7 +514,7 @@ const detectCarrierFromId = (id: string): CarrierObj | undefined => {
                       disabled={isImageUploading}
                     >
                       {imageLoading === key ? (
-                        <ActivityIndicator style={styles.imgGrey} size="small" color="#61B3E4" />
+                        <ActivityIndicator style={styles.imgGrey} size="small" color="#223890" />
                       ) : (
                         <Image
                           resizeMode="contain"
@@ -617,17 +617,17 @@ const styles = StyleSheet.create({
   headerValue: {
     fontSize: isIPad ? 20 : 17,
     fontFamily: FONTS.PoppinsSemiBold,
-    color: '#1B77AC',
+    color: '#223890',
   },
   errorMsg: { fontSize: isIPad ? 20 : 14, fontFamily: FONTS.PoppinsRegular, color: 'red', marginLeft: 30 },
   processingBanner: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'center',
-    backgroundColor: '#EAF6FF', borderWidth: 1, borderColor: '#61B3E4',
+    backgroundColor: '#EAF6FF', borderWidth: 1, borderColor: '#223890',
     paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10,
     marginBottom: 10, marginTop: 4,
   },
   processingTxt: {
-    fontSize: isIPad ? 16 : 12, fontFamily: FONTS.PoppinsRegular, color: '#1B77AC',
+    fontSize: isIPad ? 16 : 12, fontFamily: FONTS.PoppinsRegular, color: '#223890',
   },
   modalContainer: {
     position: 'absolute', bottom: 0, width: '100%', zIndex: 1,
@@ -648,12 +648,12 @@ const styles = StyleSheet.create({
   closeImg: { height: 10, width: 10, tintColor: 'black' },
   closeImgI: { height: 20, width: 20, tintColor: 'black' },
   direction: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 30, marginVertical: isIPad ? 30 : 16 },
-  clearBtn: { height: 50, borderRadius: 26, backgroundColor: '#1B77AC', justifyContent: 'center', alignItems: 'center', flex: 1 },
-  clearBtnI: { height: 75, borderRadius: 40, backgroundColor: '#1B77AC', justifyContent: 'center', alignItems: 'center', flex: 1 },
+  clearBtn: { height: 50, borderRadius: 26, backgroundColor: '#223890', justifyContent: 'center', alignItems: 'center', flex: 1 },
+  clearBtnI: { height: 75, borderRadius: 40, backgroundColor: '#223890', justifyContent: 'center', alignItems: 'center', flex: 1 },
   imgGrey: { height: isIPad ? 200 : 100, width: isIPad ? 200 : 100, borderRadius: 20 },
   imgGreyy: { height: isIPad ? 200 : 50, width: isIPad ? 200 : 50, alignSelf: 'center', borderRadius: 20 },
   addView: { height: 32 },
-  addTxt: { fontSize: isIPad ? 20 : 14, fontFamily: FONTS.PoppinsRegular, color: '#1B77AC', textAlign: 'center', marginTop: 10 },
+  addTxt: { fontSize: isIPad ? 20 : 14, fontFamily: FONTS.PoppinsRegular, color: '#223890', textAlign: 'center', marginTop: 10 },
   btnTxt: { color: 'white', fontSize: 16, fontFamily: FONTS.PoppinsSemiBold },
   btnTxtI: { color: 'white', fontSize: isIPad ? 25 : 20, fontFamily: FONTS.PoppinsSemiBold },
 });

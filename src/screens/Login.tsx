@@ -28,6 +28,7 @@ import { KeyboardScroll } from '../components/KeyboardScroll';
 import { CheckIpad, getData, saveData } from '../utilities/securestorage';
 import { useNavigationContext } from '../contexts/navigationcontext';
 import RNRestart from 'react-native-restart';
+import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 let isPad = CheckIpad();
 const LoginSchema = Yup.object().shape({
@@ -56,7 +57,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
     username: '',
     password: '',
   });
-                                                                                                                                                                                                                                                                                                                                                                                    
+
   const { user, logout } = useContext(AuthContext);
 
   const [tokenExpired, setTokenExpired] = useState(false);
@@ -68,23 +69,23 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
     async error => {
       const status = error.response?.status || 500;
       const code = error?.response?.data?.detail;
-  
+
       __DEV__ && console.log('Status in login screen:', status);
       __DEV__ && console.log('Code:', code);
-  
+
       // Handle token expiration only once
       if (status === 401 && (code === 'Session expired due to inactivity.' || code === 'Invalid token.')) {
         if (!isLoggingOut) {
           isLoggingOut = true;
           __DEV__ && console.log('Logging out due to session expiration...');
-  
+
           // Call logout first, then restart if needed
           await logout();
           setTokenExpired(true);
-          
+
           // Restart after logout completes
           // setTimeout(() => {
-            RNRestart.restart();
+          RNRestart.restart();
           // }, 500);
         }
         return Promise.reject(error);
@@ -93,8 +94,8 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       }
     }
   );
-  
-  
+
+
   // __DEV__ && console.log('tokenExpired', tokenExpired)
   useEffect(() => {
     const checkNavigation = async () => {
@@ -102,11 +103,11 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       const key = 'user.data';
       const data = await getData(key);
       // __DEV__ && console.log('data on login screen', data)
-      if (!data?.token || data==null ||data?.token=="expired") {
+      if (!data?.token || data == null || data?.token == "expired") {
         // navigation.navigate('Login');
       } else {
         setUser(data);
-        navigation.navigate('Home');
+        navigation.replace('Home');
       }
     };
     checkNavigation();
@@ -145,7 +146,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         await saveData('user.data', data);
         setUser(data);
         setSendData({ username: '', password: '' });
-        navigation.navigate('Home');
+        navigation.replace('Home');
       } else {
       }
       // setError('');
@@ -184,102 +185,109 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       <StatusBar
         barStyle={'light-content'}
       />
-      <ImageBackground source={IMAGES.background.bg} style={styles.background}>
-        <View style={styles.container}>
-          <Image style={isPad ? styles.logoIPad : styles.logo} source={IMAGES.logos.logo} />
-          <Image style={isPad ? styles.logoIwave : styles.logowave} source={IMAGES.line} tintColor={'#FDBE6F'} />
-          <View style={styles.inputGroup}>
-            <View style={isPad ? styles.iPadInput : styles.inputI}>
-              <TextInput
-                style={isPad ? styles.input : styles.inputIPad}
-                placeholder="Username"
-                placeholderTextColor={COLORS.label}
-                textAlignVertical="center"
-                value={sendData.username}
-                autoCapitalize="none"
-                onChangeText={newUsername => {
-                  setError({ username: '', password: '' });
-                  setSendData(prevValue => {
-                    return { ...prevValue, username: newUsername };
-                  });
-                }}
-              />
-            </View>
-            <Text style={styles.errorText}>
-              {error?.password == 'Not a valid user'
-                ? error?.password
-                : error.username}
-            </Text>
-            <View style={isPad ? styles.iPadInput : styles.inputI}>
-              <TextInput
-                style={isPad ? styles.input : styles.inputIPad}
-                placeholder="Password"
-                placeholderTextColor={COLORS.label}
-                textAlignVertical="center"
-                value={sendData.password}
-                secureTextEntry={securePassword}
-                onChangeText={newPass => {
-                  setError({ username: '', password: '' });
-                  setSendData(prevValue => {
-                    return { ...prevValue, password: newPass };
-                  });
-                }}
-              />
-              <TouchableOpacity
-                onPress={() => setSecurePassword(!securePassword)}
-                style={styles.eye}>
-                <Image
-                  source={
-                    securePassword
-                      ? require('../assets/images/eyeclose.png')
-                      : require('../assets/images/eyeopen.png')
-                  }
-                  style={{
-                    width: isPad ? 35 : 25,
-                    height: isPad ? 35 : 25,
-                    resizeMode: 'contain',
-                  }}
-                // tintColor={'red'}
-                />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.errorText}>
-              {error?.password != 'Not a valid user' && error?.password}
-            </Text>
+      {/* <ImageBackground source={IMAGES.background.bg} style={styles.background}> */}
+      <LinearGradient
+        colors={['#1C2C5B', '#1F3C73', '#2B5DAA']} // gradient colors
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.background}
+      >
+      <View style={styles.container}>
+        <Image style={isPad ? styles.logoIPad : styles.logo} source={IMAGES.logos.logo} />
+        <Image style={isPad ? styles.logoIwave : styles.logowave} source={IMAGES.line} tintColor={'#FDBE6F'} />
+        <View style={styles.inputGroup}>
+          <View style={isPad ? styles.iPadInput : styles.inputI}>
+            <TextInput
+              style={isPad ? styles.input : styles.inputIPad}
+              placeholder="Username"
+              placeholderTextColor={COLORS.label}
+              textAlignVertical="center"
+              value={sendData.username}
+              autoCapitalize="none"
+              onChangeText={newUsername => {
+                setError({ username: '', password: '' });
+                setSendData(prevValue => {
+                  return { ...prevValue, username: newUsername };
+                });
+              }}
+            />
           </View>
-          <View
-            style={[
-              isPad ? styles.iPadInputBtn : styles.inputIbtn,
-              { backgroundColor: '#FDBE6F' },
-            ]}>
+          <Text style={styles.errorText}>
+            {error?.password == 'Not a valid user'
+              ? error?.password
+              : error.username}
+          </Text>
+          <View style={isPad ? styles.iPadInput : styles.inputI}>
+            <TextInput
+              style={isPad ? styles.input : styles.inputIPad}
+              placeholder="Password"
+              placeholderTextColor={COLORS.label}
+              textAlignVertical="center"
+              value={sendData.password}
+              secureTextEntry={securePassword}
+              onChangeText={newPass => {
+                setError({ username: '', password: '' });
+                setSendData(prevValue => {
+                  return { ...prevValue, password: newPass };
+                });
+              }}
+            />
             <TouchableOpacity
-              style={styles.button}
-              onPress={() => {
-                onLogin();
-              }}>
-              {isLoading ? (
-                <ActivityIndicator size="small" color={COLORS.white} />
-              ) : (
-                <Text style={isPad ? styles.padText : styles.buttonText}>Login</Text>
-              )}
+              onPress={() => setSecurePassword(!securePassword)}
+              style={styles.eye}>
+              <Image
+                source={
+                  securePassword
+                    ? require('../assets/images/eyeclose.png')
+                    : require('../assets/images/eyeopen.png')
+                }
+                style={{
+                  width: isPad ? 35 : 25,
+                  height: isPad ? 35 : 25,
+                  resizeMode: 'contain',
+                }}
+              // tintColor={'red'}
+              />
             </TouchableOpacity>
           </View>
-
-
+          <Text style={styles.errorText}>
+            {error?.password != 'Not a valid user' && error?.password}
+          </Text>
         </View>
-        <Text
-          style={{
-            // marginTop: 50,
-            color: 'white',
-            fontSize: isPad ? 25 : 18,
-            fontWeight: 'bold',
-            bottom: isPad ? 90 : 70,
-            alignSelf: 'center'
-          }}>
-          v1.8.15
-        </Text>
-      </ImageBackground>
-    </KeyboardScroll>
+        <View
+          style={[
+            isPad ? styles.iPadInputBtn : styles.inputIbtn,
+            { backgroundColor: '#FDBE6F' },
+          ]}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              onLogin();
+            }}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color={COLORS.white} />
+            ) : (
+              <Text style={isPad ? styles.padText : styles.buttonText}>Login</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+
+      </View>
+      <Text
+        style={{
+          // marginTop: 50,
+          color: 'white',
+          fontSize: isPad ? 25 : 18,
+          fontWeight: 'bold',
+          bottom: isPad ? 90 : 70,
+          alignSelf: 'center'
+        }}>
+        v1.1.1
+      </Text>
+      </LinearGradient>
+    {/* </ImageBackground> */}
+    </KeyboardScroll >
   );
 };
 
@@ -293,7 +301,7 @@ const styles = StyleSheet.create({
     width: '100%',
     resizeMode: 'stretch',
   },
-  container: {  
+  container: {
     flex: 1,
     padding: '5%',
     width: '100%',

@@ -208,7 +208,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
                     <Text
                       style={[
                         styles.itemText,
-                        {color: item?.isSelect ? '#61B3E4' : 'black'},
+                        {color: item?.isSelect ? '#223890' : 'black'},
                       ]}>
                       {activeTab === 'Ship'
                         ? item?.name
@@ -236,7 +236,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             {activeTab === 'Ship' && filterType == '2' ? (
               <TouchableOpacity
-                style={[styles.applyButton, {backgroundColor: '#1B77AC'}]}
+                style={[styles.applyButton, {backgroundColor: '#223890'}]}
                 onPress={() => {
                   onClose(true);
                   Alert.alert('', 'Download Successfully', [
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   blueBox: {
     height: isIPad ? 26 : 22,
     width: isIPad ? 26 : 22,
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 4,
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#1B77AC',
+    borderBottomColor: '#223890',
   },
   tabText: {
     fontSize: 16,

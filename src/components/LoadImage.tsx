@@ -28,7 +28,7 @@ const LoadImage: React.FC<imageProps> = props => {
         <ActivityIndicator
           style={styles.indicator}
           size={'small'}
-          color={'#61B3E4'}
+          color={'#223890'}
         />
       ) : null}
     </>

@@ -258,14 +258,14 @@ const styles = StyleSheet.create({
   ClearTxt: {
     fontSize: 16,
     fontFamily: FONTS.PoppinsRegular,
-    color: '#1B77AC',
+    color: '#223890',
     textAlign: 'center',
     marginTop: 22,
   },
   amountView: {
     height: isIPad?100:50,
     flex: 1,
-    backgroundColor: '#1B77AC',
+    backgroundColor: '#223890',
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   amountLView: {
     height: isIPad?100:50,
     flex: 1,
-    borderColor: '#1B77AC',
+    borderColor: '#223890',
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   amountWTxt: {
     fontSize:isIPad?30:19,
     fontFamily: FONTS.OpenSansMedium,
-    color: '#1B77AC',
+    color: '#223890',
     fontWeight:'700'
   },
   container: {

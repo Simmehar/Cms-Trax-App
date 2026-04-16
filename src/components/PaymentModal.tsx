@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     height: 52,
     width: '20%',
     // flex: 1,
-    backgroundColor: '#1B77AC',
+    backgroundColor: '#223890',
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
     height: 52,
     width: '25%',
     // flex: 1,
-    borderColor: '#1B77AC',
+    borderColor: '#223890',
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
   amountWTxt: {
     fontSize: isIPad ? 25 : 20,
     fontFamily: FONTS.OpenSansMedium,
-    color: '#1B77AC',
+    color: '#223890',
   },
   inputView: {
     marginHorizontal: 22,
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
   selectcheckbox: {
     width: 35,
     height: 35,
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
@@ -859,7 +859,7 @@ const styles = StyleSheet.create({
   selectcheckboxI: {
     width: 40,
     height: 40,
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',

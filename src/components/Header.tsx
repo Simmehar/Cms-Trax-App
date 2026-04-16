@@ -42,7 +42,8 @@ const Header: React.FC<headProps> = ({
     if (isOnline) {
       setSearchActive(false);
       onClear();
-      navigation.goBack();
+      // navigation.goBack();
+      navigation.replace('Home');
     }
   };
 
@@ -138,11 +139,14 @@ const Header: React.FC<headProps> = ({
             </View>
           </>
         ) : (
+          <View style={{ flexDirection: 'row',justifyContent:'space-between',flex:1}}>
           <>
-            <Image style={isPad ? styles.logoiPad : styles.logo} source={IMAGES.header.logo} />
-            <Text style={[styles.title, { fontSize: isPad ? 26 : 16 }]}>
+            <Image style={isPad ? styles.logoiPad : styles.logo} source={IMAGES.header.traxlogo} />
+            {/* <Text style={[styles.title, { fontSize: isPad ? 26 : 16 }]}>
               Crew Mail Services
-            </Text>
+            </Text> */}
+            </>
+            <View style={{flexDirection:'row'}}>
             <TouchableOpacity
               style={isPad ? styles.iconCircleI : styles.iconCircle}
               onPress={handleSearchPress}>
@@ -150,7 +154,6 @@ const Header: React.FC<headProps> = ({
                 xml={ICONS.header.search}
                 width={isPad ? 32 : '21.5'}
                 height={isPad ? 32 : '21.5'}
-              // style={isPad ? styles.iconI :  styles.icon}
               />
             </TouchableOpacity>
             <TouchableOpacity
@@ -162,7 +165,8 @@ const Header: React.FC<headProps> = ({
                 height={isPad ? 30 : '21.5'}
               />
             </TouchableOpacity>
-          </>
+            </View>
+          </View>
         )}
       </View>
     </View>
@@ -199,13 +203,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: isPad ? 20 : 10,
   },
   logo: {
-    width: 38,
+    width: 200,
     height: 40,
+    //  flex: 1,
+    marginLeft: 10,
+     resizeMode: 'stretch',
   },
   logoiPad: {
-    width: 70,
+    width: 350,
     height: 70,
-    resizeMode: 'stretch'
+    resizeMode: 'stretch',
+    //  flex: 1,
+    marginLeft: 10,
   },
   title: {
     fontSize: 16,
@@ -240,7 +249,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 24,
     justifyContent: 'center',
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     alignItems: 'center',
     marginEnd: 10
   },
@@ -249,7 +258,7 @@ const styles = StyleSheet.create({
     height: 45,
     borderRadius: 40,
     justifyContent: 'center',
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     alignItems: 'center',
     marginEnd: 30
   },
@@ -274,7 +283,7 @@ const styles = StyleSheet.create({
     height: isPad ? 48 : 20,
     borderRadius: 24,
     justifyContent: 'center',
-    backgroundColor: ' #61B3E4',
+    backgroundColor: ' #223890',
     alignItems: 'center',
   },
 

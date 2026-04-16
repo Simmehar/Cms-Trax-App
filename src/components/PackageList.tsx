@@ -438,11 +438,9 @@ const styles = StyleSheet.create({
     color: '#002B45',
   },
   label: {
-    //color: '#61B3E4',
-    // fontSize: isIPad ? 20 : 16,
     fontSize: isIPad ? 23 : 18,
     fontFamily: FONTS.PoppinsSemiBold,
-    color: '#1B77AC',
+    color: '#223890',
     fontWeight: '500'
   },
   value: {
@@ -492,7 +490,7 @@ const styles = StyleSheet.create({
     height: isIPad ? 35 : 22,
     width: isIPad ? 35 : 22,
     borderRadius: 4,
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     justifyContent: 'center',
     alignItems: 'center',
   },

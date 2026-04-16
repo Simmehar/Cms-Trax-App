@@ -20,6 +20,8 @@ import {OfflineModeProvider} from './db/db.context';
 
 import SQLite from 'react-native-sqlite-storage';
 import {SearchProvider} from './contexts/SearchContext';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 // SQLite.DEBUG(true);
 SQLite.enablePromise(false);
 
@@ -70,6 +72,7 @@ const Routes = () => {
 const MasterWrapper = () => {
   return (
     <View style={{flex: 1}}>
+      
       <AuthProvider>
         <NavigationProvider>
           <PackageProvider>

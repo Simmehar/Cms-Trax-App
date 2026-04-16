@@ -123,7 +123,7 @@ const LoggedTodayScreen = ({ }: any) => {
         </View>
 
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1B77AC" />
+          <ActivityIndicator size="large" color="#223890" />
           <Text style={styles.loadingText}>Loading data...</Text>
         </View>
       </SafeAreaView>
@@ -150,7 +150,7 @@ const LoggedTodayScreen = ({ }: any) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#1B77AC"
+            tintColor="#223890"
           />
         }
       >

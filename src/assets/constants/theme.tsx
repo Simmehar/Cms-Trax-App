@@ -99,6 +99,7 @@ export const IMAGES = {
   },
   header: {
     logo: require('../images/header-logo.png'),
+    traxlogo:require('../images/Cmstrax.png')
   },
   background: {
     bg: require('../images/background.png'),

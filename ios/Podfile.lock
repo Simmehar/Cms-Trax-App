@@ -1,5 +1,7 @@
 PODS:
   - boost (1.83.0)
+  - BVLinearGradient (2.8.3):
+    - React-Core
   - DoubleConversion (1.1.6)
   - FBLazyVector (0.74.6)
   - Firebase (10.29.0):
@@ -1583,6 +1585,7 @@ PODS:
 
 DEPENDENCIES:
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
+  - BVLinearGradient (from `../node_modules/react-native-linear-gradient`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - Firebase
@@ -1707,6 +1710,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   boost:
     :podspec: "../node_modules/react-native/third-party-podspecs/boost.podspec"
+  BVLinearGradient:
+    :path: "../node_modules/react-native-linear-gradient"
   DoubleConversion:
     :podspec: "../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec"
   FBLazyVector:
@@ -1865,6 +1870,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   boost: d3f49c53809116a5d38da093a8aa78bf551aed09
+  BVLinearGradient: cb006ba232a1f3e4f341bb62c42d1098c284da70
   DoubleConversion: 76ab83afb40bddeeee456813d9c04f67f78771b5
   FBLazyVector: 4b1589d37c9ff4dba11a63083fe7515fad3ac111
   Firebase: cec914dab6fd7b1bd8ab56ea07ce4e03dd251c2d
@@ -1977,6 +1983,6 @@ SPEC CHECKSUMS:
   VisionCamera: 030bcbf22791d698926e7c0e3b804126165e62e3
   Yoga: dbb1bd5faecc60d38ed0a2f2a75db536c759b334
 
-PODFILE CHECKSUM: bdf4a5423117544fa18cc6a2159a022e06d2ed5c
+PODFILE CHECKSUM: 31d4b91010d2d56bb43a43bec4f941634a552b3c
 
 COCOAPODS: 1.16.2

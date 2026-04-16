@@ -32,7 +32,7 @@ const ImagePickerField: React.FC<Props> = ({
               disabled={isImageUploading}
             >
               {imageLoading == key ? (
-                <ActivityIndicator style={styles.imgGrey} size="small" color="#61B3E4" />
+                <ActivityIndicator style={styles.imgGrey} size="small" color="#223890" />
               ) : (
                 <Image
                   resizeMode="contain"
@@ -89,7 +89,7 @@ const styles = {
   addTxt: {
     fontSize: isIPad ? 16 : 10,
     fontFamily: FONTS.PoppinsRegular,
-    color: "#1B77AC",
+    color: "#223890",
     textAlign: "center",
     marginTop: 10,
   },

@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   blueBox: {
     height: isIPad ? 30 : 26,
     width: isIPad ? 30 : 26,
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 4,

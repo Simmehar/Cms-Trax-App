@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    color: '#61B3E4',
+    color: '#223890',
     fontWeight: '600',
   },
   input: {

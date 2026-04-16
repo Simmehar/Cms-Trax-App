@@ -60,6 +60,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getLoggedToday, getTotalReceived } from '../utilities/ApiCalls';
 import { useNavigation } from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
 interface Package {
   id: number;
   track_id: string;
@@ -442,10 +443,10 @@ const Home: React.FC = ({ navigation }: any) => {
           capturedImagePath={capturedImagePath}
           isBackgroundProcessing={isBackgroundProcessing}
           backgroundExtracted={backgroundExtracted}
-           shipName={shipName}
+          shipName={shipName}
           receipientName={receipientName}
           location={location}
-        
+
         />
 
         {/* ── Full-Screen Scanner Modal (managed by Home) ── */}
@@ -522,19 +523,37 @@ const Home: React.FC = ({ navigation }: any) => {
         </KeyboardAwareScrollView>
 
         {isInternet && (
-          <View style={[styles.drawerContainer, { paddingBottom: isIPad ? 50 : 30 }]}>
+          <View style={[styles.drawerContainer, { paddingBottom: isIPad ? 50 : 30, overflow: 'hidden' }]}>
+            {/* Aapke colors wala exact gradient background */}
+            <LinearGradient
+              colors={['#273c7a', '#1F3C73', '#2B5DAA']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[StyleSheet.absoluteFill, {
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20
+              }]}
+            />
+
             <TouchableOpacity
-              style={[isPad ? styles.buttonI : styles.button, { backgroundColor: '#1B77AC' }]}
+              style={[isPad ? styles.buttonI : styles.button, { overflow: 'hidden' }]}
               onPress={onAddPackage}
             >
+              <LinearGradient
+                colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
               <Text style={isPad ? styles.buttonTextI : styles.buttonText}>
                 {'+Add Package'}
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[isPad ? styles.buttonI : styles.button, { backgroundColor: '#FDBE6F' }]}
               disabled={submitLoading}
-              onPress={() => {
+               onPress={() => {
                 const val = { shipName, receipientName, divisionName, location };
                 const isValid = checkValidation();
                 if (!isValid) {
@@ -605,7 +624,18 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, dashboard, isInternet, 
       <View style={styles.statsContainer}>
         {/* <View style={isPad ? styles.statCardIpad : styles.statCard} > */}
 
-        <TouchableOpacity style={isPad ? styles.statCardIpad : styles.statCard} onPress={() => { navigation.navigate('LoggedTodayScreen') }}>
+        <TouchableOpacity
+          style={[isPad ? styles.statCardIpad : styles.statCard, { overflow: 'hidden' }]}
+          onPress={() => { navigation.navigate('LoggedTodayScreen') }}
+        >
+          {/* Same gradient effect as the card image you shared */}
+          <LinearGradient
+            colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+
           <Text style={[isPad ? styles.statNumberIpad : styles.statNumber, { fontFamily: 'OctoberCompressBold' }]}>
             {formatNumber(dashboard?.scannedToday || 0)}
           </Text>
@@ -615,7 +645,18 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, dashboard, isInternet, 
         </TouchableOpacity>
         {/* </View> */}
         {/* <View style={isPad ? styles.statCardIpad : styles.statCard}> */}
-        <TouchableOpacity style={isPad ? styles.statCardIpad : styles.statCard} onPress={() => { navigation.navigate('TotalReceive') }}>
+        <TouchableOpacity
+          style={[isPad ? styles.statCardIpad : styles.statCard, { overflow: 'hidden' }]}
+          onPress={() => { navigation.navigate('TotalReceive') }}
+        >
+          {/* Consistent Gradient Background */}
+          <LinearGradient
+            colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+
           <Text style={[isPad ? styles.statNumberIpad : styles.statNumber, { fontFamily: 'OctoberCompressBold' }]}>
             {formatNumber(dashboard?.todayCollection || 0)}
           </Text>
@@ -637,13 +678,13 @@ const styles = StyleSheet.create({
   // ── OCR Button ───────────────────────────────────────────
   ocrBtn: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 6,
-    borderWidth: 1.5, borderColor: '#61B3E4', paddingVertical: 10, paddingHorizontal: 20,
-    borderRadius: 14, marginBottom: 10, marginTop: 4, backgroundColor: '#EAF6FF',
-    shadowColor: '#61B3E4', shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1.5, borderColor: '#223890', paddingVertical: 10, paddingHorizontal: 20,
+    borderRadius: 14, marginBottom: 10, marginTop: 4, backgroundColor: '#e3eff6',
+    shadowColor: '#223890', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15, shadowRadius: 4, elevation: 3,
   },
   ocrTxt: {
-    fontSize: isIPad ? 20 : 15, fontFamily: FONTS.PoppinsSemiBold, color: '#1B77AC',
+    fontSize: isIPad ? 20 : 15, fontFamily: FONTS.PoppinsSemiBold, color: '#223890',
   },
   // ── Dashboard ────────────────────────────────────────────
   header: {
@@ -652,15 +693,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: isIPad ? 30 : 5,
   },
   greetingContainer: { flex: 1 },
-  greeting: { fontSize: 17, fontFamily: FONTS.PoppinsRegular, color: '#1B77AC' },
-  userName: { fontSize: 32, fontFamily: FONTS.PoppinsRegular, color: '#1B77AC', fontWeight: '600' },
+  greeting: { fontSize: 17, fontFamily: FONTS.PoppinsRegular, color: '#223890' },
+  userName: { fontSize: 32, fontFamily: FONTS.PoppinsRegular, color: '#223890', fontWeight: '600' },
   statsContainer: { flexDirection: 'row', justifyContent: isIPad ? 'space-around' : 'space-between' },
   statCard: {
-    backgroundColor: '#1B77AC', borderRadius: 10, padding: 20,
+    backgroundColor: '#223890', borderRadius: 10, padding: 20,
     width: '45%', marginBottom: 10, alignItems: 'center', marginHorizontal: 5,
   },
   statCardIpad: {
-    backgroundColor: '#1B77AC', borderRadius: 20, padding: 25, paddingVertical: 45,
+    backgroundColor: '#223890', borderRadius: 20, padding: 25, paddingVertical: 45,
     width: '45%', marginBottom: 10, alignItems: 'center', zIndex: 1,
   },
   statNumber: { fontSize: 26, fontFamily: FONTS.PoppinsMedium, color: '#fff' },
@@ -669,8 +710,7 @@ const styles = StyleSheet.create({
   statLabelIpad: { fontSize: 25, color: '#fff', marginTop: 5, textAlign: 'center' },
   // ── Bottom bar ───────────────────────────────────────────
   drawerContainer: {
-    width: '100%', flexDirection: 'row', justifyContent: 'space-around',
-    backgroundColor: '#002B45', paddingVertical: isIPad ? 20 : 10,
+    width: '100%', flexDirection: 'row', justifyContent: 'space-around', paddingVertical: isIPad ? 20 : 10,
     borderTopLeftRadius: 20, borderTopRightRadius: 20,
   },
   button: { flex: 1, marginHorizontal: 10, height: 50, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },

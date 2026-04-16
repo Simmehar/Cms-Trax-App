@@ -60,7 +60,7 @@ const CommonInput: React.FC<Props> = ({
     }),
     color: animatedIsFocused.interpolate({
       inputRange: [0, 1],
-      outputRange: ["#999", "#61B3E4"],
+      outputRange: ["#999", "#223890"],
     }),
     fontWeight: "500" as const,
   };
@@ -72,7 +72,7 @@ const CommonInput: React.FC<Props> = ({
         style={[
           styles.inputWrapper,
           {
-            borderColor: isFocused || value ? "#61B3E4" : "#ccc",
+            borderColor: isFocused || value ? "#223890" : "#ccc",
           },
         ]}
       >

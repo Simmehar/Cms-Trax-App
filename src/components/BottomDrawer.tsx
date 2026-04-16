@@ -637,11 +637,11 @@ const styles = StyleSheet.create({
   packTxt: { color: 'black', fontSize: 16, fontFamily: FONTS.PoppinsSemiBold },
   packTxtI: { color: 'black', fontSize: 24, fontFamily: FONTS.PoppinsSemiBold },
   rowView: { flexDirection: 'row', alignItems: 'center' },
-  trTxt: { flex: 1, color: '#61B3E4', fontSize: 14, fontFamily: FONTS.PoppinsSemiBold },
+  trTxt: { flex: 1, color: '#223890', fontSize: 14, fontFamily: FONTS.PoppinsSemiBold },
   trId: { color: 'black', fontSize: 12, fontFamily: FONTS.PoppinsRegular },
   roView: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginHorizontal: 30 },
   unSelBox: { height: isIPad ? 26 : 22, width: isIPad ? 26 : 22, borderRadius: 4, borderWidth: 1, borderColor: '#989898' },
-  selBox: { height: isIPad ? 26 : 22, width: isIPad ? 26 : 22, borderRadius: 4, backgroundColor: '#61B3E4', justifyContent: 'center', alignItems: 'center' },
+  selBox: { height: isIPad ? 26 : 22, width: isIPad ? 26 : 22, borderRadius: 4, backgroundColor: '#223890', justifyContent: 'center', alignItems: 'center' },
   tick: { height: 9, width: 13, tintColor: 'white' },
   sendTxt: { fontSize: isIPad ? 20 : 16, fontFamily: FONTS.PoppinsRegular, color: 'black', marginLeft: 5 },
 });

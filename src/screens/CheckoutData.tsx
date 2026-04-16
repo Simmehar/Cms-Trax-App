@@ -39,6 +39,7 @@ import { open } from '../components/CameraController';
 import deletedPackage from '../db/dbcrud/dbDeletepackage.curd';
 import { MaskedInput } from '../components/Maskedmail';
 import { getCustomerList } from '../util/apiCalls';
+import LinearGradient from 'react-native-linear-gradient';
 
 const CheckoutData: React.FC = ({ navigation, route }: any) => {
   const { user } = useAuth();
@@ -731,7 +732,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
                     <ActivityIndicator
                       style={styles.imgGrey}
                       size={'small'}
-                      color={'#61B3E4'}
+                      color={'#223890'}
                     />
                   ) : (
                     <Image
@@ -779,7 +780,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
                     <ActivityIndicator
                       style={styles.imgGrey}
                       size={'small'}
-                      color={'#61B3E4'}
+                      color={'#223890'}
                     />
                   ) : (
                     <Image
@@ -827,7 +828,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
                     <ActivityIndicator
                       style={styles.imgGrey}
                       size={'small'}
-                      color={'#61B3E4'}
+                      color={'#223890'}
                     />
                   ) : (
                     <Image
@@ -895,22 +896,46 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
           </TouchableOpacity>
         </View>
       ) : (
-        <View style={{
-          height: isIPad ? 80 : 50, width: isIPad ? 200 : 150, backgroundColor: '#1B77AC', alignSelf: 'center',
-          marginTop: isIPad ? 50 : 30, alignItems: 'center', justifyContent: 'center', borderRadius: 20
-        }}>
-          <Text style={styles.singTxt} onPress={() => setVisible(true)}>
+        <TouchableOpacity
+          onPress={() => setVisible(true)}
+          style={{
+            height: isIPad ? 80 : 50,
+            width: isIPad ? 200 : 150,
+            alignSelf: 'center',
+            marginTop: isIPad ? 50 : 30,
+            borderRadius: 20,
+            overflow: 'hidden', // Ensures the gradient follows the border radius
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <LinearGradient
+            colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <Text style={styles.singTxt}>
             Add Signature
           </Text>
-        </View>
+        </TouchableOpacity>
       )}
-
       <View style={styles.bottmView}>
+        {/* Gradient background with rounded corners */}
+        <LinearGradient
+          colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFill, {
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24
+          }]}
+        />
+
         <TouchableOpacity
           style={styles.btnView}
           onPress={() => {
             onSubmit();
-            // setSuccessVisible(true);
           }}
           disabled={apiLoading}>
           <Text style={styles.txch}>
@@ -986,7 +1011,7 @@ const styles = StyleSheet.create({
     height: isIPad ? 20 : 22,
     width: isIPad ? 20 : 22,
     borderRadius: 4,
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1021,12 +1046,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    backgroundColor: '#00303E',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     paddingHorizontal: 16,
+    overflow: 'hidden',
   },
   btnView: {
     height: 60,
@@ -1082,7 +1107,7 @@ const styles = StyleSheet.create({
   bluTxt: {
     fontSize: isIPad ? 21 : 14,
     fontFamily: FONTS.PoppinsMedium,
-    color: '#61B3E4',
+    color: '#223890',
     marginTop: isIPad ? 10 : '0%'
   },
   numTxt: {
@@ -1115,7 +1140,7 @@ const styles = StyleSheet.create({
   addTxt: {
     fontSize: isIPad ? 16 : 14,
     fontFamily: FONTS.PoppinsRegular,
-    color: '#1B77AC',
+    color: '#223890',
     textAlign: 'center',
     marginTop: 10,
   },
@@ -1163,7 +1188,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#61B3E4',
+    color: '#223890',
     fontFamily: 'Poppins-Regular',
   },
   masked: {

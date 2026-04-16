@@ -717,7 +717,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                 left: 0,
                 top: returnForm.type ? (isIPad ? -14 : -10) : (isIPad ? 20 : 14),
                 fontSize: returnForm.type ? (isIPad ? 18 : 12) : (isIPad ? 20 : 14),
-                color: returnForm.type ? "#61B3E4" : "#999",
+                color: returnForm.type ? "#223890" : "#999",
                 fontWeight: "500",
               }}>Type</Text>
               <View
@@ -726,7 +726,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   alignItems: "center",
                   borderBottomWidth: 1,
                   paddingVertical: isIPad ? 12 : 8,
-                  borderColor: returnForm.type ? "#61B3E4" : "#ccc",
+                  borderColor: returnForm.type ? "#223890" : "#ccc",
                 }}
 
               >
@@ -927,7 +927,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   left: 0,
                   top: shipPackageForm.type ? (isIPad ? -14 : -10) : (isIPad ? 20 : 14),
                   fontSize: shipPackageForm.type ? (isIPad ? 18 : 12) : (isIPad ? 20 : 14),
-                  color: shipPackageForm.type ? "#61B3E4" : "#999",
+                  color: shipPackageForm.type ? "#223890" : "#999",
                   fontWeight: "500",
                 }}>Type</Text>
                 <View
@@ -936,7 +936,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                     alignItems: "center",
                     borderBottomWidth: 1,
                     paddingVertical: isIPad ? 12 : 8,
-                    borderColor: shipPackageForm.type ? "#61B3E4" : "#ccc",
+                    borderColor: shipPackageForm.type ? "#223890" : "#ccc",
                   }}
                  
                 >
@@ -1018,7 +1018,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   left: 0,
                   top: shipPackageForm.type ? (isIPad ? -14 : -10) : (isIPad ? 20 : 14),
                   fontSize: shipPackageForm.type ? (isIPad ? 18 : 12) : (isIPad ? 20 : 14),
-                  color: shipPackageForm.type ? "#61B3E4" : "#999",
+                  color: shipPackageForm.type ? "#223890" : "#999",
                   fontWeight: "500",
                 }}>Type</Text>
                 <View
@@ -1027,7 +1027,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                     alignItems: "center",
                     borderBottomWidth: 1,
                     paddingVertical: isIPad ? 12 : 8,
-                    borderColor: shipPackageForm.type ? "#61B3E4" : "#ccc",
+                    borderColor: shipPackageForm.type ? "#223890" : "#ccc",
                   }}
                  
                 >
@@ -1104,7 +1104,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                 left: 0,
                 top: shipToShipForm.type ? (isIPad ? -14 : -10) : (isIPad ? 20 : 14),
                 fontSize: shipToShipForm.type ? (isIPad ? 18 : 12) : (isIPad ? 20 : 14),
-                color: shipToShipForm.type ? "#61B3E4" : "#999",
+                color: shipToShipForm.type ? "#223890" : "#999",
                 fontWeight: "500",
               }}>{shipToShipForm.type ? "Type" : "Type*"}</Text>
               <TouchableOpacity
@@ -1113,7 +1113,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   alignItems: "center",
                   borderBottomWidth: 1,
                   paddingVertical: isIPad ? 12 : 8,
-                  borderColor: shipToShipForm.type ? "#61B3E4" : "#ccc",
+                  borderColor: shipToShipForm.type ? "#223890" : "#ccc",
                 }}
                 onPress={() => setShowTypeDropdown(true)}
               >
@@ -1135,7 +1135,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                 left: 0,
                 top: shipToShipForm.ship_to ? (isIPad ? -14 : -10) : (isIPad ? 20 : 14),
                 fontSize: shipToShipForm.ship_to ? (isIPad ? 18 : 12) : (isIPad ? 20 : 14),
-                color: shipToShipForm.ship_to ? "#61B3E4" : "#999",
+                color: shipToShipForm.ship_to ? "#223890" : "#999",
                 fontWeight: "500",
               }}>Ship Name{shipToShipForm.ship_to ? "" : "*"}</Text>
               <View
@@ -1144,7 +1144,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   alignItems: "center",
                   borderBottomWidth: 1,
                   paddingVertical: isIPad ? 12 : 8,
-                  borderColor: shipToShipForm.ship_to ? "#61B3E4" : "#ccc",
+                  borderColor: shipToShipForm.ship_to ? "#223890" : "#ccc",
                 }}
 
               >
@@ -1270,7 +1270,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                 left: 0,
                 top: storageForm.returnDate ? (isIPad ? -14 : -10) : (isIPad ? 20 : 14),
                 fontSize: storageForm.returnDate ? (isIPad ? 18 : 12) : (isIPad ? 20 : 14),
-                color: storageForm.returnDate ? "#61B3E4" : "#999",
+                color: storageForm.returnDate ? "#223890" : "#999",
                 fontWeight: "500",
               }}>Return Date</Text>
               <View
@@ -1279,7 +1279,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   alignItems: "center",
                   borderBottomWidth: 1,
                   paddingVertical: isIPad ? 12 : 8,
-                  borderColor: storageForm.returnDate ? "#61B3E4" : "#ccc",
+                  borderColor: storageForm.returnDate ? "#223890" : "#ccc",
                 }}
               >
                 <Text style={{ flex: 1, fontSize: isIPad ? 20 : 14, color: "#000", paddingBottom: 5 }}>
@@ -1549,7 +1549,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   left: 0,
                   top: customerInfo.ship_name ? (isIPad ? -14 : -10) : (isIPad ? 20 : 14),
                   fontSize: customerInfo.ship_name ? (isIPad ? 18 : 12) : (isIPad ? 20 : 14),
-                  color: customerInfo.ship_name ? "#61B3E4" : "#999",
+                  color: customerInfo.ship_name ? "#223890" : "#999",
                   fontWeight: "500",
                 }}>Ship Name{customerInfo.ship_name ? "" : "*"}</Text>
                 <View
@@ -1558,7 +1558,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                     alignItems: "center",
                     borderBottomWidth: 1,
                     paddingVertical: isIPad ? 12 : 8,
-                    borderColor: customerInfo.ship_name ? "#61B3E4" : "#ccc",
+                    borderColor: customerInfo.ship_name ? "#223890" : "#ccc",
                   }}
 
                 >
@@ -1914,7 +1914,7 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: isIPad ? 22 : 17,
     fontWeight: "700",
-    color: "#1B77AC",
+    color: "#223890",
   },
   titleContainer: {
     flexDirection: "row",
@@ -1926,7 +1926,7 @@ const styles = StyleSheet.create({
     width: isIPad ? 32 : 24,
     height: isIPad ? 32 : 24,
     marginRight: isIPad ? 12 : 8,
-    tintColor: "#1B77AC",
+    tintColor: "#223890",
   },
   formSubmit: {
     marginTop: isIPad ? 28 : 20,
@@ -1961,7 +1961,7 @@ const styles = StyleSheet.create({
     color: "#999",
   },
   radioLabelActive: {
-    color: "#1B77AC",
+    color: "#223890",
     fontWeight: "600",
   },
   tableContainer: {
@@ -1973,7 +1973,7 @@ const styles = StyleSheet.create({
   tableTitle: {
     fontSize: isIPad ? 20 : 16,
     fontWeight: "700",
-    color: "#1B77AC",
+    color: "#223890",
     marginBottom: isIPad ? 16 : 12,
   },
   tableRow: {
@@ -2053,7 +2053,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   alertButton: {
-    backgroundColor: "#61B3E4",
+    backgroundColor: "#223890",
     paddingVertical: 10,
     borderRadius: 8,
   },

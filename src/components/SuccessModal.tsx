@@ -14,6 +14,7 @@ import {FONTS, ICONS, IMAGES} from '../assets';
 import {useNavigation} from '@react-navigation/native';
 import {useNavigationContext} from '../contexts/navigationcontext';
 import {isIPad} from '../utilities/securestorage';
+import LottieView from 'lottie-react-native';
 
 interface SuccessProps {
   visible: boolean;
@@ -36,8 +37,10 @@ const SuccessModal: React.FC<SuccessProps> = ({
     if (isOnline) {
       // setSearchActive(false);
       // navigation.navigate('Home');
+       setSearchActive(true);
       navigation.navigate('Search');
     } else {
+       setSearchActive(true);
       navigation.navigate('Search');
     }
   };
@@ -67,9 +70,15 @@ const SuccessModal: React.FC<SuccessProps> = ({
                         onPress={onClose} >
                         <Image source={IMAGES.close} style={styles.closeImg} />
                     </TouchableOpacity> */}
-          <View style={styles.gifImg}>
+          {/* <View style={styles.gifImg}>
             <Image source={IMAGES.greenCheck} style={styles.gifImg} />
-          </View>
+          </View> */}
+           <LottieView
+                        style={styles.icon}
+                        source={require('../assets/animations/LottieAnimation.json')}
+                        autoPlay
+                        loop
+                      />
           <Text style={styles.congrats}>{content?.heading} </Text>
           {content?.middle ? (
             <Text style={styles.miLable}>{content?.middle}</Text>
@@ -120,7 +129,8 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     // maxHeight: '75%',
     height: height * 0.6,
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    alignItems:'center'
   },
   crossView: {
     height: 48,
@@ -139,7 +149,7 @@ const styles = StyleSheet.create({
   gifImg: {
     height: isIPad ? 250:170,
     width: isIPad ? 250 :170,
-    resizeMode: 'cover',
+    resizeMode: 'contain',
     alignSelf: 'center',
   },
   congrats: {
@@ -162,6 +172,11 @@ const styles = StyleSheet.create({
     marginVertical:isIPad?10:10,
     color: '#FDBE6F',
     textAlign: 'center',
+  },
+   icon: {
+    width: width * 0.4,
+    height: width * 0.4,
+    marginHorizontal: 5,
   },
 });
 

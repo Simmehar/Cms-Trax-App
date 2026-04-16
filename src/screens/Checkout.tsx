@@ -499,7 +499,7 @@ const Checkout: React.FC = ({ route }: any) => {
                 {
                   fontSize: isIPad ? 23 : 20,
                   fontFamily: FONTS.OpenSansMedium,
-                  color: '#1B77AC',
+                  color: '#223890',
                   fontWeight: '700'
                 }
               }>
@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
   },
   blueView: {
     marginHorizontal: 5,
-    backgroundColor: '#EFF9FF',
+    backgroundColor: '#e3eff6',
     borderRadius: 16,
     paddingHorizontal: 10,
     paddingVertical: 10,
@@ -825,7 +825,7 @@ const styles = StyleSheet.create({
   bluTxt: {
     fontSize: isPad ? 21 : 14,
     fontFamily: FONTS.PoppinsMedium,
-    color: '#61B3E4',
+    color: '#223890',
     marginTop: isPad ? 10 : 'none'
   },
   numTxt: {
@@ -891,7 +891,7 @@ const styles = StyleSheet.create({
     height: 52,
     width: '20%',
     // flex: 1,
-    backgroundColor: '#1B77AC',
+    backgroundColor: '#223890',
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
     height: 52,
     width: '25%',
     // flex: 1,
-    borderColor: '#1B77AC',
+    borderColor: '#223890',
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
@@ -919,7 +919,7 @@ const styles = StyleSheet.create({
   amountWTxt: {
     fontSize: isIPad ? 25 : 20,
     fontFamily: FONTS.OpenSansMedium,
-    color: '#1B77AC',
+    color: '#223890',
   },
   inputView: {
     marginHorizontal: 22,
@@ -958,7 +958,7 @@ const styles = StyleSheet.create({
   selectcheckbox: {
     width: 35,
     height: 35,
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
@@ -966,7 +966,7 @@ const styles = StyleSheet.create({
   selectcheckboxI: {
     width: 40,
     height: 40,
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1106,7 +1106,7 @@ const styles = StyleSheet.create({
   receivedText: {
     marginLeft: 8,
     fontSize: isIPad ? 22 : 15,
-    color: '#1B77AC',
+    color: '#223890',
     alignSelf: 'center',
   },
   name: {

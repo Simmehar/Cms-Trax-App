@@ -5,6 +5,7 @@ import Video from 'react-native-video';
 import {checkInternet} from '../utilities/securestorage';
 import { useNavigationContext } from '../contexts/navigationcontext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
 
 export function WithSplashScreen({
   children,
@@ -121,32 +122,29 @@ export const Splash = ({isAppReady}: {isAppReady: boolean}) => {
   if (state === HIDDEN) return null;
 
   return (
-    <Animated.View
+   <Animated.View
       collapsable={false}
       style={[style.container, {opacity: containerOpacity}]}>
-      <Animated.Image
-        source={IMAGES.splash.bg}
-        fadeDuration={0}
-        onLoad={() => {
-          setState(FADE_IN_IMAGE);
-        }}
-        style={[style.image, {opacity: imageOpacity}]}
-        resizeMode="contain"
-      />
-      <Video
-        source={VIDEOS.splashvideo.bg}
-        onLoad={() => {
-          setState(FADE_IN_IMAGE);
-        }}
-        resizeMode="cover"
-        style={[
-          StyleSheet.absoluteFillObject,
-          {opacity: 1, backgroundColor: '#00b5b9'},
-        ]}
-        onEnd={() => {
-          setState(WAIT_FOR_APP_TO_BE_READY);
-        }}
-      />
+      
+      {/* The LinearGradient fills the animated container */}
+      <LinearGradient
+        colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 1}}
+        style={StyleSheet.absoluteFillObject} 
+      >
+        <Animated.View style={style.centeredContent}>
+          <Animated.Image
+            source={IMAGES.splash.bg}
+            fadeDuration={0}
+            onLoad={() => {
+              setState('Fade in image');
+            }}
+            style={[style.image, {opacity: imageOpacity}]}
+            resizeMode="contain"
+          />
+        </Animated.View>
+      </LinearGradient>
     </Animated.View>
   );
 };
@@ -154,7 +152,10 @@ export const Splash = ({isAppReady}: {isAppReady: boolean}) => {
 const style = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#00b5b9',
+   
+  },
+  centeredContent: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

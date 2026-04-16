@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     height: isIPad ? 75 : 48,
     borderRadius: isIPad ? 60 : 24,
     justifyContent: 'center',
-    backgroundColor: '#61B3E4',
+    backgroundColor: '#223890',
     alignItems: 'center',
   },
 

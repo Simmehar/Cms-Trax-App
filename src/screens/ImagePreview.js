@@ -75,7 +75,7 @@ const ImagePreview: React.FC<ImageInfo> = ({ isVisible, image, onClose }) => {
           onShowModal={false}
           renderIndicator={() => <View></View>}
           loadingRender={() => (
-            <ActivityIndicator size={"large"} color={"#1B77AC"} />
+            <ActivityIndicator size={"large"} color={"#223890"} />
           )}
         />
       </View>

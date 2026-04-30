@@ -2,8 +2,8 @@ import axios from "axios";
 // import { REACT_APP_BASE_URL } from "@env";
 
 export var Backend_URL =
-  'https://business.app.cmstrax.com/api';
-  // "https://stage-app.crewmailservices.com/api";
+  // 'https://business.app.cmstrax.com/api';
+  'https://cmslogistics.app.cmstrax.com/api'
 
 __DEV__ && console.log({ Backend_URL });
 

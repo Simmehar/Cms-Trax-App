@@ -203,19 +203,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: isPad ? 20 : 10,
   },
   logo: {
-    width: 200,
-    height: 40,
-    //  flex: 1,
-    marginLeft: 10,
-     resizeMode: 'stretch',
-  },
-  logoiPad: {
-    width: 350,
-    height: 70,
-    resizeMode: 'stretch',
-    //  flex: 1,
-    marginLeft: 10,
-  },
+  width: 150,
+  height: undefined,
+  aspectRatio: 3, // adjust based on your logo (e.g. 3:1, 4:1)
+  marginLeft: 10,
+  resizeMode: 'contain',
+},
+
+logoiPad: {
+  width: 350,
+  height: undefined,
+  aspectRatio: 3,
+  marginLeft: 10,
+  resizeMode: 'contain',
+},
   title: {
     fontSize: 16,
     fontFamily: FONTS.PoppinsRegular,

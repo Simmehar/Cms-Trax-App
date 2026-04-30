@@ -283,7 +283,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
           bottom: isPad ? 90 : 70,
           alignSelf: 'center'
         }}>
-        v1.1.1
+        v1.0.5
       </Text>
       </LinearGradient>
     {/* </ImageBackground> */}
@@ -310,9 +310,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    height: 170,
+    height: 150,
     width: 200,
-    // marginBottom: 20,
+    marginBottom: 20,
     resizeMode: 'contain',
   },
   logoIPad: {
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     height: '25%',
     resizeMode: 'contain',
 
-    // marginBottom: height * 0.02,
+    marginBottom: height * 0.02,
   },
   logowave: {
     height: 20,

@@ -92,7 +92,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
   const [selectedOptions, setSelectedOptions] = useState<any[]>([]);
 
   useKeepAwake();
-
+console.log('filterType', filterType)
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -197,6 +197,27 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
     onClose(true, selectedOptions);
   };
 
+  const onClear = () => {
+  // Reset selected IDs
+  setSelectedShip(null);
+  setSelectedRecipient(null);
+  setSelectedStatus(null);
+  setSelectedPackageType(null);
+
+  setSelectedItem('');
+  setSelectedOptions([]);
+
+  // Reset UI selection (isSelect false for all)
+
+  setShipsArr(prev => prev.map(item => ({ ...item, isSelect: false })));
+  setRecipientArr(prev => prev.map(item => ({ ...item, isSelect: false })));
+  setStatusArr(prev => prev.map(item => ({ ...item, isSelect: false })));
+  setTypeArr(prev => prev.map(item => ({ ...item, isSelect: false })));
+
+  // Optional: clear search also
+  setSearchQuery('');
+   onClose(true);
+};
   const { user } = useAuth();
 
   const onDownloadPress = async ({ user, shipId }: any) => {
@@ -406,11 +427,20 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
                 </TouchableOpacity>
               ) : null}
 
+               {filterType !== '1' &&
+                !(filterType === '2' && activeTab === 'Ship' && isOnline) ? (
+                <TouchableOpacity style={styles.clearButton} onPress={onClear}>
+                  <Text style={styles.clearButtonText}>Clear</Text>
+                </TouchableOpacity>
+              ) : null}
+
+              {/* Apply */}
               {filterType !== '1' ? (
                 <TouchableOpacity style={styles.applyButton} onPress={onApply}>
                   <Text style={styles.applyButtonText}>Apply</Text>
                 </TouchableOpacity>
               ) : null}
+
             </View>
           )}
         </View>
@@ -514,17 +544,33 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E8E8E8',
   },
-  applyButton: {
-    height: isIPad ? 75 : 60,
-    backgroundColor: '#FDBE6F',
-    borderRadius: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-    flex: 1,
-    marginLeft: 5,
-    marginRight: 5,
+  clearButton: {
+  height: isIPad ? 75 : 60,
+  borderWidth: 1,
+  borderColor: '#FDBE6F',
+  borderRadius: 36,
+  justifyContent: 'center',
+  alignItems: 'center',
+  flex: 1,
+  marginRight: 5,
+},
+
+  clearButtonText: {
+    color: '#FDBE6F',
+    fontSize: isIPad ? 25 : 18,
+    fontFamily: FONTS.PoppinsSemiBold,
   },
+
+  applyButton: {
+  height: isIPad ? 75 : 60,
+  backgroundColor: '#FDBE6F',
+  borderRadius: 36,
+  justifyContent: 'center',
+  alignItems: 'center',
+  flex: 1, // 👈 same kar diya
+  marginLeft: 5,
+},
+
   applyButtonText: {
     color: 'white',
     fontSize: isIPad ? 25 : 18,

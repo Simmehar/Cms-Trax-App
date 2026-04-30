@@ -531,7 +531,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
           <View style={styles.subContain}>
 
             <InputPicker
-              isPicker={true} isQrCode={false} placeholder={'Ship*'}
+              isPicker={true} isQrCode={false} placeholder={'Ship/Building*'}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => { oncloseBottomModal(); setVisible(true); setActiveTab('Ship'); }}
               onChangeText={() => { }} pickerValue={shipName?.name}

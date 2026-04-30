@@ -206,7 +206,7 @@ const AddRecipient: React.FC = ({navigation}: any) => {
           isQrCode={false}
           placeholder={'First Name*'}
           onPickerClick={() => {}}
-          style={{marginHorizontal: 0, marginTop: 28}}
+          // style={{marginHorizontal: 0, marginTop: 28}}
           pickerValue={name.firstName}
           onChangeText={val => {
             setName(prev => {
@@ -224,7 +224,7 @@ const AddRecipient: React.FC = ({navigation}: any) => {
           autoCapitalize={'word'}
           placeholder={'Last Name*'}
           onPickerClick={() => {}}
-          style={{marginHorizontal: 0, marginVertical: 10}}
+          // style={{marginHorizontal: 0, marginVertical: 10}}
           pickerValue={name.lastName}
           onChangeText={val => {
             setName(prev => {

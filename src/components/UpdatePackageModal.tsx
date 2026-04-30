@@ -50,6 +50,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
   const [status, setStatus] = useState<any>();
   const [type, setType] = useState<any>();
   const [location, setLocation] = useState<any>();
+    const [message, setMessage]=useState('');
   const [email, setEmail] = useState(
       // customerData?.[0]?.email,
     );
@@ -158,7 +159,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
     __DEV__ && console.log('efdsfdsfdsfdsfdsfdsfdsfdsfdsfds', )
     const uniqueIds = [...new Set(selectedPackages.map(p => p?.id))]; // Remove duplicates
   
-    if (!location && !shipName && !receipientName && !status && !type) {
+    if (!location && !shipName && !receipientName && !status && !type && !message) {
       return Alert.alert('Please update at least one value');
     }
   
@@ -181,8 +182,10 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
               ship: shipName?.id,
               shelf: location,
               user_id: receipientName?.id,
-              current_status: status?.id,
+              // current_status: status?.id,
+              current_status: String(status?.id),
               package_type: type?.id,
+              custom_message:message
             };
   __DEV__ && console.log('packagesData', packagesData)
             const isSubmitted = await updatePackage(user, packagesData);
@@ -236,6 +239,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             type,
             shipName,
             receipientName,
+            message
           }}
         />
         <View style={styles.modalContent}>
@@ -303,7 +307,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={'Ship*'}
+              placeholder={'Ship/Building*'}
               style={{marginHorizontal: 30, marginTop: 28}}
               onPickerClick={() => {
                 setIsDropdownVisible(), setDropdownActiveTab('Ship');
@@ -343,6 +347,18 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
               }}
             />
 
+ <InputPicker
+              isPicker={false}
+              isQrCode={false}
+              placeholder={'Message*'}
+              style={{ marginHorizontal: 0, marginTop: 0 }}
+              onPickerClick={() => { }}
+              pickerValue={message}
+              autoCapitalize={'words'}
+              onChangeText={val => {
+                setMessage(val.trimStart());
+              }}
+            />
             <View style={[styles.roView, {marginTop: 20}]}>
               <TouchableOpacity onPress={() => setIsNotify(!isNotify)}>
                 {!isNotify ? (

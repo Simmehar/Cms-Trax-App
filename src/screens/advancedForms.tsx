@@ -600,7 +600,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
         break;
       case "shipToShip":
         formData = shipToShipForm;
-        requiredFields = ["crewMemberEmail", "crewMemberName", "trackingNo", "amount", "ship_to", "type", "notes"];
+        requiredFields = ["crewMemberEmail", "crewMemberName", "trackingNo", "amount", "ship_to", "type"];
         // if (!shipToShipForm.senderPaidFull && !shipToShipForm.paidAmount.trim()) {
         //   Alert.alert("Error", "Please enter the amount the sender paid.");
         //   return;
@@ -615,7 +615,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
         break;
       case "storage":
         formData = storageForm;
-        requiredFields = ["phone", "total", "returnDate", "trackingNo", "notes"];
+        requiredFields = ["phone", "total", "returnDate", "trackingNo"];
         requiresImages = true;
         image1 = storageForm.image1;
         image2 = storageForm.image2;
@@ -627,7 +627,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
         break;
       case "refund":
         formData = refundForm;
-        requiredFields = ["amount", "reason"];
+        requiredFields = ["amount"];
         requiresImages = false;
         image1 = refundForm.image1;
         image2 = refundForm.image2;
@@ -1156,7 +1156,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
 
 
             <CommonInput
-              label={shipToShipForm.notes ? "Notes" : "Notes*"}
+              label={shipToShipForm.notes ? "Notes" : "Notes"}
               value={shipToShipForm.notes}
               multiline={true}
               onChangeText={(t) => setShipToShipForm({ ...shipToShipForm, notes: t })}
@@ -1289,7 +1289,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
               </View>
             </TouchableOpacity>
             <CommonInput
-              label={storageForm.notes ? "Notes" : "Notes*"}
+              label={storageForm.notes ? "Notes" : "Notes"}
               value={storageForm.notes}
               onChangeText={(t) => setStorageForm({ ...storageForm, notes: t })}
             />
@@ -1369,7 +1369,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
               keyboardType="numeric"
             />
             <CommonInput
-              label={refundForm.reason ? "Reason (Notes)" : "Reason (Notes)*"}
+              label={refundForm.reason ? "Reason (Notes)" : "Reason (Notes)"}
               value={refundForm.reason}
               multiline={true}
               onChangeText={(t) => setRefundForm({ ...refundForm, reason: t })}

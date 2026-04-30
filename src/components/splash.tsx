@@ -135,7 +135,7 @@ export const Splash = ({isAppReady}: {isAppReady: boolean}) => {
       >
         <Animated.View style={style.centeredContent}>
           <Animated.Image
-            source={IMAGES.splash.bg}
+            source={IMAGES.logos.logo}
             fadeDuration={0}
             onLoad={() => {
               setState('Fade in image');

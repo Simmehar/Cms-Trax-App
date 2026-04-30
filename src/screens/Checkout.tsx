@@ -117,13 +117,13 @@ const Checkout: React.FC = ({ route }: any) => {
       setCustomerData([customerData]);
     }
 
-    dispatch({
-      totalPayableAmount: Math.max(payable_amount).toFixed(2),
-      payable_amount: Math.max(payable_amount).toFixed(2),
-      unpaid_packages: Math.max(unpaid_packages, 0).toFixed(2),
-      other_purchases: Math.max(other_purchases, 0).toFixed(2),
-      credit: Math.max(credit, 0).toFixed(2),
-    });
+  dispatch({
+  totalPayableAmount: Math.max(payable_amount, 0).toFixed(2),
+  payable_amount: Math.max(payable_amount, 0).toFixed(2),
+  unpaid_packages: Math.max(unpaid_packages, 0).toFixed(2),
+  other_purchases: Math.max(other_purchases, 0).toFixed(2),
+  credit: Math.max(credit, 0).toFixed(2),
+});
   };
 
   useEffect(() => {
@@ -318,34 +318,31 @@ const Checkout: React.FC = ({ route }: any) => {
                         fontFamily: 'OctoberCompressRegular',
                         fontWeight: '600'
                       }}>
-                      Total due ${' '}
-                      {Number(amountState?.totalPayableAmount).toFixed(2)}
-                    </Text>
+                  
+  Total due ${' '}
+  {Math.max(Number(amountState?.totalPayableAmount), 0).toFixed(2)}
+</Text>
                   </View>
                   <View style={{ margin: 5, borderBottomWidth: 1, borderColor: 'lightgrey' }}>
                     <Text style={styles.pinDisplay}>{selectAmount || 'Amount Received'}</Text>
                   </View>
 
-                  {Number(selectAmount) < amountState?.payable_amount && (
+          {Number(selectAmount) > 0 &&
+  Number(selectAmount) < Number(amountState?.payable_amount) && (
                     <View
                       style={{
                         marginLeft: 24,
                         marginBottom: 10,
                       }}>
-                      <Text
-                        style={{
-                          color: '#db6363',
-                          fontSize: isIPad ? 25 : 23,
-                          fontFamily: 'OctoberCompressRegular',
-                        }}>
-                        Balance due is ${' '}
-                        {Math.max(
-                          Number(Number(amountState?.totalPayableAmount - selectAmount).toFixed(2)),
-                          0
-                        )}
-                      </Text>
-                    </View>
-                  )}
+                      <Text>
+      Balance due is ${' '}
+      {Math.max(
+        Number((Number(amountState?.totalPayableAmount) - Number(selectAmount)).toFixed(2)),
+        0
+      )}
+    </Text>
+  </View>
+)}
                 </View>
 
 
@@ -1123,18 +1120,18 @@ const styles = StyleSheet.create({
     height: isIPad?34:24,
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: '#3e74b0', // Custom border color
+    borderColor: '#223890', // Custom border color
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioButtonSelected: {
-    borderColor: '#3e74b0', // Custom border color when selected
+    borderColor: '#223890', // Custom border color when selected
   },
   radioButtonInner: {
     width: isIPad?17:12,
     height: isIPad?17:12,
     borderRadius: 12,
-    backgroundColor: '#3e74b0', // Inner circle color
+    backgroundColor: '#223890', // Inner circle color
   },
 });
 

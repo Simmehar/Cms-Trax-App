@@ -136,6 +136,10 @@ const LottieModal = ({
                 <Text style={styles.locationMessage}>Location:</Text>
                 <Text style={styles.message}>{responseData?.[0]?.shelf}</Text>
               </View>
+               <View style={styles.locationView}>
+                <Text style={styles.locationMessage}>Message:</Text>
+                <Text style={styles.message}>{updateData?.message}</Text>
+              </View>
 
               <View style={styles.trackBorder}>
                 <View style={styles.row}>

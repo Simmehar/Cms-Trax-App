@@ -100,7 +100,7 @@ const CheckoutBottom: React.FC<checkProps> = ({
         <View style={styles.rowView}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
             <Text style={styles.doller}>
-              $ {Number(totalPayableAmount).toFixed(2)}
+              $ {Math.max(0, Number(totalPayableAmount)).toFixed(2)}
             </Text>
             <Text style={styles.total}> Total</Text>
           </View>

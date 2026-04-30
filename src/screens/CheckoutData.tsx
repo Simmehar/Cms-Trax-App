@@ -103,12 +103,9 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
    * @returns This function is for when we make checkout request online
    */
   const CheckoutHandlerOnline = async () => {
-    // __DEV__ && console.log('come on onlineeeeeeeee :>> ', );
     setApiLoading(true);
 
     try {
-      // __DEV__ && console.log('imagesObj================================== :>> ', imagesObj);
-
       const packagesId = packages.map(val => val.id);
 
       const imgData = new FormData();
@@ -126,108 +123,83 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
         imagesObj?.image1,
         imagesObj?.image2,
         imagesObj?.image3,
-      ].filter(image => image); // Filters out empty or falsy values
-
+      ].filter(image => image);
       if (validImages.length > 0) {
         imgData.append('images', validImages);
       }
-      // __DEV__ && console.log('imgData :>> ', JSON.stringify(imgData));
+
       const logoutResponse = await bulkPackageLogout(user, imgData);
-
-      // __DEV__ && console.log('logoutResponse', logoutResponse);
-
       if (logoutResponse == '400') {
-        // setIsSubmitting(false);
         return Alert.alert(
           "Couldn't Connect",
           'There may be a problem with the server.\n Please try again later.',
         );
       }
 
+      const paidAmount = Number(amountState?.paidAmount ?? 0);
+      const totalPayableAmount = Number(amountState?.totalPayableAmount ?? 0);
+      const unpaidPackages = Number(amountState?.unpaid_packages ?? 0);
+      const otherPurchases = Number(amountState?.other_purchases ?? 0);
+      const credit = Number(amountState?.credit ?? 0);
+      const totalDebt = unpaidPackages + otherPurchases;
+
+      // Credit covers all: send totalDebt so backend adds then immediately deducts from wallet
+      // Credit doesn't cover: use previous cash logic
+      const creditCoversAll = credit >= totalDebt && paidAmount === 0 && totalDebt > 0;
+
       const totalAmount = Math.max(
         isCredit
-          ? Number(selectAmount ?? 0) // Use `selectAmount` when isCredit is true
-          : (
-            Number(amountState?.paidAmount ?? 0) - Number(amountState?.totalPayableAmount) > 0
-              ? Number(amountState?.totalPayableAmount) // If paidAmount is greater than totalPayableAmount, use totalPayableAmount
-              : Number(amountState?.paidAmount ?? 0) // Otherwise, use paidAmount
-          ),
+          ? Number(selectAmount ?? 0)
+          : creditCoversAll
+            ? 0   // ✅ send $0 — backend just deducts $24 from existing $456 → $432
+            : paidAmount > 0
+              ? (paidAmount - totalPayableAmount > 0 ? totalPayableAmount : paidAmount)
+              : totalDebt,
         0
       );
-
-
       const payment = {
-        // amount: addCredit ? cashReceived : payable,
         amount: totalAmount,
         user_id: packages[0].user.id,
-        payment_method: amountState.payment_method,
+        payment_method: amountState.payment_method, // keep as-is, no credit type exists
         direct_discount: discount,
       };
-      // __DEV__ && console.log('payment :>> ', payment);
-      if (Number(amountState.paidAmount)) {
+
+      const hasPendingPackages = totalDebt > 0;
+      const hasCashPayment = paidAmount > 0;
+
+      if (hasCashPayment || hasPendingPackages) {
         const paymentDetailsRes = await cashReceivedDetails(user, payment);
-
-        // __DEV__ && console.log('paymentDetailsRes', paymentDetailsRes);
+        __DEV__ && console.log('paymentDetailsRes', paymentDetailsRes);
       }
 
-      // if (!packages[0].user.email && email) {
       if (email) {
-        const userList = {
-          ...customerData,
-        };
+        const userList = { ...customerData };
         userList[0].email = email;
-
-        const customerEmailUpdate = await customerListApiUpdate(
-          user,
-          userList[0].id,
-          { email: email },
-        );
-
-        // __DEV__ && console.log('customerEmailUpdate', customerEmailUpdate);
+        await customerListApiUpdate(user, userList[0].id, { email: email });
       }
-
-
 
       const { id } = status;
-      let filterIds;
-
-      filterIds = packagesId; // Assuming 'packagesId' is a valid variable containing some package IDs.
-
+      let filterIds = packagesId;
       if (id == 10050 || id == 10060) {
         filterIds = [logoutResponse.data[0].package_id];
       }
 
-      // send Email Api
-      const mailData = {
-        ids: filterIds,
-        package_status: id,
-      };
-
-      if (
-        isNotify
-      ) {
+      const mailData = { ids: filterIds, package_status: id };
+      if (isNotify) {
         const emailRes = await sendEmail(user, mailData);
-
-        // __DEV__ && console.log('mailData', mailData);
-
         __DEV__ && console.log('emailRes', emailRes);
       }
 
       setApiLoading(false);
-
       setSuccessVisible(true);
-
       DeviceEventEmitter.emit('refetchPackages');
+
     } catch (err) {
       __DEV__ && console.log('err', err);
       setApiLoading(false);
-
       Alert.alert('Please try again');
     }
-
-    // await Package.deletePackages(packagesId);
   };
-
   const CheckoutHandlerOffline = async () => {
     setApiLoading(true);
 

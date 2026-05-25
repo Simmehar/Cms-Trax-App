@@ -18,4 +18,6 @@ buildscript {
     }
 }
 
+// ← NO allprojects/resolutionStrategy block needed
+
 apply plugin: "com.facebook.react.rootproject"

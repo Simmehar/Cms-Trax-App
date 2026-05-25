@@ -1,0 +1,23 @@
+diff --git a/node_modules/react-native-mlkit-ocr/android/build.gradle b/node_modules/react-native-mlkit-ocr/android/build.gradle
+index c2bcb60..5a1bd27 100644
+--- a/node_modules/react-native-mlkit-ocr/android/build.gradle
++++ b/node_modules/react-native-mlkit-ocr/android/build.gradle
+@@ -3,8 +3,8 @@ buildscript {
+   def kotlin_version = rootProject.ext.has('kotlinVersion') ? rootProject.ext.get('kotlinVersion') : project.properties['MlkitOcr_kotlinVersion']
+ 
+   repositories {
+-    google()
+-    jcenter()
++   mavenCentral()
++google()
+   }
+ 
+   dependencies {
+@@ -52,7 +52,6 @@ android {
+ 
+ repositories {
+   mavenCentral()
+-  jcenter()
+   google()
+ 
+   def found = false

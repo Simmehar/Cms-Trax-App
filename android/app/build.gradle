@@ -77,9 +77,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.cmstrax_1"
+    namespace "com.cmstrax"
     defaultConfig {
-        applicationId "com.cmstrax_1"
+        applicationId "com.cmstrax"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

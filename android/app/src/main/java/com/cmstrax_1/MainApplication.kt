@@ -1,4 +1,4 @@
-package com.cmstrax_1
+package com.cmstrax
 
 import android.app.Application
 import com.facebook.react.PackageList

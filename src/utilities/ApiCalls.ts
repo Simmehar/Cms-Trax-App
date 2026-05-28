@@ -123,19 +123,28 @@ export const postPackage = async (
   user: StoredData,
   packageData: SendObjType,
 ) => {
-  __DEV__ && console.log('==SendObjType==', packageData);
-  __DEV__ && console.log(' user?.token',  user?.token)
+  console.log('packageData',packageData)
+  console.log('Backend_URL',Backend_URL)
+  console.log('user?.token',user?.token)
 
   try {
-    const res = await axios.post(Backend_URL + '/create-package', packageData, {
-      headers: {Authorization: 'Bearer ' + user?.token},
-    });
-    __DEV__ && console.log('respon of final data=====', res?.data);
+    const res = await axios.post(
+      Backend_URL + '/create-package',
+      packageData,
+      {
+        headers: {
+          Authorization: 'Bearer ' + user?.token,
+        },
+      },
+    );
 
     return res.data;
-  } catch (error) {
-    __DEV__ && console.log('create package error==', error);
-    return `${error} "400"`;
+
+  } catch (error: any) {
+    console.log('create package error==', error);
+
+    // ✅ THROW ERROR
+    throw error;
   }
 };
 

@@ -38,7 +38,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>CMSTrax needs access to your location while using the app.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-<string>CMS TRAX uses the photo library to upload package and delivery images.</string>
+	<string>CMS TRAX uses the photo library to upload package and delivery images.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -60,5 +60,41 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>OctoberCompressRegular.otf</string>
+		<string>OctoberCompressBold.otf</string>
+		<string>OpenSans-SemiBold.ttf</string>
+		<string>Poppins-ExtraLight.ttf</string>
+		<string>Poppins-ThinItalic.ttf</string>
+		<string>Poppins-ExtraLightItalic.ttf</string>
+		<string>Poppins-BoldItalic.ttf</string>
+		<string>Poppins-Light.ttf</string>
+		<string>Poppins-Medium.ttf</string>
+		<string>OpenSans-Light.ttf</string>
+		<string>Poppins-SemiBoldItalic.ttf</string>
+		<string>OpenSans-Italic.ttf</string>
+		<string>OpenSans-MediumItalic.ttf</string>
+		<string>Poppins-ExtraBoldItalic.ttf</string>
+		<string>Compressed-Regular.ttf</string>
+		<string>Poppins-ExtraBold.ttf</string>
+		<string>OpenSans-ExtraBold.ttf</string>
+		<string>OpenSans-LightItalic.ttf</string>
+		<string>Poppins-BlackItalic.ttf</string>
+		<string>OpenSans-Bold.ttf</string>
+		<string>Poppins-Regular.ttf</string>
+		<string>OpenSans-SemiBoldItalic.ttf</string>
+		<string>OpenSans-Medium.ttf</string>
+		<string>Poppins-LightItalic.ttf</string>
+		<string>OpenSans-ExtraBoldItalic.ttf</string>
+		<string>Poppins-Bold.ttf</string>
+		<string>OpenSans-Regular.ttf</string>
+		<string>Poppins-Black.ttf</string>
+		<string>OpenSans-BoldItalic.ttf</string>
+		<string>Poppins-Thin.ttf</string>
+		<string>Poppins-SemiBold.ttf</string>
+		<string>Poppins-Italic.ttf</string>
+		<string>Poppins-MediumItalic.ttf</string>
+	</array>
 </dict>
 </plist>

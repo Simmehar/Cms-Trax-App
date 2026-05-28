@@ -564,7 +564,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
             )}
 
             <InputPicker
-              isPicker={true} disablePicker={true} isQrCode={false} placeholder={'Division'}
+              isPicker={true} disablePicker={true} isQrCode={false} placeholder={'Department'}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => { setVisible(true); setActiveTab('Division'); }}
               editable={'false'} pickerValue={divisionName?.name}

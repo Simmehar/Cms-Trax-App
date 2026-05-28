@@ -48,7 +48,7 @@ const Search = () => {
 
   const { setShowLoader, showLoader, isInternet, setIsInternet } =
     useNavigationContext();
-  const [isNet, setIsNet] = useState(true);
+  const [isNet, setIsNet] = useState(isInternet);
 
   const [packageListData, setPackageListData] = useState<Package[]>([]);
   const [selectAllChecked, setSelectAllChecked] = useState(false);
@@ -78,6 +78,7 @@ const Search = () => {
   const [refetching, setRefetching] = useState(false);
   const [flatListData, setFlatListData] = useState<any>([]);
   const [showWarningmessage, setShowWarningMessage] = useState(false);
+  const [showOfflineAlert, setShowOfflineAlert] = useState(false);
   const openModal = (value: string) => {
     setFilterType(value);
     setModalVisible(true);
@@ -178,40 +179,33 @@ const Search = () => {
   }, [packageList, dbPackages, sortingOrder]);
 
 
-  const onItemPress = (item: Package, index: number) => {
-    __DEV__ && console.log('item', item);
-    __DEV__ && console.log('index', index);
-    __DEV__ && console.log('flatListData[0]', flatListData[0]);
-    __DEV__ && console.log('selectCount', selectCount);
-    __DEV__ && console.log('selectArr', selectedArr);
+const onItemPress = (item: Package, index: number) => {
+  // Pure item object ko safety ke sath naye reference ke sath copy karein
+  let arr = flatListData.map((pkg: Package, idx: number) => 
+    idx === index ? { ...pkg, isSelect: !pkg.isSelect } : pkg
+  );
 
-    let arr = [...flatListData];
-    let selectArr = [...selectedArr];
-    let count = selectCount;
+  let selectArr = [...selectedArr];
+  let count = selectCount;
 
-    __DEV__ && console.log('arr[index].isSelect11111111', index, arr[index].isSelect);
-    arr[index].isSelect = !arr[index].isSelect;
-    __DEV__ && console.log('arr[index].isSelect', index, arr[index].isSelect);
-
-    if (arr[index].isSelect) {
-      // Check if the item already exists before adding
-      if (!selectArr.some(i => i.id === item.id)) {
-        selectArr.push(item);
-        count += 1;
-      }
-    } else {
-      let dex = selectArr.findIndex(i => i.id === item.id);
-      if (dex > -1) {
-        selectArr.splice(dex, 1);
-        count = Math.max(0, count - 1); // Prevent negative count
-      }
+  if (!flatListData[index].isSelect) { // Checked logic state safely
+    if (!selectArr.some(i => i.id === item.id)) {
+      selectArr.push({ ...item, isSelect: true });
+      count += 1;
     }
+  } else {
+    let dex = selectArr.findIndex(i => i.id === item.id);
+    if (dex > -1) {
+      selectArr.splice(dex, 1);
+      count = Math.max(0, count - 1);
+    }
+  }
 
-    setPackageListData(arr);
-    setFlatListData(arr);
-    setSelectedArr(selectArr);
-    setSelectCount(count);
-  };
+  setPackageListData(arr);
+  setFlatListData(arr);
+  setSelectedArr(selectArr);
+  setSelectCount(count);
+};
 
 
   // __DEV__ && console.log('selectArr', selectedArr);
@@ -243,17 +237,20 @@ const Search = () => {
     }
   }, [selectedArr]);
 
-  const onClear = () => {
-    let arr = isOnline ? packageListData : dbPackages;
-    arr?.map(i => (i.isSelect = false));
-    setSelectCount(0);
-    setPackageListData(arr);
-    setSelectAllChecked(false);
-    setSelectedArr([]);
-    setSelectedShip(null);
-    setSelectedShipIdDB();
-    setSortingOrder(false);
-  };
+const onClear = () => {
+  let baseArr = isOnline ? packageListData : dbPackages;
+  // Create a brand new array reference with reset elements
+  let clearedArr = baseArr?.map(i => ({ ...i, isSelect: false })) || [];
+  
+  setSelectCount(0);
+  setPackageListData(clearedArr);
+  setFlatListData(clearedArr); // Flatlist state also cleared cleanly
+  setSelectAllChecked(false);
+  setSelectedArr([]);
+  setSelectedShip(null);
+  setSelectedShipIdDB();
+  setSortingOrder(false);
+};
 
 
   const onArrowClick = (item: Package) => {
@@ -423,12 +420,16 @@ const Search = () => {
     fetchData(inputValue);
   };
 
-  useEffect(() => {
-    DeviceEventEmitter.addListener('refetchPackages', () => {
-      refetchData();
-      onClear();
-    });
-  }, []);
+ useEffect(() => {
+  const subscription = DeviceEventEmitter.addListener('refetchPackages', () => {
+    refetchData();
+    onClear();
+  });
+
+  return () => {
+    subscription.remove(); // Unmount hote hi memory clean up
+  };
+}, []);
 
 
   const loadMoreData = () => {
@@ -445,34 +446,58 @@ const Search = () => {
     }
   }, [newData]);
 
-  useEffect(() => {
-    const handleNetworkChange = async () => {
-      if (isInternet) {
-        setIsNet(true);
-      } else {
-        const hasShownOfflineMode = await AsyncStorage.getItem('hasShownOfflineMode');
-        __DEV__ && console.log('hasShownOfflineMode', hasShownOfflineMode)
-        if (hasShownOfflineMode !== 'true') {
-          setIsNet(false);
-        }
-      }
-    };
+  // useEffect(() => {
+  //   const handleNetworkChange = async () => {
+  //     if (isInternet) {
+  //       setIsNet(true);
+  //     } else {
+  //       const hasShownOfflineMode = await AsyncStorage.getItem('hasShownOfflineMode');
+  //       __DEV__ && console.log('hasShownOfflineMode', hasShownOfflineMode)
+  //       if (hasShownOfflineMode !== 'true') {
+  //         setIsNet(false);
+  //       }
+  //     }
+  //   };
 
-    handleNetworkChange();
+  //   handleNetworkChange();
 
-  }, [isInternet]);
+  // }, [isInternet]);
 
-  const handleCloseOfflineMode = async () => {
-    setIsNet(true);
 
-    await AsyncStorage.setItem('hasShownOfflineMode', 'true');
-  };
+  // const handleCloseOfflineMode = async () => {
+  //   setIsNet(true);
+
+  //   await AsyncStorage.setItem('hasShownOfflineMode', 'true');
+  // };
   // const debounced = React.useCallback(debounce(fetchData, 500), []);
 
   // useEffect(() => {
   //   debounced(inputValue, 1000);
   // }, [inputValue]);
+  console.log('setShowOfflineAlert',setShowOfflineAlert)
+  useEffect(() => {
+    const handleNetworkChange = async () => {
+      if (isInternet) {
+        setIsNet(true);
+        setShowOfflineAlert(false); // Internet aane par alert band
+      } else {
+        setIsNet(false);
 
+        // Check karein ki kya pehle alert dikha chuke hain
+        const hasShown = await AsyncStorage.getItem('hasShownOfflineMode');
+        if (hasShown !== 'true') {
+          setShowOfflineAlert(true); // Sirf pehli baar alert dikhayenge
+        }
+      }
+    };
+
+    handleNetworkChange();
+  }, [isInternet]);
+
+  const handleCloseOfflineMode = async () => {
+    setShowOfflineAlert(false); // Modal hide karein
+    await AsyncStorage.setItem('hasShownOfflineMode', 'true'); // Save karein taaki dobara na dikhe
+  };
   useEffect(() => {
     navigation.addListener('focus', () => {
       if (packageItem) {
@@ -599,7 +624,7 @@ const Search = () => {
     <View style={[styles.container]}>
 
       <SyncModal visible={dbModal} setModalVisible={setdbModal} />
-      {!isNet && (
+      {showOfflineAlert && (
         <OfflineMode
           onRedView={() => { }}
           isRedView={false}

@@ -239,7 +239,7 @@ const PackageList = React.memo(({
               <Text
                 style={[
                   styles.value,
-                  { fontFamily: FONTS.PoppinsSemiBold, fontSize: isIPad ? 23 : 18 },
+                  { fontSize: isIPad ? 23 : 18 },
                 ]}>
                 {sortShipName(`${item?.shelf}/${item.tag_number}`)}
               </Text>
@@ -439,17 +439,17 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: isIPad ? 23 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.PoppinsMedium,
     color: '#223890',
-    fontWeight: '500'
+    fontWeight: '400'
   },
   value: {
     // fontSize: isIPad ? 18 : 14,
     fontSize: isIPad ? 23 : 18,
     color: 'black',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.PoppinsMedium,
     marginLeft: 5,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   arrowButton: {
     position: 'absolute',

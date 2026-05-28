@@ -283,7 +283,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
           bottom: isPad ? 90 : 70,
           alignSelf: 'center'
         }}>
-        v1.0.3
+        v1.0.6
       </Text>
       </LinearGradient>
     {/* </ImageBackground> */}
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: '5%',
     width: '100%',
-    marginTop: isPad ? '0%' : '7%',
+    marginTop: isPad ? '0%' : '15%',
     // justifyContent: 'center',
     alignItems: 'center',
   },

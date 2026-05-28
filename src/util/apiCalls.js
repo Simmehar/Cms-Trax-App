@@ -1,11 +1,47 @@
 import axios from "axios";
 // import { REACT_APP_BASE_URL } from "@env";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export var Backend_URL =
-  // 'https://business.app.cmstrax.com/api';
-  'https://cmslogistics.app.cmstrax.com/api'
-
+export let Backend_URL =
+'';
+  // 'https://cmslogistics.app.cmstrax.com/api';
 __DEV__ && console.log({ Backend_URL });
+
+// =====================================
+// SET DYNAMIC BACKEND URL
+// =====================================
+
+export const setBackendUrl = async (tenantDomain) => {
+  try {
+    const finalUrl = `${tenantDomain}/api`;
+
+    Backend_URL = finalUrl;
+
+    await AsyncStorage.setItem('BASE_URL', finalUrl);
+
+    console.log('UPDATED Backend_URL =====>', Backend_URL);
+  } catch (error) {
+    console.log('setBackendUrl error =====>', error);
+  }
+};
+
+// =====================================
+// LOAD SAVED URL
+// =====================================
+
+export const loadBackendUrl = async () => {
+  try {
+    const savedUrl = await AsyncStorage.getItem('BASE_URL');
+
+    if (savedUrl) {
+      Backend_URL = savedUrl;
+    }
+
+    console.log('LOADED Backend_URL =====>', Backend_URL);
+  } catch (error) {
+    console.log('loadBackendUrl error =====>', error);
+  }
+};
 
 export const getShipList = async (user) => {
   const res = await axios.get(Backend_URL + "/ships", {

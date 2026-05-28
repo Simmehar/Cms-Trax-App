@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useReducer, useState } from 'react';
+import React, { cloneElement, useContext, useEffect, useReducer, useState } from 'react';
 import {
   View,
   Text,
@@ -231,16 +231,19 @@ const Home: React.FC = ({ navigation }: any) => {
     }
   };
 
-  const onCreatePackage = async (val: any) => {
-    setSubmitLoading(true);
+const onCreatePackage = async (val: any) => {
+  if (submitLoading) return;
 
-    let response: any = [];
+  setSubmitLoading(true);
 
+  let response: any = [];
+
+  try {
     for (let item of packages) {
       let sendObj: SendObjType = {
         user: receipientName.id.toString(),
         package_type: item?.type?.id?.toString(),
-        ship: (val?.shipName?.id).toString(),
+        ship: val?.shipName?.id.toString(),
         carrier: item?.carrier?.id?.toString(),
         shelf: val?.location,
         tracking_no: item?.trackingId,
@@ -253,49 +256,56 @@ const Home: React.FC = ({ navigation }: any) => {
           item?.imagesObj?.image3,
         ].filter(image => image),
       };
-      __DEV__ && console.log('sendObj :>> ', sendObj);
-      try {
-        const packageRes = await postPackage(user, sendObj);
-        __DEV__ && console.log('packageRes', packageRes);
-        setShowLoader(false);
+console.log('sendObj',sendObj)
+      const packageRes = await postPackage(user, sendObj);
+      console.log('packageRes=======',packageRes)
 
-        const mailData = {
-          ids: [packageRes?.id],
-          package_status: parseInt(item?.status?.id),
-        };
-        __DEV__ && console.log('mailData', mailData);
+      const mailData = {
+        ids: [packageRes?.id],
+        package_status: parseInt(item?.status?.id),
+      };
 
-        if (isNotify) {
-          const emailRes = await sendEmail(user, mailData);
-          __DEV__ && console.log('emailRes', emailRes);
-        }
-
-        response.push(packageRes);
-      } catch (error) {
-        __DEV__ && console.log('=getPackageData =error==', error);
-        setShowLoader(false);
-        return error;
+      if (isNotify) {
+        await sendEmail(user, mailData);
       }
+
+      response.push(packageRes);
     }
 
-    setSubmitLoading(false);
-
+    // SUCCESS
     if (packages[0]?.trackingId == response[0]?.tracking_no) {
       setPackages([]);
       setSuccessModalVisible(true);
       setResponseData(response);
+
       DeviceEventEmitter.emit('add_package_success');
+
       setLatestGemini(null);
       setBackgroundExtracted(null);
       setCapturedImagePath(null);
       setOcrText('');
-      setShipName(null);          // ✅ ADD THIS
-      setReceipientName(null);    // (recommended)
-      setLocation('');            // (recommended)
+      setShipName(null);
+      setReceipientName(null);
+      setLocation('');
 
       fetchDashboard();
     }
-  };
+
+    setSubmitLoading(false);
+
+  } catch (error: any) {
+    console.log('ERROR >>>', JSON.stringify(error, null, 2));
+
+    // ✅ ALERT FORCE SHOW
+    setTimeout(() => {
+      Alert.alert(
+        'Something went wrong',
+        'Package creation failed.',
+      );
+    }, 100);
+ setSubmitLoading(false);
+  }
+};
 
   const [dashboardData, setDashboardData] = useState({
     loggedToday: 0,
@@ -463,6 +473,11 @@ const Home: React.FC = ({ navigation }: any) => {
         </Modal>
 
         <KeyboardAwareScrollView
+          enableOnAndroid={true}
+          extraScrollHeight={Platform.OS === 'android' ? 120 : 60}
+          extraHeight={150}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ flexGrow: 1 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -470,7 +485,7 @@ const Home: React.FC = ({ navigation }: any) => {
             />
           }
         >
-          <TouchableOpacity activeOpacity={1} style={{ flex: 1, justifyContent: 'space-between' }}>
+          <TouchableOpacity activeOpacity={1} style={{ flex: 1}}>
             <Dashboard
               userName={user?.firstname || 'CMS'}
               dashboard={dashboardinfo}
@@ -553,7 +568,7 @@ const Home: React.FC = ({ navigation }: any) => {
             <TouchableOpacity
               style={[isPad ? styles.buttonI : styles.button, { backgroundColor: '#FDBE6F' }]}
               disabled={submitLoading}
-               onPress={() => {
+              onPress={() => {
                 const val = { shipName, receipientName, divisionName, location };
                 const isValid = checkValidation();
                 if (!isValid) {

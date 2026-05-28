@@ -345,30 +345,70 @@ const detectCarrierFromId = (id: string): CarrierObj | undefined => {
     setError({ isTrackingId: false, isStatus: false, isType: false, isCondition: false, isImages: false });
   };
 
-  const onSubmit = async () => {
-    if (!checkValidation()) {
-      const obj: packageOption = packageValue?.id
-        ? {
-          trackingId, type: type!, status, condition: condition!,
-          carrier: carrier!, message, imagesObj,
-          id: packageValue.id, ocrText,
-          geminiData: geminiData ?? undefined,
-        }
-        : {
-          trackingId, type: type!, status, condition: condition!,
-          carrier: carrier!, message, imagesObj, ocrText,
-          geminiData: geminiData ?? undefined,
-        };
+  // const onSubmit = async () => {
+  //   if (!checkValidation()) {
+  //     const obj: packageOption = packageValue?.id
+  //       ? {
+  //         trackingId, type: type!, status, condition: condition!,
+  //         carrier: carrier!, message, imagesObj,
+  //         id: packageValue.id, ocrText,
+  //         geminiData: geminiData ?? undefined,
+  //       }
+  //       : {
+  //         trackingId, type: type!, status, condition: condition!,
+  //         carrier: carrier!, message, imagesObj, ocrText,
+  //         geminiData: geminiData ?? undefined,
+  //       };
 
-      onSetVisible();
-      setTrackingId('');
-      setStatus(null); setCondition(null); setCarrier(null); setMessage('');
-      setImagesObj({ image1: '', image2: '', image3: '', image1dummy: '', image2dummy: '', image3dummy: '' });
-      onSubmitPackage(obj);
-      clearData();
+  //     onSetVisible();
+  //     setTrackingId('');
+  //     setStatus(null); setCondition(null); setCarrier(null); setMessage('');
+  //     setImagesObj({ image1: '', image2: '', image3: '', image1dummy: '', image2dummy: '', image3dummy: '' });
+  //     onSubmitPackage(obj);
+  //     clearData();
+  //   }
+  // };
+const onSubmit = async () => {
+  // 1. Ek array banayein jisme saare missing fields ke naam store honge
+  const missingFields: string[] = [];
+
+  if (!trackingId?.trim()) missingFields.push('Tracking ID');
+  if (!type) missingFields.push('Type');
+  if (!status) missingFields.push('Status');
+  if (!condition) missingFields.push('Condition');
+  if (!carrier) missingFields.push('Carrier');
+
+  // 2. Agar koi field missing hai, to Alert dikhayein aur execution ko rokein
+  if (missingFields.length > 0) {
+    // fields ko comma se separate karke sundar message banayein
+    Alert.alert(`Please select: ${missingFields.join(', ')}`);
+    return; // Aage ka code execute nahi hoga
+  }
+
+  // 3. Agar saare validation pass ho jate hain, to aapka baki ka logic chalega
+  const obj: packageOption = packageValue?.id
+    ? {
+      trackingId, type: type!, status, condition: condition!,
+      carrier: carrier!, message, imagesObj,
+      id: packageValue.id, ocrText,
+      geminiData: geminiData ?? undefined,
     }
-  };
+    : {
+      trackingId, type: type!, status, condition: condition!,
+      carrier: carrier!, message, imagesObj, ocrText,
+      geminiData: geminiData ?? undefined,
+    };
 
+  onSetVisible();
+  setTrackingId('');
+  setStatus(null); 
+  setCondition(null); 
+  setCarrier(null); 
+  setMessage('');
+  setImagesObj({ image1: '', image2: '', image3: '', image1dummy: '', image2dummy: '', image3dummy: '' });
+  onSubmitPackage(obj);
+  clearData();
+};
   const onPickerClick = (type: string) => {
     setModalVisible(true);
     setPickerType(type);

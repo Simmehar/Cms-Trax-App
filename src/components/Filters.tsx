@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, cloneElement } from 'react';
 import {
   View,
   Text,
@@ -92,7 +92,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
   const [selectedOptions, setSelectedOptions] = useState<any[]>([]);
 
   useKeepAwake();
-console.log('filterType', filterType)
+  console.log('filterType', filterType)
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -198,28 +198,28 @@ console.log('filterType', filterType)
   };
 
   const onClear = () => {
-  // Reset selected IDs
-  setSelectedShip(null);
-  setSelectedRecipient(null);
-  setSelectedStatus(null);
-  setSelectedPackageType(null);
+    // Reset selected IDs
+    setSelectedShip(null);
+    setSelectedRecipient(null);
+    setSelectedStatus(null);
+    setSelectedPackageType(null);
 
-  setSelectedItem('');
-  setSelectedOptions([]);
+    setSelectedItem('');
+    setSelectedOptions([]);
 
-  // Reset UI selection (isSelect false for all)
+    // Reset UI selection (isSelect false for all)
 
-  setShipsArr(prev => prev.map(item => ({ ...item, isSelect: false })));
-  setRecipientArr(prev => prev.map(item => ({ ...item, isSelect: false })));
-  setStatusArr(prev => prev.map(item => ({ ...item, isSelect: false })));
-  setTypeArr(prev => prev.map(item => ({ ...item, isSelect: false })));
+    setShipsArr(prev => prev.map(item => ({ ...item, isSelect: false })));
+    setRecipientArr(prev => prev.map(item => ({ ...item, isSelect: false })));
+    setStatusArr(prev => prev.map(item => ({ ...item, isSelect: false })));
+    setTypeArr(prev => prev.map(item => ({ ...item, isSelect: false })));
 
-  // Optional: clear search also
-  setSearchQuery('');
-   onClose(true);
-};
+    // Optional: clear search also
+    setSearchQuery('');
+    onClose(true);
+  };
   const { user } = useAuth();
-
+  console.log('user===========', user)
   const onDownloadPress = async ({ user, shipId }: any) => {
     if (shipId) {
       await setupDBPackages(user, `?ship=${shipId}`, setIsProgressOn, setIsLoadingData);
@@ -402,7 +402,8 @@ console.log('filterType', filterType)
 
           {!isLoadingData && (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {filterType === '2' && activeTab === 'Ship' && isOnline ? (
+              {filterType === '2' && activeTab === 'Ship' && isOnline &&
+                user?.currentplan !== 'Basic' ? (
                 <TouchableOpacity
                   disabled={isLoadingData || selectedItem == ''}
                   style={[
@@ -427,7 +428,7 @@ console.log('filterType', filterType)
                 </TouchableOpacity>
               ) : null}
 
-               {filterType !== '1' &&
+              {filterType !== '1' &&
                 !(filterType === '2' && activeTab === 'Ship' && isOnline) ? (
                 <TouchableOpacity style={styles.clearButton} onPress={onClear}>
                   <Text style={styles.clearButtonText}>Clear</Text>
@@ -480,7 +481,7 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: isIPad ? 22 : 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
     marginLeft: 10,
     width: '70%',
@@ -511,7 +512,7 @@ const styles = StyleSheet.create({
   },
   shipTxt: {
     fontSize: isIPad ? 22 : 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
   },
   crossViewI: {
@@ -526,13 +527,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: isIPad ? 25 : 17,
     color: 'black',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   itemTextI: {
     flex: 1,
     fontSize: 25,
     color: 'black',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   itemContainer: {
     flexDirection: 'row',
@@ -545,36 +546,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8E8E8',
   },
   clearButton: {
-  height: isIPad ? 75 : 60,
-  borderWidth: 1,
-  borderColor: '#FDBE6F',
-  borderRadius: 36,
-  justifyContent: 'center',
-  alignItems: 'center',
-  flex: 1,
-  marginRight: 5,
-},
+    height: isIPad ? 75 : 60,
+    borderWidth: 1,
+    borderColor: '#FDBE6F',
+    borderRadius: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 5,
+  },
 
   clearButtonText: {
     color: '#FDBE6F',
     fontSize: isIPad ? 25 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
 
   applyButton: {
-  height: isIPad ? 75 : 60,
-  backgroundColor: '#FDBE6F',
-  borderRadius: 36,
-  justifyContent: 'center',
-  alignItems: 'center',
-  flex: 1, // 👈 same kar diya
-  marginLeft: 5,
-},
+    height: isIPad ? 75 : 60,
+    backgroundColor: '#FDBE6F',
+    borderRadius: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1, // 👈 same kar diya
+    marginLeft: 5,
+  },
 
   applyButtonText: {
     color: 'white',
     fontSize: isIPad ? 25 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   rowView: {
     flexDirection: 'row',

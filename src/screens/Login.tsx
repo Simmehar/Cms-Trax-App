@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { cloneElement, useContext, useEffect, useState } from 'react';
 import {
   ScrollView,
   Text,
@@ -134,6 +134,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
           __DEV__ && console.log('err', err);
           Alert.alert('Email or password is incorrect', 'Please try again');
         });
+        
 
       if (response?.data) {
         login(response?.data);
@@ -142,6 +143,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
           id: response?.data?.user?.id,
           token: response?.data?.token,
           firstname: response?.data?.user?.first_name,
+          currentplan: response?.data?.current_plan?.name,
         };
         await saveData('user.data', data);
         setUser(data);
@@ -194,7 +196,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       >
       <View style={styles.container}>
         <Image style={isPad ? styles.logoIPad : styles.logo} source={IMAGES.logos.logo} />
-        <Image style={isPad ? styles.logoIwave : styles.logowave} source={IMAGES.line} tintColor={'#FDBE6F'} />
+        {/* <Image style={isPad ? styles.logoIwave : styles.logowave} source={IMAGES.line} tintColor={'#FDBE6F'} /> */}
         <View style={styles.inputGroup}>
           <View style={isPad ? styles.iPadInput : styles.inputI}>
             <TextInput
@@ -283,7 +285,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
           bottom: isPad ? 90 : 70,
           alignSelf: 'center'
         }}>
-        v1.0.6
+        v1.0.11
       </Text>
       </LinearGradient>
     {/* </ImageBackground> */}
@@ -371,7 +373,7 @@ const styles = StyleSheet.create({
   },
   input: {
     color: 'black',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     fontSize: 23,
     paddingHorizontal: 20,
     width: '80%',
@@ -381,7 +383,7 @@ const styles = StyleSheet.create({
   },
   inputIPad: {
     color: 'black',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     fontSize: 16,
     paddingHorizontal: 30,
     width: width * 0.7,
@@ -420,7 +422,7 @@ const styles = StyleSheet.create({
   forgotText: {
     ...FONTS.fontSm,
     color: COLORS.primary,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   buttonContainer: {
     width: '100%',
@@ -439,20 +441,21 @@ const styles = StyleSheet.create({
     //...FONTS.fontLg,
     color: COLORS.white,
     fontSize: isPad ? 25 : 22,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   padText: {
     color: COLORS.white,
     fontSize: isPad ? 32 : 32,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   errorText: {
-    color: 'yellow',
+    color: '#FDBE6F',
     fontSize: isPad ? 25 : 16,
     marginTop: isPad ? 5 : 0,
     textAlign: 'center',
     width: 520,
     marginStart: 5,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   eye: { width: '20%', alignItems: 'center', justifyContent: 'center' }
 });

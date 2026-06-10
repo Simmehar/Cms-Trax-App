@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   blueTxt: {
     fontSize: 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: '#223890',
   },
   input: {
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#98989850',
     color: 'black',
     fontSize: 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   qrView: {
     flexDirection: 'row',

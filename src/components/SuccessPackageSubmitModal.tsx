@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   simTitle: {
     fontSize: isIPad ? 35 : 20,
     color: '#223890',
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
 
   },
   locationView: {
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     fontSize: isIPad ? 25 : 18,
     textAlign: 'center',
     marginVertical: 5,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
 
   },
@@ -264,14 +264,14 @@ const styles = StyleSheet.create({
     marginVertical: isIPad ? 10 : 3,
     color: '#223890',
     marginHorizontal: 10,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   ascentMessage: {
     fontSize: isIPad ? 25 : 14,
     textAlign: 'center',
     color: 'black',
     marginHorizontal: 10,
-    fontFamily: FONTS.PoppinsMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
     marginVertical: isIPad ? 10 : 0
   },
 
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
    
     padding: 10,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   rowOrder: {
     backgroundColor: '#F4F4F4',
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     color: 'black',
     textAlign: 'center',
 
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   descVal: {
     fontSize: isIPad ? 21 : 18,
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     borderLeftColor: 'grey',
     padding: 10,
     width: '50%',
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   row: {
     backgroundColor: '#F4F4F4',

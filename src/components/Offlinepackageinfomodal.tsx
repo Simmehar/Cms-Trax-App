@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     // marginHorizontal: 10
   },
   pakName: {
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
 
     color: 'black',
     flex: 1,
@@ -399,18 +399,18 @@ const styles = StyleSheet.create({
   },
   activeTxt: {
     fontSize: isIPad ? 20 : 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
     fontWeight: 'bold',
   },
   leftTxt: {
     fontSize: isIPad ? 25 : 16,
-    fontFamily: FONTS.PoppinsMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
   },
   rightTxt: {
     fontSize: isIPad ? 27 : 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'black',
   },
   imagView: {

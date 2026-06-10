@@ -290,66 +290,121 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
   //    field and look up the matching Ships object from shipList.
   //    This replaces the old OCR/Gemini token-based ship detection.
   // ─────────────────────────────────────────────────────────
+  // useEffect(() => {
+  //   if (!receipientName) {
+  //     // Recipient was cleared — clear ship too
+  //     setShipName(null);
+  //     return;
+  //   }
+
+  //   const recipientShipName: string = receipientName.ship ?? '';
+
+  //   if (!recipientShipName.trim()) {
+  //     console.log('[BottomDrawer] Recipient has no ship field — skipping ship auto-fill');
+  //     return;
+  //   }
+
+  //   if (!shipList?.length) {
+  //     console.log('[BottomDrawer] shipList not loaded yet');
+  //     return;
+  //   }
+
+  //   // 1. Try exact match first
+  //   const exactMatch = shipList.find(
+  //     s => s.name.toLowerCase() === recipientShipName.toLowerCase(),
+  //   );
+
+  //   if (exactMatch) {
+  //     console.log('[BottomDrawer] ✅ Ship from recipient (exact):', exactMatch.name);
+  //     // setShipName(exactMatch);
+  //     return;
+  //   }
+
+  //   // 2. Fuzzy fallback (handles minor OCR noise in stored recipient data)
+  //   let bestScore = 0;
+  //   let bestShip: Ships | null = null;
+
+  //   for (const ship of shipList) {
+  //     const score = editSimilarity(norm(ship.name), norm(recipientShipName));
+  //     if (score > bestScore && score >= 0.80) {
+  //       bestScore = score;
+  //       bestShip = ship;
+  //     }
+  //   }
+
+  //   if (bestShip) {
+  //     console.log(
+  //       `[BottomDrawer] ✅ Ship from recipient (fuzzy, score ${bestScore.toFixed(2)}):`,
+  //       bestShip.name,
+  //     );
+  //     // setShipName(bestShip);
+  //   } else {
+  //     // 3. Last resort: build a minimal Ships-like object from the string stored on the recipient
+  //     console.log(
+  //       '[BottomDrawer] ⚠️  No shipList match — using recipient.ship string directly:',
+  //       recipientShipName,
+  //     );
+  //     // setShipName({
+  //     //   name: recipientShipName,
+  //     //   id: receipientName.ship_id ?? null,
+  //     // } as Ships);
+  //   }
+  // }, [receipientName, shipList]); // eslint-disable-line
+
+  //  ship found from gemini data 
   useEffect(() => {
-    if (!receipientName) {
-      // Recipient was cleared — clear ship too
-      setShipName(null);
-      return;
-    }
+    const geminiShip = geminiExtracted?.ship_name?.trim();
 
-    const recipientShipName: string = receipientName.ship ?? '';
-
-    if (!recipientShipName.trim()) {
-      console.log('[BottomDrawer] Recipient has no ship field — skipping ship auto-fill');
+    if (!geminiShip) {
+      console.log('No ship found from Gemini');
       return;
     }
 
     if (!shipList?.length) {
-      console.log('[BottomDrawer] shipList not loaded yet');
+      console.log('shipList not loaded');
       return;
     }
 
-    // 1. Try exact match first
+    console.log('Gemini Ship:', geminiShip);
+
+    // Exact match
     const exactMatch = shipList.find(
-      s => s.name.toLowerCase() === recipientShipName.toLowerCase(),
+      ship =>
+        ship.name.trim().toLowerCase() ===
+        geminiShip.trim().toLowerCase(),
     );
 
     if (exactMatch) {
-      console.log('[BottomDrawer] ✅ Ship from recipient (exact):', exactMatch.name);
-      // setShipName(exactMatch);
+      console.log('✅ Exact ship match:', exactMatch.name);
+      setShipName(exactMatch);
       return;
     }
 
-    // 2. Fuzzy fallback (handles minor OCR noise in stored recipient data)
+    // Fuzzy match
     let bestScore = 0;
     let bestShip: Ships | null = null;
 
     for (const ship of shipList) {
-      const score = editSimilarity(norm(ship.name), norm(recipientShipName));
-      if (score > bestScore && score >= 0.80) {
+      const score = editSimilarity(
+        norm(ship.name),
+        norm(geminiShip),
+      );
+
+      if (score > bestScore) {
         bestScore = score;
         bestShip = ship;
       }
     }
 
-    if (bestShip) {
+    if (bestShip && bestScore >= 0.75) {
       console.log(
-        `[BottomDrawer] ✅ Ship from recipient (fuzzy, score ${bestScore.toFixed(2)}):`,
-        bestShip.name,
+        `✅ Fuzzy ship match: ${bestShip.name} (${bestScore})`,
       );
-      // setShipName(bestShip);
+      setShipName(bestShip);
     } else {
-      // 3. Last resort: build a minimal Ships-like object from the string stored on the recipient
-      console.log(
-        '[BottomDrawer] ⚠️  No shipList match — using recipient.ship string directly:',
-        recipientShipName,
-      );
-      // setShipName({
-      //   name: recipientShipName,
-      //   id: receipientName.ship_id ?? null,
-      // } as Ships);
+      console.log('❌ No ship match found');
     }
-  }, [receipientName, shipList]); // eslint-disable-line
+  }, [geminiExtracted?.ship_name, shipList]);
 
   // ── Recipient search from OCR ─────────────────────────────
   useEffect(() => {
@@ -531,7 +586,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
           <View style={styles.subContain}>
 
             <InputPicker
-              isPicker={true} isQrCode={false} placeholder={'Ship/Building*'}
+              isPicker={true} isQrCode={false} placeholder={'Ship/department*'}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => { oncloseBottomModal(); setVisible(true); setActiveTab('Ship'); }}
               onChangeText={() => { }} pickerValue={shipName?.name}
@@ -565,6 +620,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
 
             <InputPicker
               isPicker={true} disablePicker={true} isQrCode={false} placeholder={'Department'}
+              placeholerstyle={{fontFamily: FONTS.RICORDORegular}}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => { setVisible(true); setActiveTab('Division'); }}
               editable={'false'} pickerValue={divisionName?.name}
@@ -573,6 +629,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
 
             <InputPicker
               isPicker={false} isQrCode={false} placeholder={'Location*'}
+              
               autoCapitalize={'words'} onPickerClick={() => { }}
               pickerValue={location}
               onChangeText={val => {
@@ -628,22 +685,22 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
 // ─────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'space-between' },
-  errorMsg: { fontSize: isPad ? 18 : 14, fontFamily: FONTS.PoppinsRegular, color: 'red', marginLeft: 30, marginTop: 5 },
+  errorMsg: { fontSize: isPad ? 18 : 14, fontFamily: FONTS.RICORDORegular, color: 'red', marginLeft: 30, marginTop: 5 },
   scrollContent: { flexGrow: 1, backgroundColor: '#fff' },
   subContain: { marginHorizontal: 15, borderRadius: 11, marginTop: 20, paddingBottom: 10, marginBottom: 10 },
   packView: { marginHorizontal: isPad ? 15 : 15, marginTop: isPad ? 20 : 5, backgroundColor: '#F4F4F4', borderRadius: 11, padding: isPad ? 30 : 14 },
   modalContainer: { marginTop: isPad ? 30 : 0, flex: 1, backgroundColor: 'white', borderWidth: 0.2, borderBottomWidth: 0, borderColor: '#80808080', borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   drawerContainer: { width: '100%', flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#002B45', paddingVertical: 10, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  packTxt: { color: 'black', fontSize: 16, fontFamily: FONTS.PoppinsSemiBold },
-  packTxtI: { color: 'black', fontSize: 24, fontFamily: FONTS.PoppinsSemiBold },
+  packTxt: { color: 'black', fontSize: 16, fontFamily: FONTS.RICORDOSemiBold },
+  packTxtI: { color: 'black', fontSize: 24, fontFamily: FONTS.RICORDOSemiBold },
   rowView: { flexDirection: 'row', alignItems: 'center' },
-  trTxt: { flex: 1, color: '#223890', fontSize: 14, fontFamily: FONTS.PoppinsSemiBold },
-  trId: { color: 'black', fontSize: 12, fontFamily: FONTS.PoppinsRegular },
+  trTxt: { flex: 1, color: '#223890', fontSize: 14, fontFamily: FONTS.RICORDOSemiBold },
+  trId: { color: 'black', fontSize: 12, fontFamily: FONTS.RICORDORegular },
   roView: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginHorizontal: 30 },
   unSelBox: { height: isIPad ? 26 : 22, width: isIPad ? 26 : 22, borderRadius: 4, borderWidth: 1, borderColor: '#989898' },
   selBox: { height: isIPad ? 26 : 22, width: isIPad ? 26 : 22, borderRadius: 4, backgroundColor: '#223890', justifyContent: 'center', alignItems: 'center' },
   tick: { height: 9, width: 13, tintColor: 'white' },
-  sendTxt: { fontSize: isIPad ? 20 : 16, fontFamily: FONTS.PoppinsRegular, color: 'black', marginLeft: 5 },
+  sendTxt: { fontSize: isIPad ? 20 : 16, fontFamily: FONTS.RICORDORegular, color: 'black', marginLeft: 5 },
 });
 
 export { BottomDrawer };

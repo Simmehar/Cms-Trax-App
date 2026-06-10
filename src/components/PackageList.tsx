@@ -180,7 +180,7 @@ const PackageList = React.memo(({
                     color: 'white',
                     paddingHorizontal: 5,
                     paddingVertical: 3,
-                    fontFamily: FONTS.PoppinsSemiBold,
+                    fontFamily: FONTS.RICORDOSemiBold,
                   }}>
                   Inactive
                 </Text>
@@ -224,7 +224,7 @@ const PackageList = React.memo(({
                 color: 'white',
                 paddingHorizontal: 5,
                 paddingVertical: 3,
-                fontFamily: FONTS.PoppinsSemiBold,
+                fontFamily: FONTS.RICORDOSemiBold,
               }}>
               Inactive
             </Text>
@@ -434,12 +434,12 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 16,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOBold,
     color: '#002B45',
   },
   label: {
     fontSize: isIPad ? 23 : 18,
-    fontFamily: FONTS.PoppinsMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
     fontWeight: '400'
   },
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     // fontSize: isIPad ? 18 : 14,
     fontSize: isIPad ? 23 : 18,
     color: 'black',
-    fontFamily: FONTS.PoppinsMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
     marginLeft: 5,
     fontWeight: '400',
   },

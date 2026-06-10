@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     fontSize: isIPad ? 24 : 20,
     fontWeight: '800',
     color: '#002B45',
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   closeCircle: {
     width: 36,
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 16,
     color: '#9E9E9E',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   chevron: {
     fontSize: 18,
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
 });
 

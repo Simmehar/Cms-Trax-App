@@ -61,9 +61,7 @@ const StackNavigator: React.FC<StackNavigatorProps> = ({isLoggedIn}) => {
         gestureEnabled: false,
       }}>
       
-      {/* CONDITIONAL HATA DIYA HAI: 
-        Screens ko hamesha stack mein rakhein, initialRouteName decide karega ki pehle kaun si dikhegi.
-      */}
+     
       <Stack.Screen name="BusinessSelect" component={BusinessSelect} />
 
       <Stack.Screen name="Login" component={Login} />

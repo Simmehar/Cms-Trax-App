@@ -161,14 +161,14 @@ const styles = StyleSheet.create({
   },
   botTle: {
     fontSize: isIPad ? 30 : 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: '#6F7884',
     textAlign: 'center',
     marginVertical:isIPad?10:10,
   },
   miLable: {
     fontSize: isIPad ? 25 : 16,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     marginVertical:isIPad?10:10,
     color: '#FDBE6F',
     textAlign: 'center',

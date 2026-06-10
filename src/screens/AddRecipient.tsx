@@ -239,7 +239,7 @@ const AddRecipient: React.FC = ({navigation}: any) => {
         <InputPicker
           isPicker={true}
           isQrCode={false}
-          placeholder={'Select Ship/Building*'}
+          placeholder={'Select Ship/department*'}
           style={{marginHorizontal: 30, marginTop: 28}}
           onPickerClick={() => {
             setVisible(true), setActiveTab('Ship');

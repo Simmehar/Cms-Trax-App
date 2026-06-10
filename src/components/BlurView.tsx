@@ -26,7 +26,7 @@ interface BlurProps {
 const BLURView: React.FC<BlurProps> = ({onClose}) => {
   useKeepAwake();
   const {searchActive, setSearchActive} = useNavigationContext();
-  const {logout} = useAuth();
+  const {user,logout} = useAuth();
   const {isOnline, SyncUnsynched, CheckoutProgressBar, initializeDatabase} =
     useMode();
 
@@ -108,14 +108,14 @@ const BLURView: React.FC<BlurProps> = ({onClose}) => {
         <Text style={styles.label}>Recent Checkouts</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
+    { user?.currentplan !== 'Basic' && <TouchableOpacity
         style={styles.cardView}
         onPress={() => {
           onItemPress('OfflineCheckout');
         }}>
         <Image source={IMAGES.secure} style={styles.iconImg} />
         <Text style={styles.label}>Offline Checkout</Text>
-      </TouchableOpacity>
+      </TouchableOpacity>}
 
       <TouchableOpacity
         style={styles.cardView}
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: isIPad ? 25 : 18,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
     marginLeft: isIPad ? 15 : 7,
   },

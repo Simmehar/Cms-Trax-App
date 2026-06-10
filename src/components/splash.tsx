@@ -122,30 +122,31 @@ export const Splash = ({isAppReady}: {isAppReady: boolean}) => {
   if (state === HIDDEN) return null;
 
   return (
-   <Animated.View
-      collapsable={false}
-      style={[style.container, {opacity: containerOpacity}]}>
+  //  <Animated.View
+  //     collapsable={false}
+  //     style={[style.container, {opacity: containerOpacity}]}>
       
-      {/* The LinearGradient fills the animated container */}
-      <LinearGradient
-        colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}
-        style={StyleSheet.absoluteFillObject} 
-      >
-        <Animated.View style={style.centeredContent}>
-          <Animated.Image
-            source={IMAGES.logos.logo}
-            fadeDuration={0}
-            onLoad={() => {
-              setState('Fade in image');
-            }}
-            style={[style.image, {opacity: imageOpacity}]}
-            resizeMode="contain"
-          />
-        </Animated.View>
-      </LinearGradient>
-    </Animated.View>
+  //     {/* The LinearGradient fills the animated container */}
+  //     <LinearGradient
+  //       colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+  //       start={{x: 0, y: 0}}
+  //       end={{x: 1, y: 1}}
+  //       style={StyleSheet.absoluteFillObject} 
+  //     >
+  //       <Animated.View style={style.centeredContent}>
+  //         <Animated.Image
+  //           source={IMAGES.logos.logo}
+  //           fadeDuration={0}
+  //           onLoad={() => {
+  //             setState('Fade in image');
+  //           }}
+  //           style={[style.image, {opacity: imageOpacity}]}
+  //           resizeMode="contain"
+  //         />
+  //       </Animated.View>
+  //     </LinearGradient>
+  //   </Animated.View>
+  <></>
   );
 };
 

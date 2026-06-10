@@ -949,7 +949,7 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
     flex: 1,
   },
@@ -989,7 +989,7 @@ const styles = StyleSheet.create({
   },
   sendTxt: {
     fontSize: isIPad ? 20 : 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
     marginLeft: 5,
   },
@@ -1000,13 +1000,13 @@ const styles = StyleSheet.create({
   },
   singTxt: {
     fontSize: isIPad ? 24 : 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'white',
     textAlign: 'center',
   },
   inputNote: {
     fontSize: 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
     height: 72,
   },
@@ -1034,7 +1034,7 @@ const styles = StyleSheet.create({
   },
   txch: {
     fontSize: isIPad ? 26 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
 
@@ -1058,7 +1058,7 @@ const styles = StyleSheet.create({
     // height: height * 0.3,
   },
   shipNem: {
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     fontSize: isIPad ? 25 : 16,
     color: '#002B45',
     marginLeft: 16,
@@ -1073,18 +1073,18 @@ const styles = StyleSheet.create({
   },
   tagTxt: {
     fontSize: isIPad ? 23 : 16,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'black',
   },
   bluTxt: {
     fontSize: isIPad ? 21 : 14,
-    fontFamily: FONTS.PoppinsMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
     marginTop: isIPad ? 10 : '0%'
   },
   numTxt: {
     fontSize: isIPad ? 21 : 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
   },
   imgSel: {
@@ -1111,7 +1111,7 @@ const styles = StyleSheet.create({
   },
   addTxt: {
     fontSize: isIPad ? 16 : 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: '#223890',
     textAlign: 'center',
     marginTop: 10,
@@ -1123,14 +1123,14 @@ const styles = StyleSheet.create({
   },
   topTitle: {
     fontSize: isIPad ? 30 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: '#FDBE6F',
     textAlign: 'center',
     marginTop: isIPad ? 20 : 10,
   },
   congrats: {
     fontSize: isIPad ? 35 : 22,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: '#002B45',
     textAlign: 'center',
     marginTop: isIPad ? 10 : 10,

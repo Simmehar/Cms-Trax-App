@@ -137,26 +137,26 @@ const styles = StyleSheet.create({
   },
   topTitle: {
     fontSize: isIPad ? 30 : 22,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: '#FDBE6F',
     textAlign: 'center',
   },
   congrats: {
     fontSize: isIPad ? 35 : 26,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: '#002B45',
     textAlign: 'center',
     marginTop: 26,
   },
   botTle: {
     fontSize: 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: '#6F7884',
     textAlign: 'center',
   },
   miLable: {
     fontSize: isIPad ? 24 : 20,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
     marginLeft: 5,
   },
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   },
   subTxt: {
     fontSize: isIPad ? 24 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
   blueBox: {

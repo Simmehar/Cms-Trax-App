@@ -117,13 +117,13 @@ const Checkout: React.FC = ({ route }: any) => {
       setCustomerData([customerData]);
     }
 
-  dispatch({
-  totalPayableAmount: Math.max(payable_amount, 0).toFixed(2),
-  payable_amount: Math.max(payable_amount, 0).toFixed(2),
-  unpaid_packages: Math.max(unpaid_packages, 0).toFixed(2),
-  other_purchases: Math.max(other_purchases, 0).toFixed(2),
-  credit: Math.max(credit, 0).toFixed(2),
-});
+    dispatch({
+      totalPayableAmount: Math.max(payable_amount, 0).toFixed(2),
+      payable_amount: Math.max(payable_amount, 0).toFixed(2),
+      unpaid_packages: Math.max(unpaid_packages, 0).toFixed(2),
+      other_purchases: Math.max(other_purchases, 0).toFixed(2),
+      credit: Math.max(credit, 0).toFixed(2),
+    });
   };
 
   useEffect(() => {
@@ -285,9 +285,9 @@ const Checkout: React.FC = ({ route }: any) => {
                 <Image source={IMAGES.cash} style={styles.cashImg} />
                 <Text style={styles.cashTxt}>Cash</Text>
               </View>
-              <View style={[styles.radioButton,  payType == 'cash' && styles.radioButtonSelected]}>
-                      { payType == 'cash' && <View style={styles.radioButtonInner} />}
-                    </View>
+              <View style={[styles.radioButton, payType == 'cash' && styles.radioButtonSelected]}>
+                {payType == 'cash' && <View style={styles.radioButtonInner} />}
+              </View>
               {/* <View style={styles.rightView}>
                 <Image
                   source={IMAGES.left_arrow}
@@ -318,31 +318,31 @@ const Checkout: React.FC = ({ route }: any) => {
                         fontFamily: 'OctoberCompressRegular',
                         fontWeight: '600'
                       }}>
-                  
-  Total due ${' '}
-  {Math.max(Number(amountState?.totalPayableAmount), 0).toFixed(2)}
-</Text>
+
+                      Total due ${' '}
+                      {Math.max(Number(amountState?.totalPayableAmount), 0).toFixed(2)}
+                    </Text>
                   </View>
                   <View style={{ margin: 5, borderBottomWidth: 1, borderColor: 'lightgrey' }}>
                     <Text style={styles.pinDisplay}>{selectAmount || 'Amount Received'}</Text>
                   </View>
 
-          {Number(selectAmount) > 0 &&
-  Number(selectAmount) < Number(amountState?.payable_amount) && (
-                    <View
-                      style={{
-                        marginLeft: 24,
-                        marginBottom: 10,
-                      }}>
-                      <Text>
-      Balance due is ${' '}
-      {Math.max(
-        Number((Number(amountState?.totalPayableAmount) - Number(selectAmount)).toFixed(2)),
-        0
-      )}
-    </Text>
-  </View>
-)}
+                  {Number(selectAmount) > 0 &&
+                    Number(selectAmount) < Number(amountState?.payable_amount) && (
+                      <View
+                        style={{
+                          marginLeft: 24,
+                          marginBottom: 10,
+                        }}>
+                        <Text>
+                          Balance due is ${' '}
+                          {Math.max(
+                            Number((Number(amountState?.totalPayableAmount) - Number(selectAmount)).toFixed(2)),
+                            0
+                          )}
+                        </Text>
+                      </View>
+                    )}
                 </View>
 
 
@@ -462,9 +462,9 @@ const Checkout: React.FC = ({ route }: any) => {
                       />
                       <Text style={[styles.cashTxt]}>Card</Text>
                     </View>
-                    <View style={[styles.radioButton,  payType == 'card' && styles.radioButtonSelected]}>
-                            { payType == 'card' && <View style={styles.radioButtonInner} />}
-                          </View>
+                    <View style={[styles.radioButton, payType == 'card' && styles.radioButtonSelected]}>
+                      {payType == 'card' && <View style={styles.radioButtonInner} />}
+                    </View>
                     {/* <View style={[styles.rightView]}>
                       <Image
                         source={IMAGES.left_arrow}
@@ -601,7 +601,7 @@ const Checkout: React.FC = ({ route }: any) => {
                           Tracking ID:{' '}
                           <Text style={styles.numTxt}>{item.tracking_no}</Text>{' '}
                         </Text>
-                       
+
                       </View>
                       {/* <Image style={styles.delete} source={IMAGES.delete} /> */}
                     </TouchableOpacity>
@@ -637,7 +637,7 @@ const Checkout: React.FC = ({ route }: any) => {
                         Tracking ID:{' '}
                         <Text style={styles.numTxt}>{item.tracking_no}</Text>{' '}
                       </Text>
-                     
+
                     </View>
                     {/* <Image style={styles.delete} source={IMAGES.delete} /> */}
                   </TouchableOpacity>
@@ -764,7 +764,7 @@ const Checkout: React.FC = ({ route }: any) => {
                 color: '#db6363',
                 fontSize: isIPad ? 30 : 20,
                 textAlign: 'center',
-                fontFamily: 'OctoberCompressRegular',
+                fontFamily: FONTS.RICORDOBold,
                 fontWeight: '600'
               }}>Warning!!</Text>
               <Text style={{
@@ -772,6 +772,7 @@ const Checkout: React.FC = ({ route }: any) => {
                 marginTop: isIPad ? 30 : 20,
                 color: 'grey',
                 textAlign: 'center',
+                fontFamily: FONTS.RICORDORegular,
               }}>There are 1 or more packages NOT selected !</Text>
             </View>
 
@@ -801,7 +802,7 @@ const styles = StyleSheet.create({
     // height: height * 0.3,
   },
   shipNem: {
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     fontSize: isPad ? 25 : 16,
     color: '#002B45',
     marginLeft: 16,
@@ -816,18 +817,18 @@ const styles = StyleSheet.create({
   },
   tagTxt: {
     fontSize: isPad ? 23 : 16,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'black',
   },
   bluTxt: {
     fontSize: isPad ? 21 : 14,
-    fontFamily: FONTS.PoppinsMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
     marginTop: isPad ? 10 : 'none'
   },
   numTxt: {
     fontSize: isPad ? 21 : 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
   },
   delete: {
@@ -866,7 +867,7 @@ const styles = StyleSheet.create({
   },
   cashTxt: {
     fontSize: isIPad ? 23 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'black',
     marginLeft: 18,
   },
@@ -948,7 +949,7 @@ const styles = StyleSheet.create({
   },
   submitTxt: {
     fontSize: isIPad ? 25 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
 
@@ -1109,15 +1110,15 @@ const styles = StyleSheet.create({
   name: {
     flex: 1,
     fontSize: isIPad ? 22 : 15,
-  paddingRight:isIPad?60:20,
+    paddingRight: isIPad ? 60 : 20,
   },
   price: {
     color: '#666',
     fontSize: isIPad ? 22 : 15,
   },
   radioButton: {
-    width: isIPad?34:24,
-    height: isIPad?34:24,
+    width: isIPad ? 34 : 24,
+    height: isIPad ? 34 : 24,
     borderRadius: 24,
     borderWidth: 2,
     borderColor: '#223890', // Custom border color
@@ -1128,8 +1129,8 @@ const styles = StyleSheet.create({
     borderColor: '#223890', // Custom border color when selected
   },
   radioButtonInner: {
-    width: isIPad?17:12,
-    height: isIPad?17:12,
+    width: isIPad ? 17 : 12,
+    height: isIPad ? 17 : 12,
     borderRadius: 12,
     backgroundColor: '#223890', // Inner circle color
   },

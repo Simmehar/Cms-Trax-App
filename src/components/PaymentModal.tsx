@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
   },
   cashTxt: {
     fontSize: isIPad ? 25 : 15,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'black',
     marginLeft: 18,
   },
@@ -805,13 +805,13 @@ const styles = StyleSheet.create({
   },
   amountTxt: {
     // fontSize: 19,
-    fontFamily: FONTS.OpenSansMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
     fontSize: isIPad ? 25 : 20,
   },
   amountWTxt: {
     fontSize: isIPad ? 25 : 20,
-    fontFamily: FONTS.OpenSansMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
   },
   inputView: {
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
   input: {
     height: 50,
     fontSize: isIPad ? 40 : 30,
-    fontFamily: FONTS.OpenSansMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'black',
     textDecorationLine: 'underline'
   },
@@ -844,7 +844,7 @@ const styles = StyleSheet.create({
   },
   submitTxt: {
     fontSize: isIPad ? 25 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
 

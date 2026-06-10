@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>CMSTrax</string>
+	<string>CMS TRAX</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -95,6 +95,16 @@
 		<string>Poppins-SemiBold.ttf</string>
 		<string>Poppins-Italic.ttf</string>
 		<string>Poppins-MediumItalic.ttf</string>
+		<string>RICORDO-ExtraLight.ttf</string>
+		<string>RICORDO-SemiBold.ttf</string>
+		<string>RICORDO-Light.ttf</string>
+		<string>RICORDO-ExtraBold.ttf</string>
+		<string>RICORDO-Medium.ttf</string>
+		<string>RICORDO-Black.ttf</string>
+		<string>RICORDO-Thin.ttf</string>
+		<string>RICORDO-Regular.ttf</string>
+		<string>RICORDO-Bold.ttf</string>
+		<string>Questrial-Regular.ttf</string>
 	</array>
 </dict>
 </plist>

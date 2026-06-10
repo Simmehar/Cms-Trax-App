@@ -476,23 +476,31 @@ const onClear = () => {
   // }, [inputValue]);
   console.log('setShowOfflineAlert',setShowOfflineAlert)
   useEffect(() => {
-    const handleNetworkChange = async () => {
-      if (isInternet) {
-        setIsNet(true);
-        setShowOfflineAlert(false); // Internet aane par alert band
-      } else {
-        setIsNet(false);
+  const handleNetworkChange = async () => {
+    // Network status abhi load nahi hua
+    if (isInternet === null || isInternet === undefined) {
+      return;
+    }
 
-        // Check karein ki kya pehle alert dikha chuke hain
-        const hasShown = await AsyncStorage.getItem('hasShownOfflineMode');
-        if (hasShown !== 'true') {
-          setShowOfflineAlert(true); // Sirf pehli baar alert dikhayenge
-        }
+    if (isInternet) {
+      setIsNet(true);
+      setShowOfflineAlert(false);
+    } else {
+      setIsNet(false);
+
+      const hasShown = await AsyncStorage.getItem('hasShownOfflineMode');
+
+      if (hasShown !== 'true') {
+        setShowOfflineAlert(true);
       }
-    };
+    }
+  };
 
-    handleNetworkChange();
-  }, [isInternet]);
+  handleNetworkChange();
+}, [isInternet]);
+useEffect(() => {
+  console.log('isInternet:=========', isInternet);
+}, [isInternet]);
 
   const handleCloseOfflineMode = async () => {
     setShowOfflineAlert(false); // Modal hide karein
@@ -875,7 +883,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   actionButton: {
     width: 200,

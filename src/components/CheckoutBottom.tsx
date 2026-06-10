@@ -136,18 +136,18 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: isIPad ? 23 : 18,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
     flex: 1,
   },
   amount: {
     fontSize: isIPad ? 23 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'black',
   },
   disTxt: {
     fontSize: isIPad ? 23 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
   },
   blueView: {
@@ -164,13 +164,13 @@ const styles = StyleSheet.create({
   },
   doller: {
     fontSize: isIPad ? 45 : 24,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
     // flex: 1,
   },
   total: {
     fontSize: isIPad ? 25 : 18,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'white',
     // marginLeft: 25,
   },
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   nxtTxt: {
     fontSize: isIPad ? 25 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
 });

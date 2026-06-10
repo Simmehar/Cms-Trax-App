@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   },
   ofline: {
     fontSize: 26,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
     textAlign: 'center',
   },
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   content: {
     fontSize: 18,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: '#6F7884',
     textAlign: 'center',
     marginTop: 16,
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   },
   okTxt: {
     fontSize: 16,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
   redView: {
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   },
   uhTxt: {
     fontSize: 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
   rowView: {
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 18,
     flex: 1,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'white',
     marginRight: 20,
   },

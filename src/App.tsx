@@ -21,6 +21,7 @@ import {SearchProvider} from './contexts/SearchContext';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 
 import {loadBackendUrl} from './util/apiCalls';
+import { WithSplashScreen } from './components/splash';
 
 SQLite.enablePromise(false);
 
@@ -47,11 +48,12 @@ const Routes = () => {
 
   return (
     <StripeProvider
-      publishableKey={'pk_live_c6t4v7zq4t1oy1guwBpQaoF7'}
+      publishableKey={'pk_live_51T7IhYQesY9Hh8zgFg7vFERFzZPHIpn7gBEM4gn7vhs7TUZLc9lcmugiSh3j8gZCC4qmBBHSnPKj4hIQnkZ1daPU00nwHKEskU'}
       merchantIdentifier="merchant.identifier"
       urlScheme="your-url-scheme">
 
       <StatusBar barStyle={'dark-content'} />
+      <WithSplashScreen isAppReady={isAppReady}>
 
       <SafeAreaProvider>
         <SearchProvider>
@@ -62,6 +64,7 @@ const Routes = () => {
           </OfflineModeProvider>
         </SearchProvider>
       </SafeAreaProvider>
+      </WithSplashScreen>
 
     </StripeProvider>
   );

@@ -1522,7 +1522,7 @@ PODS:
   - react-native-mlkit-ocr (0.3.0):
     - GoogleMLKit/TextRecognition (= 2.6.0)
     - React
-  - react-native-netinfo (12.0.1):
+  - react-native-netinfo (11.5.2):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2825,7 +2825,7 @@ SPEC CHECKSUMS:
   react-native-date-picker: 11c5a0b2a0a54a213d6bb4067bf3df4962c714d4
   react-native-keep-awake: 129cb4bd75d0f304a479b4c4527d2994fe18e43c
   react-native-mlkit-ocr: c87ab440396bc7c908e01e4574952bc4b08709e4
-  react-native-netinfo: 2f906d5d9a639090ed1c079135d6485a95f749f1
+  react-native-netinfo: 4319d381f35bc11b53dafebd5cd99c04c66a9fb4
   react-native-restart: 0bc732f4461709022a742bb29bcccf6bbc5b4863
   react-native-safe-area-context: fb5c8ee9f6dd62ef710611b3d370c501f42a4ac0
   react-native-sqlite-storage: 0c84826214baaa498796c7e46a5ccc9a82e114ed

@@ -8,6 +8,7 @@ export interface StoredData {
   token?: string;
   firstname?: string;
   id?: string;
+  currentplan?:string;
 }
 
 SQLite.enablePromise(true);

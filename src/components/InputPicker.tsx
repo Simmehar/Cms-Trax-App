@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,12 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
-import {FONTS, ICONS, IMAGES} from '../assets';
-import {SvgXml} from 'react-native-svg';
-import {CheckIpad} from '../utilities/securestorage';
-import {useNavigation} from '@react-navigation/native';
+import { FONTS, ICONS, IMAGES } from '../assets';
+import { SvgXml } from 'react-native-svg';
+import { CheckIpad } from '../utilities/securestorage';
+import { useNavigation } from '@react-navigation/native';
 import ScanBarCodeModal from './ScanBarCodeModal';
-import {usePackageContext} from '../contexts/packagecontext';
+import { usePackageContext } from '../contexts/packagecontext';
 
 interface inputProps {
   isPicker: boolean;
@@ -31,8 +31,9 @@ interface inputProps {
   editable: boolean;
   disablePicker: boolean;
   hideDropdownButton: boolean;
-  placeholderTextColor:any;
-  maxLength:any;
+  placeholderTextColor: any;
+  maxLength: any;
+  placeholerstyle: any;
 }
 
 let isPad = CheckIpad();
@@ -53,6 +54,7 @@ const InputPicker: React.FC<inputProps> = ({
   autoCapitalize,
   placeholderTextColor,
   maxLength,
+  placeholerstyle
 }) => {
   const [inputValue, setInputValue] = useState('');
 
@@ -72,23 +74,28 @@ const InputPicker: React.FC<inputProps> = ({
   }, []);
 
   return (
-    <View style={{backgroundColor:null}}>
+    <View style={{ backgroundColor: null }}>
       {isPicker ? (
         <TouchableOpacity
           onPress={onPickerClick}
           style={[styles.pickerView]}
           disabled={disablePicker || false}>
           {pickerValue ? (
-            <View style={{flex: 1}}>
-              <Text style={[styles.blueTxt, {fontSize: isPad ? 20 : 14}]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.blueTxt, { fontSize: isPad ? 20 : 14 }]}>
                 {placeholder}
               </Text>
-              <Text style={[styles.valTxt, {fontSize: isPad ? 25 : 16,marginTop:isPad?5:'none'}]}>
+              <Text style={[styles.valTxt, { fontSize: isPad ? 25 : 16, marginTop: isPad ? 5 : 'none' }]}>
                 {pickerValue ? pickerValue : ''}
               </Text>
             </View>
           ) : (
-            <Text style={[styles.trckId, {fontSize: isPad ? 24 : 16}]}>
+            <Text
+              style={[
+                styles.trckId,
+                { fontSize: isPad ? 24 : 16 },
+                placeholerstyle,
+              ]}>
               {placeholder}
             </Text>
           )}
@@ -96,7 +103,7 @@ const InputPicker: React.FC<inputProps> = ({
             <TouchableOpacity onPress={onPickerClick}>
               <Image
                 source={IMAGES.down_arrow}
-                style={{height: isPad?20:12, width: isPad?20:12, marginTop: pickerValue ? 18 : 0}}
+                style={{ height: isPad ? 20 : 12, width: isPad ? 20 : 12, marginTop: pickerValue ? 18 : 0 }}
               />
             </TouchableOpacity>
           )}
@@ -145,54 +152,54 @@ const InputPicker: React.FC<inputProps> = ({
         //     )}
         //   </View>
         // </View>
-        <TouchableOpacity 
-    activeOpacity={1} // Click hone par flash na ho
-    onPress={() => inputRef.current?.focus()} // Area par click hote hi keyboard khule
-    style={styles.inputView}
-  >
-    {inputValue ? (
-      <Text style={[styles.blueTxt, {fontSize: isPad ? 20 : 14}]}>
-        {placeholder}
-      </Text>
-    ) : null}
-    
-    <View style={isQrCode ? styles.qrView : { flexDirection: 'row', alignItems: 'center' }}>
-      <TextInput 
-        ref={inputRef} // Ref assign karein
-        autoCapitalize={autoCapitalize || 'none'}
-        placeholder={placeholder}
-        maxLength={maxLength ? maxLength : null}
-        placeholderTextColor={placeholderTextColor || 'black'}
-        style={[
-          styles.input,
-          style,
-          {
-            paddingBottom: isQrCode ? 8 : 4, 
-            fontSize: isPad ? 24 : 16,
-            borderBottomWidth: 0, // Border main container (inputView) par shift kar sakte hain
-          },
-        ]}
-        value={inputValue}
-        onChangeText={val => {
-          onChangeText(val);
-          setInputValue(val);
-        }}
-        editable={editable !== undefined ? editable : true}
-      />
-      
-      {isQrCode && (
         <TouchableOpacity
-          style={{marginBottom: 10  }}
-          onPress={() => setBarCodeModalVisible(true)}>
-          <SvgXml
-            xml={ICONS.header.scan}
-            width={isPad ? 35 : 25}
-            height={isPad ? 35 :25 }
-          />
+          activeOpacity={1} // Click hone par flash na ho
+          onPress={() => inputRef.current?.focus()} // Area par click hote hi keyboard khule
+          style={styles.inputView}
+        >
+          {inputValue ? (
+            <Text style={[styles.blueTxt, { fontSize: isPad ? 20 : 14 }]}>
+              {placeholder}
+            </Text>
+          ) : null}
+
+          <View style={isQrCode ? styles.qrView : { flexDirection: 'row', alignItems: 'center' }}>
+            <TextInput
+              ref={inputRef} // Ref assign karein
+              autoCapitalize={autoCapitalize || 'none'}
+              placeholder={placeholder}
+              maxLength={maxLength ? maxLength : null}
+              placeholderTextColor={placeholderTextColor || 'black'}
+              style={[
+                styles.input,
+                style,
+                {
+                  paddingBottom: isQrCode ? 8 : 4,
+                  fontSize: isPad ? 24 : 18,
+                  borderBottomWidth: 0, // Border main container (inputView) par shift kar sakte hain
+                },
+              ]}
+              value={inputValue}
+              onChangeText={val => {
+                onChangeText(val);
+                setInputValue(val);
+              }}
+              editable={editable !== undefined ? editable : true}
+            />
+
+            {isQrCode && (
+              <TouchableOpacity
+                style={{ marginBottom: 10 }}
+                onPress={() => setBarCodeModalVisible(true)}>
+                <SvgXml
+                  xml={ICONS.header.scan}
+                  width={isPad ? 35 : 25}
+                  height={isPad ? 35 : 25}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
         </TouchableOpacity>
-      )}
-    </View>
-  </TouchableOpacity>
       )}
 
       {barCodeModalVisible && (
@@ -207,7 +214,7 @@ const InputPicker: React.FC<inputProps> = ({
   );
 };
 
-export {InputPicker};
+export { InputPicker };
 
 const styles = StyleSheet.create({
   mainView: {
@@ -216,13 +223,13 @@ const styles = StyleSheet.create({
   },
   blueTxt: {
     fontSize: 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: '#223890',
   },
   trckId: {
     color: 'black',
     fontSize: 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     flex: 1,
   },
   codeImg: {
@@ -232,7 +239,7 @@ const styles = StyleSheet.create({
   valTxt: {
     color: 'black',
     fontSize: 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     // flex: 1,
   },
   // pickerView: {
@@ -294,7 +301,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: 'black',
     fontSize: 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     // borderBottomWidth: 0, // Yaha border zero kardein kyuki container mein de di hai
   },
 });

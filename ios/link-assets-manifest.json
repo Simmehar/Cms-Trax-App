@@ -132,6 +132,46 @@
     {
       "path": "src/assets/fonts/Poppins-ThinItalic.ttf",
       "sha1": "fb8fccca21550e71135f92bbaf8a2e8a12c90465"
+    },
+    {
+      "path": "src/assets/fonts/Questrial-Regular.ttf",
+      "sha1": "4da84c6f257f4b422681a0d756cf8e354b9f8ac6"
+    },
+    {
+      "path": "src/assets/fonts/RICORDO-Black.ttf",
+      "sha1": "4f4bcc79124e26da04cbd935f0e911df3257dd86"
+    },
+    {
+      "path": "src/assets/fonts/RICORDO-Bold.ttf",
+      "sha1": "0a2321d3d08283eefabfd31d306951facc6b55bb"
+    },
+    {
+      "path": "src/assets/fonts/RICORDO-ExtraBold.ttf",
+      "sha1": "65358d5159bfbd65da570662867b1282253a4ca9"
+    },
+    {
+      "path": "src/assets/fonts/RICORDO-ExtraLight.ttf",
+      "sha1": "2c68c02d6d7d362f50ae679f2129ece580e47ccd"
+    },
+    {
+      "path": "src/assets/fonts/RICORDO-Light.ttf",
+      "sha1": "c6535af051a0b49bc16556815fd3f75eaf6d7420"
+    },
+    {
+      "path": "src/assets/fonts/RICORDO-Medium.ttf",
+      "sha1": "d4ed38ab24b4e3de43e610551dde398c52bb8ba0"
+    },
+    {
+      "path": "src/assets/fonts/RICORDO-Regular.ttf",
+      "sha1": "a6712684d3c3bc3ca79a5d1d6a6095f6bf37f00e"
+    },
+    {
+      "path": "src/assets/fonts/RICORDO-SemiBold.ttf",
+      "sha1": "9f2bd7f6d8bb3ae5d10d41d5576bd745ffd3ade8"
+    },
+    {
+      "path": "src/assets/fonts/RICORDO-Thin.ttf",
+      "sha1": "5a2ea6ad8c87a66e9f05e47cb222e20083078954"
     }
   ]
 }

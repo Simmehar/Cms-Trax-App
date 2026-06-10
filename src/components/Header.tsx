@@ -298,7 +298,7 @@ logoiPad: {
   },
   input: {
     fontSize: 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
     marginLeft: 10,
     flex: 1,

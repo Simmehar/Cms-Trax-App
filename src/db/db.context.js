@@ -73,8 +73,8 @@ export const OfflineModeProvider = ({ children }) => {
 
     const filteredCheckedOutPackages = checkedOutPackages
       ? checkedOutPackages.filter(
-          (pkgId) => !selectedPackageIds.includes(pkgId)
-        )
+        (pkgId) => !selectedPackageIds.includes(pkgId)
+      )
       : [];
 
     const newPackages = dbPackages.filter(
@@ -154,10 +154,21 @@ export const OfflineModeProvider = ({ children }) => {
       setModalVisible(true);
     };
 
-    
+
     const handleConnectivityChange = async (state) => {
-      const online = state.isConnected && state.isInternetReachable;
-      __DEV__ && console.log('0948553485bnfvdjbg234959057295729457', online)
+      const online =
+        state.isConnected === true &&
+        state.isInternetReachable !== false;
+
+      console.log(
+        'isConnected:',
+        state.isConnected,
+        'isInternetReachable:',
+        state.isInternetReachable,
+        'online:',
+        online
+      );
+
       setIsOnline(online);
       await resetState();
       if (online) {
@@ -190,7 +201,7 @@ export const OfflineModeProvider = ({ children }) => {
     const syncData = async () => {
       await Checkout.createTable();
       await AdvancedForms.createTable();
-      const allRecords = await Checkout.getAllRecords(); 
+      const allRecords = await Checkout.getAllRecords();
 
       // __DEV__ && console.log(allRecords);
 
@@ -281,298 +292,153 @@ export const OfflineModeProvider = ({ children }) => {
     }
   };
 
- 
+
 
   const uploadImagesIfAny = async (user, images = []) => {
-  const validImages = images.filter(img => img && img !== '');
-  if (!validImages.length) return [];
+    const validImages = images.filter(img => img && img !== '');
+    if (!validImages.length) return [];
 
-  const uploadPromises = validImages.map(image => {
-    const fd = new FormData();
-    fd.append('image', {
-      name: 'image',
-      type: 'image/jpeg',
-      uri: image,
+    const uploadPromises = validImages.map(image => {
+      const fd = new FormData();
+      fd.append('image', {
+        name: 'image',
+        type: 'image/jpeg',
+        uri: image,
+      });
+      return uploadImg(user, fd);
     });
-    return uploadImg(user, fd);
-  });
 
-  const responses = await Promise.all(uploadPromises);
-  return responses.map(r => r.image_url);
-};
+    const responses = await Promise.all(uploadPromises);
+    return responses.map(r => r.image_url);
+  };
 
-const syncToOnlineServer = async (
-  unsyncedCheckouts,
-  unsyncedAdvanced,
-  setIsProgressEnabled
-) => {
-  try {
-    setIsProgressEnabled(true);
+  const syncToOnlineServer = async (
+    unsyncedCheckouts,
+    unsyncedAdvanced,
+    setIsProgressEnabled
+  ) => {
+    try {
+      setIsProgressEnabled(true);
 
-    const customerCache = {};
-    let progressCount = 0;
+      const customerCache = {};
+      let progressCount = 0;
 
-    /* ===========================
-       SYNC CHECKOUTS
-    ============================ */
-    for (const [index, checkout] of unsyncedCheckouts.entries()) {
-      const {
-        id,
-        sign,
-        packagesId,
-        selectedStatus,
-        notes,
-        notification,
-        totalAmount,
-        cashReceived,
-        user_id,
-        payment_method,
-        direct_discount,
-        imageOne,
-        imageTwo,
-        imageThree,
-        email,
-      } = checkout;
-
-      const parsedPackageIds = JSON.parse(packagesId);
-
-      const imgData = new FormData();
-
-      if (sign) {
-        imgData.append('signature', {
-          name: 'image',
-          type: 'image/jpeg',
-          uri: sign,
-        });
-      }
-
-      imgData.append('ids', parsedPackageIds);
-      imgData.append('current_status', parseInt(selectedStatus));
-      imgData.append('notes', notes);
-      imgData.append('notification', notification);
-
-      const imageUrls = await uploadImagesIfAny(user, [
-        imageOne,
-        imageTwo,
-        imageThree,
-      ]);
-
-      if (imageUrls.length) {
-        imgData.append('images', imageUrls);
-      }
-
-      const logoutResponse = await bulkPackageLogout(user, imgData);
-
-      if (logoutResponse === '400') {
-        Alert.alert(
-          "Couldn't Connect",
-          'There may be a problem with the server.'
-        );
-        return;
-      }
-
-      if (cashReceived) {
-        await cashReceivedDetails(user, {
-          amount: totalAmount?.toString() || 0,
-          user_id: parseInt(user_id),
+      /* ===========================
+         SYNC CHECKOUTS
+      ============================ */
+      for (const [index, checkout] of unsyncedCheckouts.entries()) {
+        const {
+          id,
+          sign,
+          packagesId,
+          selectedStatus,
+          notes,
+          notification,
+          totalAmount,
+          cashReceived,
+          user_id,
           payment_method,
           direct_discount,
-        });
-      }
+          imageOne,
+          imageTwo,
+          imageThree,
+          email,
+        } = checkout;
 
-      if (!customerCache[user_id]) {
-        customerCache[user_id] = await customerListApi(user_id);
-      }
+        const parsedPackageIds = JSON.parse(packagesId);
 
-      if (email && customerCache[user_id]?.[0]) {
-        await customerListApiUpdate(
-          user,
-          customerCache[user_id][0].id,
-          { email }
-        );
-      }
+        const imgData = new FormData();
 
-      if (notification) {
-        await sendEmail(user, {
-          ids: parsedPackageIds,
-          package_status: selectedStatus,
-        });
-      }
+        if (sign) {
+          imgData.append('signature', {
+            name: 'image',
+            type: 'image/jpeg',
+            uri: sign,
+          });
+        }
 
-      await Checkout.markRecordAsSynced(id);
+        imgData.append('ids', parsedPackageIds);
+        imgData.append('current_status', parseInt(selectedStatus));
+        imgData.append('notes', notes);
+        imgData.append('notification', notification);
 
-      progressCount++;
-      if (progressCount % 3 === 0) {
-        setProgress(progressCount);
-      }
-    }
+        const imageUrls = await uploadImagesIfAny(user, [
+          imageOne,
+          imageTwo,
+          imageThree,
+        ]);
 
-    /* ===========================
-       ADVANCED FORMS
-    ============================ */
-    const addCustomerForms = unsyncedAdvanced.filter(
-      f => f.category === 'addCustomer'
-    );
-    const otherForms = unsyncedAdvanced.filter(
-      f => f.category !== 'addCustomer'
-    );
+        if (imageUrls.length) {
+          imgData.append('images', imageUrls);
+        }
 
-    // ---- ADD CUSTOMER FIRST ----
-    for (const form of addCustomerForms) {
-      const { id, data } = form;
-      const payload = {
-        form_type: 'add_customer',
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        ship_name: data.ship_name,
-      };
+        const logoutResponse = await bulkPackageLogout(user, imgData);
 
-      const res = await formSync(user, payload);
-      if (res !== '400') {
-        await AdvancedForms.markRecordAsSynced(id);
+        if (logoutResponse === '400') {
+          Alert.alert(
+            "Couldn't Connect",
+            'There may be a problem with the server.'
+          );
+          return;
+        }
+
+        if (cashReceived) {
+          await cashReceivedDetails(user, {
+            amount: totalAmount?.toString() || 0,
+            user_id: parseInt(user_id),
+            payment_method,
+            direct_discount,
+          });
+        }
+
+        if (!customerCache[user_id]) {
+          customerCache[user_id] = await customerListApi(user_id);
+        }
+
+        if (email && customerCache[user_id]?.[0]) {
+          await customerListApiUpdate(
+            user,
+            customerCache[user_id][0].id,
+            { email }
+          );
+        }
+
+        if (notification) {
+          await sendEmail(user, {
+            ids: parsedPackageIds,
+            package_status: selectedStatus,
+          });
+        }
+
+        await Checkout.markRecordAsSynced(id);
+
         progressCount++;
-        setProgress(progressCount);
-      }
-    }
-
-    // ---- OTHER FORMS ----
-    for (const form of otherForms) {
-      const { id, category, data } = form;
-      let payload = null;
-      let imageUrls = [];
-
-      switch (category) {
-        case 'return':
-          imageUrls = await uploadImagesIfAny(user, [
-            data.image1,
-            data.image2,
-          ]);
-          payload = {
-            form_type: 'returns',
-            email: data.email,
-            customer_name: data.name,
-            tracking_no: data.trackingNo,
-            ship_name: data.ship_name,
-            package_type: data.type.toString(),
-            notes: data.notes,
-            payment_received: data.payment_received,
-            ...(imageUrls.length && { images: imageUrls }),
-          };
-          break;
-
-        case 'deposit':
-          imageUrls = await uploadImagesIfAny(user, [
-            data.image1,
-            data.image2,
-          ]);
-          payload = {
-            form_type: 'deposit',
-            email: data.email,
-            customer_name: data.name,
-            amount: parseInt(data.amount),
-            ...(data.reason && { reason: data.reason }),
-            ship_name: data.ship_name,
-            ...(imageUrls.length && { images: imageUrls }),
-          };
-          break;
-
-        case 'refund':
-          payload = {
-            form_type: 'refund',
-            email: data.email,
-            amount: parseInt(data.amount),
-            ...(data.reason && { reason: data.reason }),
-            refund_method: data.refund_method,
-            ship_name: data.ship_name,
-            ...(data.phone && { phone: data.phone }),
-          };
-          break;
-
-        case 'storage':
-          imageUrls = await uploadImagesIfAny(user, [
-            data.image1,
-            data.image2,
-          ]);
-          payload = {
-            form_type: 'storage',
-            customer_name: data.name,
-            email: data.email,
-            phone: data.phone,
-            total_months: parseInt(data.total),
-            pickup_return_date: data.returnDate?.split('T')[0],
-            notes: data.notes,
-            ship_name: data.ship_name,
-            package_type:"10",
-            tracking_no: data.trackingNo,
-            ...(imageUrls.length && { images: imageUrls }),
-          };
-          break;
-
-        case 'shipToShip':
-          imageUrls = await uploadImagesIfAny(user, [
-            data.image1,
-            data.image2,
-          ]);
-          payload = {
-            form_type: 'ship_to_ship',
-            email: data.email,
-            customer_name: data.name,
-            tracking_no: data.trackingNo,
-            crew_member_receiving: data.crewMemberEmail,
-            recipient_name: data.crewMemberName,
-            package_type: data.type.toString(),
-            ship_name: data.ship_name,
-            ship_to: data.ship_to,
-            sender_paid_full: data.senderPaidFull,
-            payment_method: '1',
-            ...(data.paidAmount && { paid_amount: data.paidAmount }),
-            ...(data.notes && { notes: data.notes }),
-            ...(imageUrls.length && { images: imageUrls }),
-          };
-          break;
-
-        case 'shipPackage':
-          const imgs =
-            data.packageType === 'international'
-              ? [data.internationalImage1, data.internationalImage2]
-              : [data.domesticImage1, data.domesticImage2];
-
-          imageUrls = await uploadImagesIfAny(user, imgs);
-
-          payload = {
-            form_type:
-              data.packageType === 'international'
-                ? 'ship_package_intl'
-                : 'ship_package_local',
-            email: data.email,
-            customer_name: data.name,
-            tracking_no: data.trackingNo,
-            ship_name: data.ship_name,
-            package_type: parseInt(9),
-            ...(imageUrls.length && { images: imageUrls }),
-            package_details:
-              data.packageType === 'international'
-                ? {
-                    contents: data.contents,
-                    value: data.value,
-                    country_of_manufacture: data.country,
-                  }
-                : {
-                    address1: data.address1,
-                    city: data.city,
-                    state: data.state,
-                    zip_code: data.zip,
-                  },
-            notes:
-              data.packageType === 'international'
-                ? data.internationalNotes
-                : data.domesticNotes,
-          };
-          break;
+        if (progressCount % 3 === 0) {
+          setProgress(progressCount);
+        }
       }
 
-      if (payload) {
+      /* ===========================
+         ADVANCED FORMS
+      ============================ */
+      const addCustomerForms = unsyncedAdvanced.filter(
+        f => f.category === 'addCustomer'
+      );
+      const otherForms = unsyncedAdvanced.filter(
+        f => f.category !== 'addCustomer'
+      );
+
+      // ---- ADD CUSTOMER FIRST ----
+      for (const form of addCustomerForms) {
+        const { id, data } = form;
+        const payload = {
+          form_type: 'add_customer',
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          ship_name: data.ship_name,
+        };
+
         const res = await formSync(user, payload);
         if (res !== '400') {
           await AdvancedForms.markRecordAsSynced(id);
@@ -580,20 +446,165 @@ const syncToOnlineServer = async (
           setProgress(progressCount);
         }
       }
+
+      // ---- OTHER FORMS ----
+      for (const form of otherForms) {
+        const { id, category, data } = form;
+        let payload = null;
+        let imageUrls = [];
+
+        switch (category) {
+          case 'return':
+            imageUrls = await uploadImagesIfAny(user, [
+              data.image1,
+              data.image2,
+            ]);
+            payload = {
+              form_type: 'returns',
+              email: data.email,
+              customer_name: data.name,
+              tracking_no: data.trackingNo,
+              ship_name: data.ship_name,
+              package_type: data.type.toString(),
+              notes: data.notes,
+              payment_received: data.payment_received,
+              ...(imageUrls.length && { images: imageUrls }),
+            };
+            break;
+
+          case 'deposit':
+            imageUrls = await uploadImagesIfAny(user, [
+              data.image1,
+              data.image2,
+            ]);
+            payload = {
+              form_type: 'deposit',
+              email: data.email,
+              customer_name: data.name,
+              amount: parseInt(data.amount),
+              ...(data.reason && { reason: data.reason }),
+              ship_name: data.ship_name,
+              ...(imageUrls.length && { images: imageUrls }),
+            };
+            break;
+
+          case 'refund':
+            payload = {
+              form_type: 'refund',
+              email: data.email,
+              amount: parseInt(data.amount),
+              ...(data.reason && { reason: data.reason }),
+              refund_method: data.refund_method,
+              ship_name: data.ship_name,
+              ...(data.phone && { phone: data.phone }),
+            };
+            break;
+
+          case 'storage':
+            imageUrls = await uploadImagesIfAny(user, [
+              data.image1,
+              data.image2,
+            ]);
+            payload = {
+              form_type: 'storage',
+              customer_name: data.name,
+              email: data.email,
+              phone: data.phone,
+              total_months: parseInt(data.total),
+              pickup_return_date: data.returnDate?.split('T')[0],
+              notes: data.notes,
+              ship_name: data.ship_name,
+              package_type: "10",
+              tracking_no: data.trackingNo,
+              ...(imageUrls.length && { images: imageUrls }),
+            };
+            break;
+
+          case 'shipToShip':
+            imageUrls = await uploadImagesIfAny(user, [
+              data.image1,
+              data.image2,
+            ]);
+            payload = {
+              form_type: 'ship_to_ship',
+              email: data.email,
+              customer_name: data.name,
+              tracking_no: data.trackingNo,
+              crew_member_receiving: data.crewMemberEmail,
+              recipient_name: data.crewMemberName,
+              package_type: data.type.toString(),
+              ship_name: data.ship_name,
+              ship_to: data.ship_to,
+              sender_paid_full: data.senderPaidFull,
+              payment_method: '1',
+              ...(data.paidAmount && { paid_amount: data.paidAmount }),
+              ...(data.notes && { notes: data.notes }),
+              ...(imageUrls.length && { images: imageUrls }),
+            };
+            break;
+
+          case 'shipPackage':
+            const imgs =
+              data.packageType === 'international'
+                ? [data.internationalImage1, data.internationalImage2]
+                : [data.domesticImage1, data.domesticImage2];
+
+            imageUrls = await uploadImagesIfAny(user, imgs);
+
+            payload = {
+              form_type:
+                data.packageType === 'international'
+                  ? 'ship_package_intl'
+                  : 'ship_package_local',
+              email: data.email,
+              customer_name: data.name,
+              tracking_no: data.trackingNo,
+              ship_name: data.ship_name,
+              package_type: parseInt(9),
+              ...(imageUrls.length && { images: imageUrls }),
+              package_details:
+                data.packageType === 'international'
+                  ? {
+                    contents: data.contents,
+                    value: data.value,
+                    country_of_manufacture: data.country,
+                  }
+                  : {
+                    address1: data.address1,
+                    city: data.city,
+                    state: data.state,
+                    zip_code: data.zip,
+                  },
+              notes:
+                data.packageType === 'international'
+                  ? data.internationalNotes
+                  : data.domesticNotes,
+            };
+            break;
+        }
+
+        if (payload) {
+          const res = await formSync(user, payload);
+          if (res !== '400') {
+            await AdvancedForms.markRecordAsSynced(id);
+            progressCount++;
+            setProgress(progressCount);
+          }
+        }
+      }
+
+      await AdvancedForms.deleteSyncedRecords();
+
+      Alert.alert('Sync Successful', 'Data synced successfully');
+    } catch (error) {
+      console.log('Sync Error:', error);
+      Alert.alert('Sync Error', 'Please try again later.');
+    } finally {
+      setProgress(0);
+      setTotalProgress();
+      setIsProgressEnabled(false);
     }
-
-    await AdvancedForms.deleteSyncedRecords();
-
-    Alert.alert('Sync Successful', 'Data synced successfully');
-  } catch (error) {
-    console.log('Sync Error:', error);
-    Alert.alert('Sync Error', 'Please try again later.');
-  } finally {
-    setProgress(0);
-    setTotalProgress();
-    setIsProgressEnabled(false);
-  }
-};
+  };
 
   const customerListApi = async (user_id) => {
     const customerList = await getCustomerList(user, user_id);
@@ -673,7 +684,7 @@ const syncToOnlineServer = async (
     setDbShips(dbShipResponse);
   };
 
-  
+
 
   const sortPackagesByFirstName = (packages, sortingOrder = true) => {
     return [...packages].sort((a, b) => {
@@ -729,7 +740,7 @@ const syncToOnlineServer = async (
             try {
               await deleteDataRelatedToShip(shipId);
               setIsLoadingData(true);
-              const response = await getPackagesForDbSetup(user, shipId,10210);
+              const response = await getPackagesForDbSetup(user, shipId, 10210);
 
               if (!response?.results?.length) {
                 Alert.alert("No packages available for download.");
@@ -784,8 +795,15 @@ const syncToOnlineServer = async (
 
   const toggleMode = async () => {
     const netInfoState = await NetInfo.fetch();
-    const online = netInfoState.isConnected && netInfoState.isInternetReachable;
+    const online =
+      netInfoState.isConnected === true &&
+      netInfoState.isInternetReachable !== false;
 
+      console.log('NetInfo State:', {
+  isConnected: netInfoState.isConnected,
+  isInternetReachable: netInfoState.isInternetReachable,
+  type: netInfoState.type,
+});
     if (online) {
       setIsOnline((prevMode) => !prevMode);
 

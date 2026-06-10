@@ -694,8 +694,8 @@ const styles = StyleSheet.create({
   imgGreyy: { height: isIPad ? 200 : 50, width: isIPad ? 200 : 50, alignSelf: 'center', borderRadius: 20 },
   addView: { height: 32 },
   addTxt: { fontSize: isIPad ? 20 : 14, fontFamily: FONTS.PoppinsRegular, color: '#223890', textAlign: 'center', marginTop: 10 },
-  btnTxt: { color: 'white', fontSize: 16, fontFamily: FONTS.PoppinsSemiBold },
-  btnTxtI: { color: 'white', fontSize: isIPad ? 25 : 20, fontFamily: FONTS.PoppinsSemiBold },
+  btnTxt: { color: 'white', fontSize: 16, fontFamily: FONTS.RICORDOSemiBold },
+  btnTxtI: { color: 'white', fontSize: isIPad ? 25 : 20, fontFamily: FONTS.RICORDOSemiBold },
 });
 
 export { AddPackageModal };

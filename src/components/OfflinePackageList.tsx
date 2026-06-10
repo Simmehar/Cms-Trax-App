@@ -181,7 +181,7 @@ const OfflinePackageList: React.FC<PackageListProps> = ({
                     color: 'white',
                     paddingHorizontal: 5,
                     paddingVertical: 3,
-                    fontFamily: FONTS.PoppinsSemiBold,
+                    fontFamily: FONTS.RICORDOSemiBold,
                   }}>
                   Inactive
                 </Text>
@@ -225,7 +225,7 @@ const OfflinePackageList: React.FC<PackageListProps> = ({
                 color: 'white',
                 paddingHorizontal: 5,
                 paddingVertical: 3,
-                fontFamily: FONTS.PoppinsSemiBold,
+                fontFamily: FONTS.RICORDOSemiBold,
               }}>
               Inactive
             </Text>
@@ -240,7 +240,7 @@ const OfflinePackageList: React.FC<PackageListProps> = ({
               <Text
                 style={[
                   styles.value,
-                  { fontFamily: FONTS.PoppinsSemiBold, fontSize: isIPad ? 23 : 18 },
+                  { fontFamily: FONTS.RICORDOSemiBold, fontSize: isIPad ? 23 : 18 },
                 ]}>
                 {sortShipName(`${item?.shelf}/${item.tag_number}`)}
               </Text>
@@ -389,13 +389,13 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 16,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: '#002B45',
   },
   label: {
     // fontSize: isIPad ? 20 : 16,
     fontSize: isIPad ? 23 : 18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
     fontWeight: '500'
   },
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     // fontSize: isIPad ? 18 : 14,
     fontSize: isIPad ? 23 : 18,
     color: 'black',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     marginLeft: 5,
     fontWeight: '500',
   },

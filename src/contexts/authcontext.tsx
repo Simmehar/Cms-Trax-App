@@ -29,7 +29,7 @@ interface AuthProviderProps {
 }
 
 const AuthProvider: FC<AuthProviderProps> = ({children}) => {
-  const [user, setUser] = useState<User>({id: '', token: '', firstname: ''});
+  const [user, setUser] = useState<User>({id: '', token: '', firstname: '',currentplan:''});
 
   const login = async (data: any) => {
     const key = 'user.data';
@@ -47,6 +47,10 @@ const AuthProvider: FC<AuthProviderProps> = ({children}) => {
       setUser(prev => ({...prev, id: data.user.id}));
       value.id = data.user.id.toString();
     }
+     if (data?.user?.currentplan) {
+      setUser(prev => ({...prev, currentplan: data.user.currentplan}));
+      value.currentplan = data.user.currentplan.toString();
+    }
     __DEV__ && console.log(user);
     // await saveData(key, value);
   };
@@ -54,7 +58,7 @@ const AuthProvider: FC<AuthProviderProps> = ({children}) => {
   const logout = async () => {
     const key = 'user.data';
     await deleteData(key);
-    setUser({token: '', firstname: '', id: ''});
+    setUser({token: '', firstname: '', id: '',currentplan:''});
   };
 
   const expire = async () => {

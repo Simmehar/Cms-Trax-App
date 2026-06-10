@@ -281,7 +281,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={'Select Recipient*'}
+              placeholder={'Select Recipient'}
               style={{marginHorizontal: 30, marginTop: 28}}
               onPickerClick={() => {
                 setDropdownActiveTab('Rceipient'), setIsDropdownVisible(true);
@@ -296,7 +296,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={'Select Status*'}
+              placeholder={'Select Status'}
               style={{}}
               onPickerClick={() => {
                 setDropdownActiveTab('Status'), setIsDropdownVisible(true);
@@ -307,7 +307,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={'Ship/Building*'}
+              placeholder={'Ship/department'}
               style={{marginHorizontal: 30, marginTop: 28}}
               onPickerClick={() => {
                 setIsDropdownVisible(), setDropdownActiveTab('Ship');
@@ -318,7 +318,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={'Select Type*'}
+              placeholder={'Select Type'}
               style={{}}
               onPickerClick={() => {
                 setDropdownActiveTab('Type'), setIsDropdownVisible(true);
@@ -337,7 +337,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={false}
               isQrCode={false}
-              placeholder={'Location*'}
+              placeholder={'Location'}
               style={{marginHorizontal: 0, marginTop: 0}}
               onPickerClick={() => {}}
               pickerValue={location}
@@ -350,7 +350,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
  <InputPicker
               isPicker={false}
               isQrCode={false}
-              placeholder={'Message*'}
+              placeholder={'Message'}
               style={{ marginHorizontal: 0, marginTop: 0 }}
               onPickerClick={() => { }}
               pickerValue={message}

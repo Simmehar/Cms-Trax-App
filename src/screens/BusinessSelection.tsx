@@ -32,7 +32,7 @@ interface Props {
 }
 
 const BusinessSelect: React.FC<Props> = ({navigation}) => {
-  const [businessEmail, setBusinessEmail] = useState('');
+  const [businessPhoneNumber, setBusinessPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
 
   // =========================
@@ -40,8 +40,8 @@ const BusinessSelect: React.FC<Props> = ({navigation}) => {
   // =========================
 const handleContinue = async () => {
   try {
-    if (!businessEmail?.trim()) {
-      Alert.alert('Please enter business email');
+    if (!businessPhoneNumber?.trim()) {
+      Alert.alert('Please enter your 10 digit phone number');
       return;
     }
 
@@ -50,7 +50,7 @@ const handleContinue = async () => {
     const response = await axios.post(
       'https://cmslogistics.app.cmstrax.com/api/billing/validate-business-id/',
       {
-        business_email: businessEmail,
+        phone_number: businessPhoneNumber,
       },
     );
 
@@ -67,14 +67,14 @@ const handleContinue = async () => {
       setLoading(false);
 
       Alert.alert(
-        'Business email not found. Please verify your email and try again.'
+        'Phone Number not found. Please verify your Number and try again.'
       );
 
       return;
     }
 
     // ==========================
-    // VALID BUSINESS EMAIL
+    // VALID phone number
     // ==========================
 
     const tenantDomain = response?.data?.tenant_domain;
@@ -88,14 +88,14 @@ const handleContinue = async () => {
     navigation.replace('Login');
 
   } catch (error: any) {
-    console.log('Business email not found. Please verify your email and try again.');
+    console.log('Phone Number not found. Please verify your Number and try again.');
 
     setLoading(false);
 
     // ==========================
     // API ERROR MESSAGE
     // ==========================
-    Alert.alert('Business email not found. Please verify your email and try again.');
+    Alert.alert('Phone Number not found. Please verify your Number and try again.');
   }
 };
 
@@ -136,17 +136,18 @@ const handleContinue = async () => {
           <Text style={styles.title}>Business Setup</Text>
 
           <Text style={styles.subTitle}>
-            Enter your business Email to continue
+            Enter the phone number registered with your organization.
           </Text>
 
           <View style={styles.inputWrapper}>
             <TextInput
-              placeholder="Enter Business Email"
+              placeholder="Enter 10 digit phone number"
               placeholderTextColor="#7A7A7A"
               autoCapitalize="none"
-              value={businessEmail}
-              onChangeText={setBusinessEmail}
+              value={businessPhoneNumber}
+              onChangeText={setBusinessPhoneNumber}
               style={styles.input}
+              keyboardType='number-pad'
             />
           </View>
 
@@ -164,7 +165,7 @@ const handleContinue = async () => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.versionText}>v1.0.4</Text>
+        <Text style={styles.versionText}>v1.0.11</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   </LinearGradient>
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
   title: {
     color: COLORS.white,
     fontSize: isPad ? 34 : 28,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     marginTop:20
   },
 
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
     fontSize: isPad ? 20 : 14,
     marginTop: 8,
     marginBottom: 35,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     textAlign: 'center',
   },
 
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
   input: {
     color: '#111111',
     fontSize: isPad ? 24 : 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
 
   button: {
@@ -262,14 +263,14 @@ const styles = StyleSheet.create({
   buttonText: {
     color: COLORS.white,
     fontSize: isPad ? 24 : 17,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
 
   versionText: {
     color: COLORS.white,
     fontSize: isPad ? 20 : 14,
     opacity: 0.7,
-    fontFamily: FONTS.PoppinsMedium,
+    fontFamily: FONTS.RICORDORegular,
     marginTop: 20, // Safe margin agar screen choti ho toh content se na chipke
   },
 });

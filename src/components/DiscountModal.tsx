@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   },
   saveTxt: {
     fontSize: isIPad?25:18,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
   crossView: {
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   },
   ClearTxt: {
     fontSize: 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: '#223890',
     textAlign: 'center',
     marginTop: 22,
@@ -285,13 +285,13 @@ const styles = StyleSheet.create({
   },
   amountTxt: {
     fontSize: isIPad?30:19,
-    fontFamily: FONTS.OpenSansMedium,
+    fontFamily: FONTS.RICORDORegular,
     color: 'white',
     fontWeight:'700'
   },
   amountWTxt: {
     fontSize:isIPad?30:19,
-    fontFamily: FONTS.OpenSansMedium,
+    fontFamily: FONTS.RICORDORegular,
     color: '#223890',
     fontWeight:'700'
   },

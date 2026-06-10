@@ -108,7 +108,7 @@ const Home: React.FC = ({ navigation }: any) => {
   const [isBackgroundProcessing, setIsBackgroundProcessing] = useState(false);
   const [backgroundExtracted, setBackgroundExtracted] = useState<GeminiExtractionResult | null>(null);
   const [ocrText, setOcrText] = useState('');
-
+  const [showShipAlert, setShowShipAlert] = useState(false);
   console.log('packages-=------------', packages);
   console.log('shipName============', shipName);
   console.log('receipientName', receipientName);
@@ -231,81 +231,81 @@ const Home: React.FC = ({ navigation }: any) => {
     }
   };
 
-const onCreatePackage = async (val: any) => {
-  if (submitLoading) return;
+  const onCreatePackage = async (val: any) => {
+    if (submitLoading) return;
 
-  setSubmitLoading(true);
+    setSubmitLoading(true);
 
-  let response: any = [];
+    let response: any = [];
 
-  try {
-    for (let item of packages) {
-      let sendObj: SendObjType = {
-        user: receipientName.id.toString(),
-        package_type: item?.type?.id?.toString(),
-        ship: val?.shipName?.id.toString(),
-        carrier: item?.carrier?.id?.toString(),
-        shelf: val?.location,
-        tracking_no: item?.trackingId,
-        condition: item?.condition?.name,
-        custom_message: item?.message,
-        selected_status: item?.status?.id,
-        images: [
-          item?.imagesObj?.image1,
-          item?.imagesObj?.image2,
-          item?.imagesObj?.image3,
-        ].filter(image => image),
-      };
-console.log('sendObj',sendObj)
-      const packageRes = await postPackage(user, sendObj);
-      console.log('packageRes=======',packageRes)
+    try {
+      for (let item of packages) {
+        let sendObj: SendObjType = {
+          user: receipientName.id.toString(),
+          package_type: item?.type?.id?.toString(),
+          ship: val?.shipName?.id.toString(),
+          carrier: item?.carrier?.id?.toString(),
+          shelf: val?.location,
+          tracking_no: item?.trackingId,
+          condition: item?.condition?.name,
+          custom_message: item?.message,
+          selected_status: item?.status?.id,
+          images: [
+            item?.imagesObj?.image1,
+            item?.imagesObj?.image2,
+            item?.imagesObj?.image3,
+          ].filter(image => image),
+        };
+        console.log('sendObj', sendObj)
+        const packageRes = await postPackage(user, sendObj);
+        console.log('packageRes=======', packageRes)
 
-      const mailData = {
-        ids: [packageRes?.id],
-        package_status: parseInt(item?.status?.id),
-      };
+        const mailData = {
+          ids: [packageRes?.id],
+          package_status: parseInt(item?.status?.id),
+        };
 
-      if (isNotify) {
-        await sendEmail(user, mailData);
+        if (isNotify) {
+          await sendEmail(user, mailData);
+        }
+
+        response.push(packageRes);
       }
 
-      response.push(packageRes);
+      // SUCCESS
+      if (packages[0]?.trackingId == response[0]?.tracking_no) {
+        setPackages([]);
+        setSuccessModalVisible(true);
+        setResponseData(response);
+
+        DeviceEventEmitter.emit('add_package_success');
+
+        setLatestGemini(null);
+        setBackgroundExtracted(null);
+        setCapturedImagePath(null);
+        setOcrText('');
+        setShipName(null);
+        setReceipientName(null);
+        setLocation('');
+
+        fetchDashboard();
+      }
+
+      setSubmitLoading(false);
+
+    } catch (error: any) {
+      console.log('ERROR >>>', JSON.stringify(error, null, 2));
+
+      // ✅ ALERT FORCE SHOW
+      setTimeout(() => {
+        Alert.alert(
+          'Something went wrong',
+          'Package creation failed.',
+        );
+      }, 100);
+      setSubmitLoading(false);
     }
-
-    // SUCCESS
-    if (packages[0]?.trackingId == response[0]?.tracking_no) {
-      setPackages([]);
-      setSuccessModalVisible(true);
-      setResponseData(response);
-
-      DeviceEventEmitter.emit('add_package_success');
-
-      setLatestGemini(null);
-      setBackgroundExtracted(null);
-      setCapturedImagePath(null);
-      setOcrText('');
-      setShipName(null);
-      setReceipientName(null);
-      setLocation('');
-
-      fetchDashboard();
-    }
-
-    setSubmitLoading(false);
-
-  } catch (error: any) {
-    console.log('ERROR >>>', JSON.stringify(error, null, 2));
-
-    // ✅ ALERT FORCE SHOW
-    setTimeout(() => {
-      Alert.alert(
-        'Something went wrong',
-        'Package creation failed.',
-      );
-    }, 100);
- setSubmitLoading(false);
-  }
-};
+  };
 
   const [dashboardData, setDashboardData] = useState({
     loggedToday: 0,
@@ -442,6 +442,51 @@ console.log('sendObj',sendObj)
           />
         </View>
 
+        <Modal
+          visible={showShipAlert}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowShipAlert(false)}
+        >
+          <View style={modalStyles.overlay}>
+            <View style={modalStyles.container}>
+              <Text style={modalStyles.title}>
+               belongs to another ship.
+              </Text>
+
+              <Text style={modalStyles.message}>
+                Do you still want to proceed?
+              </Text>
+
+              <View style={modalStyles.buttonRow}>
+                <TouchableOpacity
+                  style={[modalStyles.button, modalStyles.cancelBtn]}
+                  onPress={() => setShowShipAlert(false)}
+                >
+                  <Text style={modalStyles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[modalStyles.button, modalStyles.yesBtn]}
+                  onPress={() => {
+                    setShowShipAlert(false);
+
+                    const submitData = {
+                      shipName,
+                      receipientName,
+                      divisionName,
+                      location,
+                    };
+
+                    onCreatePackage(submitData);
+                  }}
+                >
+                  <Text style={modalStyles.yesText}>Yes</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
         {/* ── AddPackageModal — no scanner inside ─────────── */}
         <AddPackageModal
           isVisible={isVisible}
@@ -485,7 +530,7 @@ console.log('sendObj',sendObj)
             />
           }
         >
-          <TouchableOpacity activeOpacity={1} style={{ flex: 1}}>
+          <TouchableOpacity activeOpacity={1} style={{ flex: 1 }}>
             <Dashboard
               userName={user?.firstname || 'CMS'}
               dashboard={dashboardinfo}
@@ -577,14 +622,15 @@ console.log('sendObj',sendObj)
                     showToast('Please add at least one Package information', '', 3000);
                     return;
                   } else if (val?.receipientName?.ship != val?.shipName?.name) {
-                    Alert.alert(
-                      'The recipient belongs to another ship.',
-                      'Do you still want to proceed?',
-                      [
-                        { text: 'Cancel' },
-                        { text: 'Yes', onPress: () => onCreatePackage(val) },
-                      ],
-                    );
+                    // Alert.alert(
+                    //   'The recipient belongs to another ship.',
+                    //   'Do you still want to proceed?',
+                    //   [
+                    //     { text: 'Cancel' },
+                    //     { text: 'Yes', onPress: () => onCreatePackage(val) },
+                    //   ],
+                    // );
+                    setShowShipAlert(true);
                   } else {
                     onCreatePackage(val);
                   }
@@ -618,6 +664,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, dashboard, isInternet, 
   const { user } = useAuth();
   return (
     <View style={styles.container}>
+
       <View style={styles.header}>
         <View style={styles.greetingContainer}>
           <Text style={[styles.greeting, { fontSize: isPad ? 27 : 17 }]}>
@@ -651,10 +698,10 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, dashboard, isInternet, 
             style={StyleSheet.absoluteFill}
           />
 
-          <Text style={[isPad ? styles.statNumberIpad : styles.statNumber, { fontFamily: 'OctoberCompressBold' }]}>
+          <Text style={[isPad ? styles.statNumberIpad : styles.statNumber, { fontFamily: FONTS.RICORDOBold }]}>
             {formatNumber(dashboard?.scannedToday || 0)}
           </Text>
-          <Text style={[isPad ? styles.statLabelIpad : styles.statLabel, { fontFamily: 'OctoberCompressBold' }]}>
+          <Text style={[isPad ? styles.statLabelIpad : styles.statLabel, { fontFamily: FONTS.RICORDOBold }]}>
             Logged Today
           </Text>
         </TouchableOpacity>
@@ -672,10 +719,10 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, dashboard, isInternet, 
             style={StyleSheet.absoluteFill}
           />
 
-          <Text style={[isPad ? styles.statNumberIpad : styles.statNumber, { fontFamily: 'OctoberCompressBold' }]}>
+          <Text style={[isPad ? styles.statNumberIpad : styles.statNumber, { fontFamily: FONTS.RICORDOBold }]}>
             {formatNumber(dashboard?.todayCollection || 0)}
           </Text>
-          <Text style={[isPad ? styles.statLabelIpad : styles.statLabel, { fontFamily: 'OctoberCompressBold' }]}>
+          <Text style={[isPad ? styles.statLabelIpad : styles.statLabel, { fontFamily: FONTS.RICORDOBold }]}>
             Total Summary
           </Text>
         </TouchableOpacity>
@@ -699,7 +746,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15, shadowRadius: 4, elevation: 3,
   },
   ocrTxt: {
-    fontSize: isIPad ? 20 : 15, fontFamily: FONTS.PoppinsSemiBold, color: '#223890',
+    fontSize: isIPad ? 20 : 15, fontFamily: FONTS.RICORDOBold, color: '#223890',
   },
   // ── Dashboard ────────────────────────────────────────────
   header: {
@@ -708,8 +755,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: isIPad ? 30 : 5,
   },
   greetingContainer: { flex: 1 },
-  greeting: { fontSize: 17, fontFamily: FONTS.PoppinsRegular, color: '#223890' },
-  userName: { fontSize: 32, fontFamily: FONTS.PoppinsRegular, color: '#223890', fontWeight: '600' },
+  greeting: { fontSize: 20, fontFamily: FONTS.RICORDOSemiBold, color: '#223890' },
+  userName: { fontSize: 35, fontFamily: FONTS.RICORDORegular, color: '#223890', fontWeight: '600' },
   statsContainer: { flexDirection: 'row', justifyContent: isIPad ? 'space-around' : 'space-between' },
   statCard: {
     backgroundColor: '#223890', borderRadius: 10, padding: 20,
@@ -719,8 +766,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#223890', borderRadius: 20, padding: 25, paddingVertical: 45,
     width: '45%', marginBottom: 10, alignItems: 'center', zIndex: 1,
   },
-  statNumber: { fontSize: 26, fontFamily: FONTS.PoppinsMedium, color: '#fff' },
-  statNumberIpad: { fontSize: 45, fontFamily: FONTS.PoppinsMedium, color: '#fff', fontWeight: '600' },
+  statNumber: { fontSize: 26, fontFamily: FONTS.RICORDOSemiBold, color: '#fff' },
+  statNumberIpad: { fontSize: 45, fontFamily: FONTS.RICORDOSemiBold, color: '#fff', fontWeight: '600' },
   statLabel: { fontSize: 15, color: '#fff', marginTop: 5, textAlign: 'center' },
   statLabelIpad: { fontSize: 25, color: '#fff', marginTop: 5, textAlign: 'center' },
   // ── Bottom bar ───────────────────────────────────────────
@@ -730,10 +777,80 @@ const styles = StyleSheet.create({
   },
   button: { flex: 1, marginHorizontal: 10, height: 50, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   buttonI: { flex: 1, marginHorizontal: 10, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center' },
-  buttonText: { color: '#fff', fontSize: 16, fontFamily: FONTS.PoppinsSemiBold },
-  buttonTextI: { color: '#fff', fontSize: 25, fontFamily: FONTS.PoppinsSemiBold },
+  buttonText: { color: '#fff', fontSize: 16, fontFamily: FONTS.RICORDOBold },
+  buttonTextI: { color: '#fff', fontSize: 25, fontFamily: FONTS.RICORDOBold },
   network: { height: isIPad ? 55 : 30, width: isIPad ? 55 : 30, tintColor: 'green' },
   networkI: { height: isIPad ? 55 : 30, width: isIPad ? 55 : 30, tintColor: '#c93a3a' },
+});
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+
+  container: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 24,
+  },
+
+  title: {
+    fontSize: 18,
+    color: '#223890',
+    textAlign: 'center',
+    fontFamily: FONTS.RICORDOBold, // Custom Font
+  },
+
+  message: {
+    fontSize: 15,
+    color: '#555',
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 22,
+    fontFamily: FONTS.RICORDORegular, // Custom Font
+  },
+
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 24,
+  },
+
+  button: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  cancelBtn: {
+    backgroundColor: '#E5E7EB',
+    marginRight: 8,
+  },
+
+  yesBtn: {
+    backgroundColor: '#223890',
+    marginLeft: 8,
+  },
+
+  cancelText: {
+    color: '#333',
+    fontSize: 15,
+    fontFamily: FONTS.RICORDOSemiBold,
+  },
+
+  yesText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontFamily: FONTS.RICORDOSemiBold,
+  },
 });
 
 export { Home };

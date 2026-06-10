@@ -175,7 +175,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
                 <Text
                   style={{
                     fontSize: isIPad ? 22 : 12,
-                    fontFamily: FONTS.PoppinsRegular,
+                    fontFamily: FONTS.RICORDORegular,
                     color: 'black',
                   }}>
                   Checkouts
@@ -188,7 +188,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
                 <Text
                   style={{
                     fontSize: isIPad ? 22 : 12,
-                    fontFamily: FONTS.PoppinsRegular,
+                    fontFamily: FONTS.RICORDORegular,
                     color: 'black',
                     marginLeft: isIPad ? 15 : 7,
                     backgroundColor: '#fff'
@@ -257,15 +257,15 @@ const styles = StyleSheet.create({
   checkboxI: { width: 26, height: 26, borderWidth: 1, borderColor: '#D6D6D6', borderRadius: 4 },
   selectcheckbox: { width: 22, height: 22, backgroundColor: '#223890', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
   selectcheckboxI: { width: 28, height: 28, backgroundColor: '#223890', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
-  selectAllText: { color: 'black', fontFamily: FONTS.PoppinsRegular, marginLeft: 10, fontWeight: '600' },
+  selectAllText: { color: 'black', fontFamily: FONTS.RICORDORegular, marginLeft: 10, fontWeight: '600' },
   actionsContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   actionButton: { width: 90, height: 40, borderRadius: 20, marginRight: 5, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 1.84 },
   actionButtonI: { width: 180, height: 70, borderRadius: 40, marginRight: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 1.84 },
-  actionText: { fontSize: 14, color: 'black', fontFamily: FONTS.PoppinsRegular },
+  actionText: { fontSize: 14, color: 'black', fontFamily: FONTS.RICORDORegular },
   tick: { height: 9, width: 13, tintColor: 'white' },
   tickI: { height: 12, width: 17, tintColor: 'white' },
-  countNu: { fontSize: 14, color: 'black', fontFamily: FONTS.PoppinsSemiBold, flex: 1 },
-  clear: { fontSize: 14, color: '#223890', fontFamily: FONTS.PoppinsRegular },
+  countNu: { fontSize: 14, color: 'black', fontFamily: FONTS.RICORDOSemiBold, flex: 1 },
+  clear: { fontSize: 14, color: '#223890', fontFamily: FONTS.RICORDORegular },
   network: { height: 25, width: 25, tintColor: 'green', marginRight: 10 },
   networkI: { height: isIPad?40:20, width: isIPad?40:20, tintColor: '#c93a3a', marginRight: 10 },
   actionButtonCheck: { paddingHorizontal: 10, height: 40, borderRadius: 30, marginEnd: 5, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 1.84 },

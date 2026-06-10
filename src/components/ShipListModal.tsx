@@ -339,7 +339,7 @@ const ShipListModal: React.FC<ShipListProps> = ({
                           (item.id == 1 || item.id == 2)
                             ? {
                                 // fontWeight:
-                                fontFamily: FONTS.PoppinsBold,
+                                fontFamily: FONTS.RICORDOBold,
                               }
                             : {},
                         ]}
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 16,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     color: 'black',
     marginLeft: 10,
     width: width * 0.5,
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: 'black',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     marginHorizontal: 20,
   },
   shipText: {
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop:2,
     color: 'grey',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     marginHorizontal: 20,
   },
   lineView: {

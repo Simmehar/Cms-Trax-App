@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: '#1A1A1A',
     fontSize: isPad ? 26 : 19,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     fontWeight: '700',
   },
   backBtn: {
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#666',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   errorContainer: {
     backgroundColor: '#FFE5E5',
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#CC0000',
     fontSize: 14,
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     marginBottom: 10,
   },
   retryButton: {
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     fontWeight: '600',
   },
   topRow: {
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: '#002B45',
     fontWeight: 'bold',
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     marginBottom: 8,
   },
   totalCount: {
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   timeLabel: {
     fontSize: 15,
     color: '#666',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   timeValue: {
     fontWeight: '600',
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#333',
     fontWeight: '500',
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   emptyContainer: {
     paddingVertical: 50,
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#999',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   cardsContainer: {
     backgroundColor: '#F2F2F2',
@@ -437,13 +437,13 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 14,
     color: '#87CEFA',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     fontWeight: '600',
   },
   detailValue: {
     fontSize: 14,
     color: '#444',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
     flex: 1,
     textAlign: 'right',
   },
@@ -485,18 +485,18 @@ const styles = StyleSheet.create({
   loggedInLabel: {
     fontSize: 16,
     color: '#333',
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   loggedOutLabel: {
     fontSize: 16,
     color: '#8B2121',
-    fontFamily: FONTS.PoppinsSemiBold,
+    fontFamily: FONTS.RICORDOSemiBold,
     marginBottom: 5,
   },
   summaryCount: {
     fontSize: 32,
     fontWeight: 'bold',
-    fontFamily: FONTS.PoppinsBold,
+    fontFamily: FONTS.RICORDOBold,
     color: '#002B45',
   },
 
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
   timeSpentLabel: {
     fontSize: 13,
     color: '#777',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   timeRangeRow: {
     flexDirection: 'row',
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
   timeRangeLabel: {
     fontSize: 13,
     color: '#777',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   userCard: {
     backgroundColor: '#FFFFFF',
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#002B45',
     fontWeight: '700',
-    fontFamily: FONTS.PoppinsBold,
+    fontFamily: FONTS.RICORDOBold,
     marginBottom: 4,
   },
   userAvatar: {
@@ -573,12 +573,12 @@ const styles = StyleSheet.create({
   userLoggedInText: {
 
     fontSize: 14,
-    fontFamily: FONTS.PoppinsMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
     marginBottom: 2,
   },
   userLoggedOutText: {
     fontSize: 14,
-    fontFamily: FONTS.PoppinsMedium,
+    fontFamily: FONTS.RICORDOSemiBold,
   },
   countText: {
     fontWeight: 'bold', // Make numbers bold
@@ -596,16 +596,16 @@ const styles = StyleSheet.create({
   footerLabel: {
     fontSize: 13,
     color: '#9EABB8', // Muted grey from screenshot
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   footerValue: {
     color: '#9EABB8',
-    fontFamily: FONTS.PoppinsRegular,
+    fontFamily: FONTS.RICORDORegular,
   },
   timeRangeValue: {
     fontSize: 13,
     color: '#002B45', // Darker blue/black for the actual time
-    fontFamily: FONTS.PoppinsBold,
+    fontFamily: FONTS.RICORDOBold,
     fontWeight: '800',
   },
   listWrapper: {

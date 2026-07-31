@@ -27,6 +27,7 @@ import {
 import { sortTrackingNumber } from '../functions/SortTrackingNumber';
 import { recipientSearchApi } from '../utilities/ApiCalls';
 import { GeminiExtractionResult } from './SmartDocumentScanner';
+import { useTranslation } from 'react-i18next';
 
 let isPad = CheckIpad();
 const screenhight = Dimensions.get('window').height;
@@ -269,7 +270,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
   const [visible, setVisible] = useState(false);
   const searchAbortRef = useRef<AbortController | null>(null);
   const { shipList, user } = usePackageContext();
-
+  const { t } = useTranslation();
   console.log('[BottomDrawer] ocrText received:', ocrText);
   console.log('[BottomDrawer] geminiExtracted:', geminiExtracted);
 
@@ -586,7 +587,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
           <View style={styles.subContain}>
 
             <InputPicker
-              isPicker={true} isQrCode={false} placeholder={'Ship/department*'}
+              isPicker={true} isQrCode={false} placeholder={t('Ship/Building*')}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => { oncloseBottomModal(); setVisible(true); setActiveTab('Ship'); }}
               onChangeText={() => { }} pickerValue={shipName?.name}
@@ -596,7 +597,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
             )}
 
             <InputPicker
-              isPicker={true} isQrCode={false} placeholder={'Recipient*'}
+              isPicker={true} isQrCode={false} placeholder={t('Recipient*')}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => {
                 oncloseBottomModal(); setVisible(true); setActiveTab('Rceipient');
@@ -619,8 +620,8 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
             )}
 
             <InputPicker
-              isPicker={true} disablePicker={true} isQrCode={false} placeholder={'Department'}
-              placeholerstyle={{fontFamily: FONTS.RICORDORegular}}
+              isPicker={true} disablePicker={true} isQrCode={false} placeholder={t('Department')}
+              placeholerstyle={{ fontFamily: FONTS.RICORDORegular }}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => { setVisible(true); setActiveTab('Division'); }}
               editable={'false'} pickerValue={divisionName?.name}
@@ -628,8 +629,13 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
             />
 
             <InputPicker
-              isPicker={false} isQrCode={false} placeholder={'Location*'}
-              
+              isPicker={false} isQrCode={false} placeholder={t('Location*')}
+              placeholerstyle={{ fontFamily: FONTS.RICORDORegular }}
+              inputView={{
+                paddingTop: isPad ? 20 : 10,
+                paddingBottom: isPad ? 10 : 10,
+              }}
+              style={{ marginLeft: 0, padding: 0, margin: 0 }}
               autoCapitalize={'words'} onPickerClick={() => { }}
               pickerValue={location}
               onChangeText={val => {
@@ -650,7 +656,7 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
                   </View>
                 }
               </TouchableOpacity>
-              <Text style={styles.sendTxt}>Send notification</Text>
+              <Text style={styles.sendTxt}>{t('Send notification')}</Text>
             </View>
 
           </View>

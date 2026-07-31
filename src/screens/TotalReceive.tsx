@@ -19,6 +19,7 @@ import { useAuth } from '../contexts';
 import { getTotalReceived } from '../utilities/ApiCalls';
 import ReceiveFiltersModal from '../components/ReceiveFilterModal';
 import { useNavigationContext } from '../contexts/navigationcontext';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const isPad = CheckIpad();
@@ -44,6 +45,7 @@ interface TotalReceivedData {
 const TotalReceive = ({ navigation }: any) => {
   const { user } = useAuth();
   const { setSearchActive } = useNavigationContext();
+  const { t } = useTranslation();
   // State management
   const [totalData, setTotalData] = useState<TotalReceivedData>({
     total_packages: 0,
@@ -65,7 +67,7 @@ const TotalReceive = ({ navigation }: any) => {
     try {
       setError(null);
       if (!user?.token) {
-        throw new Error('User token not available');
+       throw new Error(t('User token not available'));
       }
 
       const data = await getTotalReceived(user);
@@ -83,8 +85,8 @@ const TotalReceive = ({ navigation }: any) => {
       setFilteredData(null);
     } catch (err) {
       console.error('Error fetching total received data:', err);
-      setError('Failed to load total received data');
-      Alert.alert('Error', 'Failed to load total received data');
+     setError(t('Failed to load total received data'));
+Alert.alert(t('Error'), t('Failed to load total received data'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -161,13 +163,13 @@ const TotalReceive = ({ navigation }: any) => {
           <TouchableOpacity onPress={handleBackPress} style={styles.backBtn}>
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Total Received</Text>
+          <Text style={styles.headerTitle}>{t('Total Received')}</Text>
           <View style={{ width: 40 }} />
         </View>
 
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#223890" />
-          <Text style={styles.loadingText}>Loading data...</Text>
+          <Text style={styles.loadingText}>{t('Loading data...')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -182,7 +184,7 @@ const TotalReceive = ({ navigation }: any) => {
         <TouchableOpacity onPress={handleBackPress} style={styles.backBtn}>
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Total Summary</Text>
+        <Text style={styles.headerTitle}>{t('Total Summary')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -195,7 +197,7 @@ const TotalReceive = ({ navigation }: any) => {
         <View style={styles.summaryCard}>
           <View style={styles.summarySection}>
             <View style={styles.labelRow}>
-              <Text style={styles.loggedInLabel}>Logged In:</Text>
+              <Text style={styles.loggedInLabel}>{t('Logged In')}:</Text>
             </View>
             <Text style={[styles.summaryCount, { color: '#2D543F' }]}>{displayData.total_logged_in || 0}</Text>
           </View>
@@ -203,7 +205,7 @@ const TotalReceive = ({ navigation }: any) => {
           <View style={styles.divider} />
 
           <View style={styles.summarySection}>
-            <Text style={styles.loggedOutLabel}>Logged Out:</Text>
+            <Text style={styles.loggedOutLabel}>{t('Logged Out')}:</Text>
             <Text style={[styles.summaryCount, { color: '#8B2121' }]}>{displayData.total_logged_out || 0}</Text>
           </View>
         </View>
@@ -230,10 +232,10 @@ const TotalReceive = ({ navigation }: any) => {
                   <Text style={styles.userName}>{item.user_name}</Text>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }} >
                     <Text style={styles.userLoggedOutText} >
-                      Logged Out: <Text style={styles.countText}>{item.logged_out_count}</Text>
+                      {t('Logged Out')}: <Text style={styles.countText}>{item.logged_out_count}</Text>
                     </Text>
                     <Text style={styles.userLoggedInText}>
-                      Logged In: <Text style={styles.countText}>{item.logged_in_count}</Text>
+                      {t('Logged In')}: <Text style={styles.countText}>{item.logged_in_count}</Text>
                     </Text>
 
 
@@ -245,11 +247,11 @@ const TotalReceive = ({ navigation }: any) => {
               <View style={styles.cardDivider} />
 
               <View style={styles.footerRow}>
-                <Text style={styles.footerLabel}>Time Spent: <Text style={styles.footerValue}>{item.time_spent}</Text></Text>
+                <Text style={styles.footerLabel}>{t('Time Spent')}: <Text style={styles.footerValue}>{item.time_spent}</Text></Text>
               </View>
 
               <View style={styles.footerRow}>
-                <Text style={styles.footerLabel}>Time Range</Text>
+                <Text style={styles.footerLabel}>{t('Time Range')}</Text>
                 <Text style={styles.timeRangeValue}>{item.time_range}</Text>
               </View>
             </TouchableOpacity>

@@ -18,6 +18,8 @@ import { sortTrackingNumber } from '../functions/SortTrackingNumber';
 import { LoadImage } from './LoadImage';
 import FastImage from 'react-native-fast-image';
 import { useMode } from '../db/db.context';
+import { useTranslation } from 'react-i18next';
+import i18n from '../localization/i18n';
 
 interface Ship {
   id: number;
@@ -124,6 +126,8 @@ const PackageList = React.memo(({
 }: PackageListProps) => {
   const flatListRef = useRef(null);
   const { isOnline } = useMode();
+  const { t } = useTranslation();
+  console.log('i18n.language',typeof(i18n.language))
   // const packages: any = [];
   const renderItem = useCallback(({ item, index }: { item: Package; index: number }) => {
     // __DEV__ && console.log('item?.user', item);
@@ -182,7 +186,7 @@ const PackageList = React.memo(({
                     paddingVertical: 3,
                     fontFamily: FONTS.RICORDOSemiBold,
                   }}>
-                  Inactive
+                  {t('Inactive')}
                 </Text>
               </View>
             )}
@@ -226,7 +230,7 @@ const PackageList = React.memo(({
                 paddingVertical: 3,
                 fontFamily: FONTS.RICORDOSemiBold,
               }}>
-              Inactive
+              {t('Inactive')}
             </Text>
           </View>
         )}
@@ -234,7 +238,7 @@ const PackageList = React.memo(({
           <View style={{ width: '50%' }}>
             <View style={styles.detailcontainer}>
               <Text style={[styles.label, { fontSize: isIPad ? 23 : 18 }]}>
-                Loc/Tag:
+                {t('Loc/Tag')}:
               </Text>
               <Text
                 style={[
@@ -247,7 +251,7 @@ const PackageList = React.memo(({
 
             <View style={styles.detailcontainer}>
               <Text style={[styles.label, { fontSize: isIPad ? 23 : 18 }]}>
-                Tracking#:
+                {t('Tracking#')}:
               </Text>
               <Text style={styles.value}>
                 {sortTrackingNumber(item.tracking_no || '')}
@@ -256,7 +260,7 @@ const PackageList = React.memo(({
 
             {/* <View style={{flexDirection:isIPad?'row':'column'}}> */}
             <View style={styles.detailcontainer}>
-              <Text style={styles.label}>Ship:</Text>
+              <Text style={styles.label}>{t('Ship')}:</Text>
               <Text style={[styles.value, { width: isIPad ? '100%' : 'auto', fontSize: isIPad ? 23 : 18 }]} numberOfLines={1}>
                 {sortShipName(item?.ship?.name || item?.ship_name)}
 
@@ -352,9 +356,14 @@ const PackageList = React.memo(({
   }, [onItemPress, onArrowClick]);
 
   const renderEmptyList = () => (
+    
     <View style={styles.emptyListContainer}>
+      
       <Image
-        source={IMAGES.package.packagesnotfound}
+        source={ i18n.language === 'en'
+      ? IMAGES.package.packagesnotfound 
+      : IMAGES.package.packagesnotfoundspain
+  }
         style={styles.emptyListImage}
       />
     </View>

@@ -19,6 +19,7 @@ import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { useAuth } from '../contexts';
 import ImagePreview from '../screens/ImagePreview';
+import { useTranslation } from 'react-i18next';
 
 // Extend dayjs with the customParseFormat plugin
 dayjs.extend(customParseFormat);
@@ -30,6 +31,7 @@ interface packaegInfo {
   navigation: any;
 }
 let isPad = CheckIpad();
+  const { t, i18n } = useTranslation();
 
 const Status: any = [10050, 10060, 10140, 10090, 10270, 10280];
 
@@ -174,13 +176,13 @@ const [ShowImage, setShowImage] = useState([]);
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={[styles.rowView, { marginTop: 15 }]}>
               <Text style={styles.leftTxt}>
-                Tracking#:{' '}
+              {t('Tracking')}#:{" "}
                 <Text style={styles.rightTxt}>{item?.tracking_no}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Ship:{' '}
+               {t('Ship')}:{' '}
                 <Text style={styles.rightTxt}>
                   {item?.ship_name || item?.ship?.name}
                 </Text>{' '}
@@ -188,17 +190,17 @@ const [ShowImage, setShowImage] = useState([]);
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Location: <Text style={styles.rightTxt}>{item?.shelf}</Text>{' '}
+                {t('Location')}: <Text style={styles.rightTxt}>{item?.shelf}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Tag#: <Text style={styles.rightTxt}>{item?.tag_number}</Text>{' '}
+               {t('Tag#')}:  <Text style={styles.rightTxt}>{item?.tag_number}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Division:{' '}
+                {t('Division')}{' '}
                 <Text style={styles.rightTxt}>
                   {item?.department_name}
                 </Text>{' '}
@@ -212,12 +214,12 @@ const [ShowImage, setShowImage] = useState([]);
               </View> */}
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Carrier: <Text style={styles.rightTxt}>{item?.carrier}</Text>{' '}
+                {t('Carrier')} <Text style={styles.rightTxt}>{item?.carrier}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Status:{' '}
+                {t('Status')}:{' '}
                 <Text style={styles.rightTxt}>{item?.current_status}</Text>{' '}
               </Text>
             </View>
@@ -233,7 +235,7 @@ const [ShowImage, setShowImage] = useState([]);
             </View> */}
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Log-In By:{' '}
+                {t('Log-In By')}
                 <Text style={styles.rightTxt}>
                   {item?.package_tracking?.[0]?.done_by_user || item?.logInBy}
                 </Text>{' '}
@@ -243,7 +245,7 @@ const [ShowImage, setShowImage] = useState([]);
             <View>
               <View style={[styles.rowView, { marginTop: 10 }]}>
                 <Text style={styles.leftTxt}>
-                  Log-Out:{' '}
+                  {t('Log-Out')}:{' '}
                   <Text style={styles.rightTxt}>
                     {formatDateTime(item?.Logout ? item?.Logout : '-')}
                   </Text>{' '}
@@ -252,7 +254,7 @@ const [ShowImage, setShowImage] = useState([]);
 
               <View style={[styles.rowView, { marginTop: 10 }]}>
                 <Text style={styles.leftTxt}>
-                  Log-Out By:{' '}
+                   {t('Log-Out By')}:{' '}
                   <Text style={styles.rightTxt}>
                     {user?.firstname ? user?.firstname : '-'}
                   </Text>{' '}
@@ -261,14 +263,14 @@ const [ShowImage, setShowImage] = useState([]);
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Amount Paid:{' '}
+                 {t('Amount Paid')}:{' '}
                 <Text style={styles.rightTxt}> ${item?.cashReceived}</Text>{' '}
               </Text>
             </View>
 
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Type:{' '}
+                 {t('Type')}:{' '}
                 <Text style={styles.rightTxt}>
                   {item?.package_type?.name || item?.packageType}
                 </Text>{' '}
@@ -276,14 +278,14 @@ const [ShowImage, setShowImage] = useState([]);
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Condition:{' '}
+                {t('Condition')}:{' '}
                 <Text style={styles.rightTxt}>{item?.condition}</Text>{' '}
               </Text>
             </View>
 
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Message:{' '}
+                {t('Message')}:{' '}
                 <Text style={styles.rightTxt}>{item?.custom_message ? item?.custom_message : '-'}</Text>{' '}
               </Text>
             </View>
@@ -297,7 +299,7 @@ const [ShowImage, setShowImage] = useState([]);
             </View>
             <View style={{ marginVertical: 15 }}>
               <Text style={styles.leftTxt}>
-                Logged-Out Image(s):
+               {t('Logged-Out Image(s)')}
 
               </Text>
             </View>

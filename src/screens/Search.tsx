@@ -34,11 +34,12 @@ import RNFS from "react-native-fs";
 import { AdvancedForms as AdvancedFormsDB } from '../db/db.crud';
 import { useRoute } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 
 const Search = () => {
   const navigation = useNavigation<any>();
-
+ const { t, i18n } = useTranslation();
   const [isModalVisible, setModalVisible] = useState(false);
   const [visible, setVisible] = useState(false);
   const { user } = useAuth();
@@ -114,6 +115,7 @@ const Search = () => {
     setSortingOrder,
     setSelectedShipIdDB,
   } = useMode();
+  console.log('dbPackages==========',dbPackages)
   const handleSelectAll = (value: string) => {
 
     setSelectAllChecked(!selectAllChecked);
@@ -179,33 +181,33 @@ const Search = () => {
   }, [packageList, dbPackages, sortingOrder]);
 
 
-const onItemPress = (item: Package, index: number) => {
-  // Pure item object ko safety ke sath naye reference ke sath copy karein
-  let arr = flatListData.map((pkg: Package, idx: number) => 
-    idx === index ? { ...pkg, isSelect: !pkg.isSelect } : pkg
-  );
+  const onItemPress = (item: Package, index: number) => {
+    // Pure item object ko safety ke sath naye reference ke sath copy karein
+    let arr = flatListData.map((pkg: Package, idx: number) =>
+      idx === index ? { ...pkg, isSelect: !pkg.isSelect } : pkg
+    );
 
-  let selectArr = [...selectedArr];
-  let count = selectCount;
+    let selectArr = [...selectedArr];
+    let count = selectCount;
 
-  if (!flatListData[index].isSelect) { // Checked logic state safely
-    if (!selectArr.some(i => i.id === item.id)) {
-      selectArr.push({ ...item, isSelect: true });
-      count += 1;
+    if (!flatListData[index].isSelect) { // Checked logic state safely
+      if (!selectArr.some(i => i.id === item.id)) {
+        selectArr.push({ ...item, isSelect: true });
+        count += 1;
+      }
+    } else {
+      let dex = selectArr.findIndex(i => i.id === item.id);
+      if (dex > -1) {
+        selectArr.splice(dex, 1);
+        count = Math.max(0, count - 1);
+      }
     }
-  } else {
-    let dex = selectArr.findIndex(i => i.id === item.id);
-    if (dex > -1) {
-      selectArr.splice(dex, 1);
-      count = Math.max(0, count - 1);
-    }
-  }
 
-  setPackageListData(arr);
-  setFlatListData(arr);
-  setSelectedArr(selectArr);
-  setSelectCount(count);
-};
+    setPackageListData(arr);
+    setFlatListData(arr);
+    setSelectedArr(selectArr);
+    setSelectCount(count);
+  };
 
 
   // __DEV__ && console.log('selectArr', selectedArr);
@@ -237,20 +239,20 @@ const onItemPress = (item: Package, index: number) => {
     }
   }, [selectedArr]);
 
-const onClear = () => {
-  let baseArr = isOnline ? packageListData : dbPackages;
-  // Create a brand new array reference with reset elements
-  let clearedArr = baseArr?.map(i => ({ ...i, isSelect: false })) || [];
-  
-  setSelectCount(0);
-  setPackageListData(clearedArr);
-  setFlatListData(clearedArr); // Flatlist state also cleared cleanly
-  setSelectAllChecked(false);
-  setSelectedArr([]);
-  setSelectedShip(null);
-  setSelectedShipIdDB();
-  setSortingOrder(false);
-};
+  const onClear = () => {
+    let baseArr = isOnline ? packageListData : dbPackages;
+    // Create a brand new array reference with reset elements
+    let clearedArr = baseArr?.map(i => ({ ...i, isSelect: false })) || [];
+
+    setSelectCount(0);
+    setPackageListData(clearedArr);
+    setFlatListData(clearedArr); // Flatlist state also cleared cleanly
+    setSelectAllChecked(false);
+    setSelectedArr([]);
+    setSelectedShip(null);
+    setSelectedShipIdDB();
+    setSortingOrder(false);
+  };
 
 
   const onArrowClick = (item: Package) => {
@@ -420,16 +422,16 @@ const onClear = () => {
     fetchData(inputValue);
   };
 
- useEffect(() => {
-  const subscription = DeviceEventEmitter.addListener('refetchPackages', () => {
-    refetchData();
-    onClear();
-  });
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener('refetchPackages', () => {
+      refetchData();
+      onClear();
+    });
 
-  return () => {
-    subscription.remove(); // Unmount hote hi memory clean up
-  };
-}, []);
+    return () => {
+      subscription.remove(); // Unmount hote hi memory clean up
+    };
+  }, []);
 
 
   const loadMoreData = () => {
@@ -474,33 +476,33 @@ const onClear = () => {
   // useEffect(() => {
   //   debounced(inputValue, 1000);
   // }, [inputValue]);
-  console.log('setShowOfflineAlert',setShowOfflineAlert)
+  console.log('setShowOfflineAlert', setShowOfflineAlert)
   useEffect(() => {
-  const handleNetworkChange = async () => {
-    // Network status abhi load nahi hua
-    if (isInternet === null || isInternet === undefined) {
-      return;
-    }
-
-    if (isInternet) {
-      setIsNet(true);
-      setShowOfflineAlert(false);
-    } else {
-      setIsNet(false);
-
-      const hasShown = await AsyncStorage.getItem('hasShownOfflineMode');
-
-      if (hasShown !== 'true') {
-        setShowOfflineAlert(true);
+    const handleNetworkChange = async () => {
+      // Network status abhi load nahi hua
+      if (isInternet === null || isInternet === undefined) {
+        return;
       }
-    }
-  };
 
-  handleNetworkChange();
-}, [isInternet]);
-useEffect(() => {
-  console.log('isInternet:=========', isInternet);
-}, [isInternet]);
+      if (isInternet) {
+        setIsNet(true);
+        setShowOfflineAlert(false);
+      } else {
+        setIsNet(false);
+
+        const hasShown = await AsyncStorage.getItem('hasShownOfflineMode');
+
+        if (hasShown !== 'true') {
+          setShowOfflineAlert(true);
+        }
+      }
+    };
+
+    handleNetworkChange();
+  }, [isInternet]);
+  useEffect(() => {
+    console.log('isInternet:=========', isInternet);
+  }, [isInternet]);
 
   const handleCloseOfflineMode = async () => {
     setShowOfflineAlert(false); // Modal hide karein
@@ -602,7 +604,10 @@ useEffect(() => {
       const records = await AdvancedFormsDB.getAllRecords();
 
       if (!records || records.length === 0) {
-        Alert.alert("No Data", "No offline records found.");
+        Alert.alert(
+          t('No Data'),
+          t('No offline records found.')
+        );
         return;
       }
 
@@ -615,15 +620,24 @@ useEffect(() => {
 
       await RNFS.writeFile(path, csv, "utf8");
 
+      // Alert.alert(
+      //   "Success",
+      //   Platform.OS === "ios"
+      //     ? "CSV saved successfully!\n\nFiles → On My iPhone → advanced_forms.csv"
+      //     : "CSV saved successfully!\n\nInternal Storage → Download → advanced_forms.csv"
+      // );
       Alert.alert(
-        "Success",
-        Platform.OS === "ios"
-          ? "CSV saved successfully!\n\nFiles → On My iPhone → advanced_forms.csv"
-          : "CSV saved successfully!\n\nInternal Storage → Download → advanced_forms.csv"
+        t('Success'),
+        Platform.OS === 'ios'
+          ? t('CSV saved successfully on your iPhone.')
+          : t('CSV saved successfully in the Download folder.')
       );
     } catch (error) {
       console.error("CSV Export Error:", error);
-      Alert.alert("Error", "CSV export failed.");
+      Alert.alert(
+        t('Error'),
+        t('CSV export failed.')
+      );
     }
   };
 
@@ -688,7 +702,7 @@ useEffect(() => {
       {successVisible ? (
         <SuccessModal
           visible={successVisible}
-          content={{ heading: 'Download Successfully!', middle: '', lable: '' }}
+          content={{ heading: t('Download Successfully!'), middle: '', lable: '' }}
           onClose={() => setSuccessVisible(!successVisible)}
         />
       ) : (
@@ -796,7 +810,7 @@ useEffect(() => {
               style={StyleSheet.absoluteFill}
             />
             <Text style={[styles.buttonText, { fontSize: isIPad ? 27 : 16 }]}>
-              Update Package
+              {t('Update Package')}
             </Text>
           </TouchableOpacity>
         )}
@@ -814,7 +828,7 @@ useEffect(() => {
             })
           }>
           <Text style={[styles.buttonText, { fontSize: isIPad ? 27 : 16 }]}>
-            Checkout
+            {t('Checkout')}
           </Text>
         </TouchableOpacity>
       </View>

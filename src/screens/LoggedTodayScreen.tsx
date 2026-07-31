@@ -19,6 +19,7 @@ import { useAuth } from '../contexts';
 import { getLoggedToday } from '../utilities/ApiCalls';
 import { useNavigation } from '@react-navigation/native';
 import { useNavigationContext } from '../contexts/navigationcontext';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const isPad = CheckIpad();
@@ -44,6 +45,7 @@ interface LoggedTodayData {
 const LoggedTodayScreen = ({ }: any) => {
   const { user } = useAuth();
   let navigation = useNavigation<any>();
+  const { t } = useTranslation();
   const { setSearchActive } = useNavigationContext();
   // State management
   const [loggedData, setLoggedData] = useState<LoggedTodayData>({
@@ -66,7 +68,7 @@ const LoggedTodayScreen = ({ }: any) => {
     try {
       setError(null);
       if (!user?.token) {
-        throw new Error('User token not available');
+        throw new Error(t('User token not available'));
       }
 
       const data = await getLoggedToday(user);
@@ -83,8 +85,8 @@ const LoggedTodayScreen = ({ }: any) => {
       });
     } catch (err) {
       console.error('Error fetching logged today data:', err);
-      setError('Failed to load logged today data');
-      Alert.alert('Error', 'Failed to load logged today data');
+      setError(t('Failed to load logged today data'));
+Alert.alert(t('Error'), t('Failed to load logged today data'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -119,13 +121,13 @@ const LoggedTodayScreen = ({ }: any) => {
           <TouchableOpacity onPress={handleBackPress} style={styles.backBtn}>
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Logged Today</Text>
+          <Text style={styles.headerTitle}>{t('Logged Today')}</Text>
           <View style={{ width: 40 }} />
         </View>
 
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#223890" />
-          <Text style={styles.loadingText}>Loading data...</Text>
+          <Text style={styles.loadingText}>{t('Loading data...')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -140,7 +142,7 @@ const LoggedTodayScreen = ({ }: any) => {
         <TouchableOpacity onPress={handleBackPress} style={styles.backBtn}>
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Logged Today</Text>
+        <Text style={styles.headerTitle}>{t('Logged Today')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -172,7 +174,7 @@ const LoggedTodayScreen = ({ }: any) => {
         <View style={styles.statusCard}>
           <View style={styles.summarySection}>
             <View style={styles.labelRow}>
-              <Text style={styles.loggedInLabel}>Logged In:</Text>
+              <Text style={styles.loggedInLabel}>{t('Logged In')}:</Text>
             </View>
             <Text style={[styles.summaryCount, { color: '#2D543F' }]}>{loggedData.total_logged_in || 0}</Text>
           </View>
@@ -180,22 +182,22 @@ const LoggedTodayScreen = ({ }: any) => {
           <View style={styles.divider} />
 
           <View style={styles.summarySection}>
-            <Text style={styles.loggedOutLabel}>Logged Out:</Text>
+            <Text style={styles.loggedOutLabel}>{t('Logged Out')}:</Text>
             <Text style={[styles.summaryCount, { color: '#8B2121' }]}>{loggedData.total_logged_out || 0}</Text>
           </View>
         </View>
         {/* Summary Card */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryHeaderRow}>
-            <Text style={styles.cardTitle}>My Summary</Text>
+            <Text style={styles.cardTitle}>{t('My Summary')}</Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Time Spent: </Text>
+            <Text style={styles.summaryLabel}>{t('Time Spent')}: </Text>
             <Text style={styles.summaryValue}>{loggedData.time_spent}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Time Range: </Text>
+            <Text style={styles.summaryLabel}>{t('Time Range')}: </Text>
             <Text style={styles.summaryValue}>{loggedData.time_range}</Text>
           </View>
         </View>
@@ -204,7 +206,7 @@ const LoggedTodayScreen = ({ }: any) => {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, }}>
           <View style={styles.countContainer}>
             <Text style={styles.countText}>
-              Packages Logged: {loggedData.packages_logged}
+              {t('Packages Logged')}: {loggedData.packages_logged}
             </Text>
           </View>
           <TouchableOpacity style={styles.ListContainer} onPress={() => {
@@ -212,7 +214,7 @@ const LoggedTodayScreen = ({ }: any) => {
             navigation.navigate('Search', { user_id: loggedData?.user_id, today_only: true });
           }}>
             <Text style={styles.ListText}>
-              List
+              {t('List')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -220,7 +222,7 @@ const LoggedTodayScreen = ({ }: any) => {
         {/* Empty State */}
         {loggedData.packages.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No packages logged today</Text>
+            <Text style={styles.emptyText}> {t('No packages logged today')}</Text>
           </View>
         ) : (
           /* Packages List */
@@ -228,15 +230,15 @@ const LoggedTodayScreen = ({ }: any) => {
             <View key={item.id || index} style={styles.packageCard}>
               <Text style={styles.recipientName}>{item.recipient_name}</Text>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Tracking ID: </Text>
+                <Text style={styles.infoLabel}>{t('Tracking ID')}: </Text>
                 <Text style={styles.infoValue}>{item.tracking_no}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Tag Number: </Text>
+                <Text style={styles.infoLabel}>{t('Tag Number')}:</Text>
                 <Text style={styles.infoValue}>{item.tag_number}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Time: </Text>
+                <Text style={styles.infoLabel}>{t('Time')}: </Text>
                 <Text style={styles.infoValue}>{item.created_at}</Text>
               </View>
             </View>

@@ -255,7 +255,8 @@ const styles = StyleSheet.create({
     // paddingTop: isIPad ? 12 : 0,
     paddingRight: 10,
     marginRight: 10,
-    // backgroundColor:'red'
+    // backgroundColor:'red',
+    marginBottom:8
   },
   flag: {
     fontSize: 20,

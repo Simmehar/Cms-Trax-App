@@ -15,13 +15,14 @@ import { Offlinepackageinfomodal } from '../components/Offlinepackageinfomodal';
 import deletedPackage from '../db/dbcrud/dbDeletepackage.curd';
 import { FONTS, ICONS } from '../assets';
 import { SvgXml } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 
 
 const ShowOfflineCheckout = ({ navigation }: any) => {
   const { user } = useContext(AuthContext);
   const [checkouts, setCheckouts] = useState([]);
   const [Copycheckouts, setCopyCheckouts] = useState([]);
-
+const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
  const [searchInDB, setSearchInDB] = useState("");
@@ -70,8 +71,8 @@ const ShowOfflineCheckout = ({ navigation }: any) => {
                     payable_amount: customerData?.payable_amount,
                     ship_name: customerData?.ship_name,
                     carrier: deletedRecord?.carrier,
-                    shelf: deletedRecord?.shelf || 'Bag # Not Found',
-                    tag_number: deletedRecord?.tag_number || 'Tag # Not Found',
+                    shelf: deletedRecord?.shelf || t('Bag # Not Found'),
+                    tag_number: deletedRecord?.tag_number || t('Tag # Not Found'),
                     tracking_no: deletedRecord?.tracking_no,
                     department_name: customerData?.dept_name,
                     packageType: deletedRecord?.packageType,
@@ -224,7 +225,7 @@ const ShowOfflineCheckout = ({ navigation }: any) => {
 
   return (
     <View style={styles.mainView}>
-      <BackHeader title="Offline Checkouts" />
+      <BackHeader title={t('Offline Checkouts')} />
         <View style={styles.inputContier}>
            <View style={[styles.iconsContainer, { flex: 1 }]}>
                             <SvgXml
@@ -235,7 +236,7 @@ const ShowOfflineCheckout = ({ navigation }: any) => {
                             />
       <TextInput
         style={[styles.input, { fontSize: isIPad ? 24 : 14, }]}
-        placeholder="Tracking or Name"
+        placeholder={t('Tracking or Name')}
         placeholderTextColor="#999"
         value={searchInDB}
         onChangeText={val => FilterPackages(val)}

@@ -22,6 +22,7 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 
 import {loadBackendUrl} from './util/apiCalls';
 import { WithSplashScreen } from './components/splash';
+import './localization/i18n';
 
 SQLite.enablePromise(false);
 

@@ -20,6 +20,7 @@ import { usePackageContext } from '../contexts/packagecontext';
 interface inputProps {
   isPicker: boolean;
   style: {};
+  inputView: {};
   onPickerClick: () => void;
   pickerValue: string;
   placeholder: string;
@@ -42,6 +43,7 @@ const InputPicker: React.FC<inputProps> = ({
   isQrCode,
   isPicker,
   style,
+  inputView,
   onPickerClick,
   pickerValue,
   placeholder,
@@ -109,53 +111,11 @@ const InputPicker: React.FC<inputProps> = ({
           )}
         </TouchableOpacity>
       ) : (
-        // <View style={styles.inputView}>
-        //   {inputValue ? (
-        //     <Text style={[styles.blueTxt, {fontSize: isPad ? 20 : 14}]}>
-        //       {placeholder}
-        //     </Text>
-        //   ) : (
-        //     <></>
-        //   )}
-        //   <View style={isQrCode ? styles.qrView : {}}>
-        //     <TextInput 
-        //     autoCapitalize={ autoCapitalize || 'none'}
-        //       placeholder={placeholder}
-        //       maxLength={maxLength?maxLength:null}
-        //       placeholderTextColor={placeholderTextColor||'black'}
-        //       style={[
-        //         styles.input,
-        //         style,
-        //         {paddingBottom: isQrCode ? 8 : 4, fontSize: isPad ? 24 : 16},
-        //       ]}
-        //       value={inputValue}
-        //       onChangeText={val => {
-        //         onChangeText(val);
-        //         setInputValue(val);
-        //       }}
-        //       editable={!!editable ? editable : true}
-        //     />
-        //     {isQrCode ? (
-        //       <TouchableOpacity
-        //         style={{marginBottom: 10}}
-        //         onPress={() => setBarCodeModalVisible(true)}>
-        //         {/* onPress={() => navigation?.navigate('ScannerView')}> */}
-        //         <SvgXml
-        //           xml={ICONS.header.scan}
-        //           width={isPad ? 35 : '21.5'}
-        //           height={isPad ? 35 : '21.5'}
-        //           //  style={styles.codeImg}
-        //         />
-        //       </TouchableOpacity>
-        //     ) : (
-        //       <></>
-        //     )}
-        //   </View>
-        // </View>
+
         <TouchableOpacity
           activeOpacity={1} // Click hone par flash na ho
           onPress={() => inputRef.current?.focus()} // Area par click hote hi keyboard khule
-          style={styles.inputView}
+          style={[styles.inputView,inputView]}
         >
           {inputValue ? (
             <Text style={[styles.blueTxt, { fontSize: isPad ? 20 : 14 }]}>
@@ -174,8 +134,8 @@ const InputPicker: React.FC<inputProps> = ({
                 styles.input,
                 style,
                 {
-                  paddingBottom: isQrCode ? 8 : 4,
-                  fontSize: isPad ? 24 : 18,
+                  // paddingBottom: isQrCode ? 8 : 4,
+                  fontSize: isPad ? 24 : 16,
                   borderBottomWidth: 0, // Border main container (inputView) par shift kar sakte hain
                 },
               ]}
@@ -282,25 +242,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingTop: isPad ? 20 : 10,
-    paddingBottom: isPad ? 10 : 5,
-    marginBottom: isPad ? 20 : 10,
+    paddingBottom: isPad ? 10 : 10,
+    // marginBottom: isPad ? 20 : 10,
     borderBottomWidth: 1,
     borderBottomColor: '#98989850',
     marginHorizontal: 30,
+    // backgroundColor:'red'
   },
   inputView: {
     // Isse pickerView ke exact match banayein
     borderBottomWidth: 1,
     borderBottomColor: '#98989850',
-    paddingTop: isPad ? 20 : 10,
-    paddingBottom: isPad ? 10 : 5,
+    // paddingTop: isPad ? 20 : 10,
+    // paddingBottom: isPad ? 10 : 5,
     marginHorizontal: 30,
-    marginBottom: isPad ? 20 : 10,
+    // marginBottom: isPad ? 20 : 10,
+    // marginTop:isPad?12:8,
   },
   input: {
     flex: 1,
     color: 'black',
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: FONTS.RICORDORegular,
     // borderBottomWidth: 0, // Yaha border zero kardein kyuki container mein de di hai
   },

@@ -20,6 +20,7 @@ import customParseFormat from 'dayjs/plugin/customParseFormat';
  import { BackHeader } from './Header';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import ImagePreview from '../screens/ImagePreview';
+import { useTranslation } from 'react-i18next';
 
 // Extend dayjs with the customParseFormat plugin
 dayjs.extend(customParseFormat);
@@ -43,6 +44,10 @@ const PackageInfoModal: React.FC<packaegInfo> = ({
   showPaid
 }) => {
   const { isOnline } = useMode();
+  const { t, i18n } = useTranslation();
+
+console.log('Current Language:', i18n.language);
+console.log('Translation:', t('Active'));
   const [ShowImage, setShowImage] = useState([]);
   const [isVisible, setIsVisible] = useState(false)
   const getFormattedDate = (dateTime: any) => {
@@ -101,13 +106,12 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
 
           <View style={styles.oraView}>
             <Text style={styles.activeTxt}>
-              {item?.user?.is_active ? 'Active' : 'Inactive'}
+              {item?.user?.is_active ? t('Active') : t('Inactive')}
             </Text>
           </View>
           <View style={{ marginVertical: 5 }}>
             <Text style={styles.leftTxt}>
-              Logged-In Image(s):
-
+              {t('Logged-In Image(s):')}
             </Text>
           </View>
           <View>
@@ -154,13 +158,13 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={[styles.rowView, { marginTop: 15 }]}>
               <Text style={styles.leftTxt}>
-                Tracking#:{' '}
+           {t('Tracking')}#:{" "}
                 <Text style={styles.rightTxt}>{item?.tracking_no}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Ship:{' '}
+               {t('Ship')}:{' '}
                 <Text style={styles.rightTxt}>
                   {item?.ship_name || item?.ship?.name}
                 </Text>{' '}
@@ -168,17 +172,17 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Location: <Text style={styles.rightTxt}>{item?.shelf}</Text>{' '}
+                {t('Location')}: <Text style={styles.rightTxt}>{item?.shelf}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Tag#: <Text style={styles.rightTxt}>{item?.tag_number}</Text>{' '}
+                {t('Tag#')}: <Text style={styles.rightTxt}>{item?.tag_number}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Division:{' '}
+               {t('Division')}{' '}
                 <Text style={styles.rightTxt}>
                   {item?.user?.department_name}
                 </Text>{' '}
@@ -187,18 +191,18 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
 
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Carrier: <Text style={styles.rightTxt}>{item?.carrier}</Text>{' '}
+                {t('Carrier')} <Text style={styles.rightTxt}>{item?.carrier}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Status:{' '}
+                {t('Status')}:{' '}
                 <Text style={styles.rightTxt}>{item?.current_status}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Log-In:{' '}
+               {t('Log-In')}
                 <Text style={styles.rightTxt}>
                   {/* {getFormattedDate( */}
                   {item?.package_tracking?.[0]?.created_at || item?.logInDate}
@@ -208,7 +212,7 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Log-In By:{' '}
+                {t('Log-In By')}
                 <Text style={styles.rightTxt}>
                   {item?.package_tracking?.[0]?.done_by_user || item?.logInBy}
                 </Text>{' '}
@@ -218,7 +222,7 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
               <View>
                 <View style={[styles.rowView, { marginTop: 10 }]}>
                   <Text style={styles.leftTxt}>
-                    Log-Out:{' '}
+                    {t('Log-Out')}:{' '}
                     <Text style={styles.rightTxt}>
                       {logOutData?.logoutDate ? logOutData?.logoutDate : '-'}
                     </Text>{' '}
@@ -227,7 +231,7 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
 
                 <View style={[styles.rowView, { marginTop: 10 }]}>
                   <Text style={styles.leftTxt}>
-                    Log-Out By:{' '}
+                    {t('Log-Out By')}:{' '}
                     <Text style={styles.rightTxt}>
                       {logOutData?.logoutBy ? logOutData?.logoutBy : '-'}
                     </Text>{' '}
@@ -237,13 +241,13 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
             )}
         {showPaid &&   <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Amount Paid:{' '}
+                {t('Amount Paid')}:{' '}
                 <Text style={styles.rightTxt}> ${item?.price}</Text>{' '}
               </Text>
             </View>}
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Type:{' '}
+                {t('Type')}:{' '}
                 <Text style={styles.rightTxt}>
                   {item?.package_type?.name || item?.packageType}
                 </Text>{' '}
@@ -251,20 +255,20 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Condition:{' '}
+                {t('Condition')}:{' '}
                 <Text style={styles.rightTxt}>{item?.condition}</Text>{' '}
               </Text>
             </View>
 
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Message:{' '}
+                {t('Message')}:{' '}
                 <Text style={styles.rightTxt}>{item?.custom_message ? item?.custom_message : '-'}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                Notes:{' '}
+                {t('Notes')}:{' '}
                 <Text style={styles.rightTxt}>
                   {logOutData?.note ? logOutData?.note : '-'}
                 </Text>{' '}
@@ -272,7 +276,7 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
             </View>
             <View style={{ marginVertical: 15 }}>
               <Text style={styles.leftTxt}>
-                Logged-Out Image(s):
+               {t('Logged-Out Image(s)')}
 
               </Text>
             </View>

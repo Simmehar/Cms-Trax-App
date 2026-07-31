@@ -20,6 +20,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts';
 import { useStripe } from '@stripe/stripe-react-native';
 import { Backend_URL } from '../util/apiCalls';
+import { useTranslation } from 'react-i18next';
 interface PaymentProps {
   visible: boolean;
   onClose: () => void;
@@ -97,7 +98,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
       .catch(err => {
         __DEV__ && console.log('err', err);
         setLoading(false);
-        Alert.alert('Server error', 'Please try again later!');
+        Alert.alert(t('Server error'), t('Please try again later!'));
       });
   };
 
@@ -108,6 +109,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
   // }, [amountState]);
 
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const { t } = useTranslation();
 
   const setup = async (paymentIntent: any) => {
     const { error } = await initPaymentSheet({
@@ -117,7 +119,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
     });
     if (error) {
       // handle error
-      Alert.alert('Error while making payment with card.', 'Please try again');
+      Alert.alert(t('Error while making payment with card.'), t('Please try again'));
 
       __DEV__ && console.log('error', error);
     } else {
@@ -193,7 +195,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
             }>
             <View style={styles.rowView}>
               <Image source={IMAGES.cash} style={styles.cashImg} />
-              <Text style={styles.cashTxt}>Cash</Text>
+              <Text style={styles.cashTxt}>{t('Cash')}</Text>
             </View>
             <View style={styles.rightView}>
               <Image
@@ -229,7 +231,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                     style={
                       selectAmount == 10 ? styles.amountTxt : styles.amountWTxt
                     }>
-                    $ 10.00
+                    {t('$')} 10.00
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -241,7 +243,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                     style={
                       selectAmount == 20 ? styles.amountTxt : styles.amountWTxt
                     }>
-                    $ 20.00
+                    {t('$')} 20.00
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -253,7 +255,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                     style={
                       selectAmount == 100 ? styles.amountTxt : styles.amountWTxt
                     }>
-                    $ 100.00
+                    {t('$')} 100.00
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -266,7 +268,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
             <View style={styles.lineView}></View>
           </View> */}
               <View style={{ margin: 20, borderBottomWidth: 1, borderColor: 'lightgrey' }}>
-                <Text style={styles.pinDisplay}>{selectAmount || 'Amount Received'}</Text>
+                <Text style={styles.pinDisplay}>{selectAmount || t('Amount Received')}</Text>
               </View>
               {__DEV__ && console.log('amountState?.totalPayableAmount', amountState)}
               {Number(selectAmount) < amountState?.payable_amount && (
@@ -282,7 +284,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                       fontFamily: 'OctoberCompressRegular',
                       fontWeight: '600'
                     }}>
-                    Balance due is ${' '}
+                    {t('Balance due is')} {t('$')}
                     {Number(
                       amountState?.payable_amount - selectAmount,
                     ).toFixed(1)}
@@ -363,7 +365,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                       source={IMAGES.card}
                       style={{ height: 46, width: 49, marginLeft: 15 }}
                     />
-                    <Text style={[styles.cashTxt]}>POS</Text>
+                    <Text style={[styles.cashTxt]}>{t('POS')}</Text>
                   </View>
                 </TouchableOpacity>
               )}
@@ -383,7 +385,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
               if (Number(selectAmount) > 0) {
                 onTestPress();
               } else {
-                Alert.alert('Please enter some amount.');
+                Alert.alert(t('Please enter some amount.'));
               }
             }}>
             {loading ? (
@@ -399,7 +401,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                     source={IMAGES.card}
                     style={{ height: isIPad ? 46 : 40, width: isIPad ? 49 : 40 }}
                   />
-                  <Text style={[styles.cashTxt]}>Card</Text>
+                  <Text style={[styles.cashTxt]}>{t('Card')}</Text>
                 </View>
                 <View style={[styles.rightView]}>
                   <Image
@@ -431,8 +433,8 @@ const PaymentModal: React.FC<PaymentProps> = ({
               selectAmount == 100 ? styles.amountTxt : styles.amountWTxt
             }>
             {disValue && disValue > 0
-              ? `Discount:=${disValue}%`
-              : 'Add Discount'}
+              ? `${t('Discount')}: ${disValue}%`
+              : t('Add Discount')}
           </Text>
         </TouchableOpacity>
 
@@ -458,7 +460,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                     fontFamily: 'OctoberCompressRegular',
                     fontWeight: '600'
                   }}>
-                  Total due ${' '}
+                  {t('Total Due')} {t('$')}
                   {Number(amountState?.totalPayableAmount).toFixed(2)}
                 </Text>
               </View>
@@ -476,7 +478,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                 }>
                 <View style={styles.rowView}>
                   <Image source={IMAGES.cash} style={styles.cashImg} />
-                  <Text style={styles.cashTxt}>Cash</Text>
+                  <Text style={styles.cashTxt}>{t('Cash')}</Text>
                 </View>
                 <View style={[styles.radioButton, payType == 'cash' && styles.radioButtonSelected]}>
                   {payType == 'cash' && <View style={styles.radioButtonInner} />}
@@ -521,7 +523,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                     <View style={styles.lineView}></View>
                   </View> */}
                   <View style={{ margin: isIPad ? 25 : 10, borderBottomWidth: 0.5, borderColor: 'lightgrey', marginHorizontal: 30 }}>
-                    <Text style={styles.pinDisplay}>{selectAmount || 'Amount ($)'}</Text>
+                    <Text style={styles.pinDisplay}>{selectAmount || t('Amount ($)')}</Text>
                   </View>
                   <View style={{ alignItems: 'center', justifyContent: 'center' }}>
 
@@ -580,7 +582,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                           fontFamily: 'OctoberCompressRegular',
                           fontWeight: '600'
                         }}>
-                        Balance due is ${' '}
+                        {t('Balance due is')} {t('$')}
                         {Number(
                           amountState?.totalPayableAmount - selectAmount,
                         ).toFixed(2)}
@@ -615,7 +617,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                           source={IMAGES.card}
                           style={{ height: isIPad ? 46 : 40, width: isIPad ? 49 : 40, marginLeft: 15 }}
                         />
-                        <Text style={[styles.cashTxt]}>POS</Text>
+                        <Text style={[styles.cashTxt]}>{t('POS')}</Text>
                       </View>
                     </TouchableOpacity>
                   )}
@@ -633,7 +635,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                       onTestPress();
                       setPayType('card');
                     } else {
-                      Alert.alert('Please enter some amount.');
+                      Alert.alert(t('Please enter some amount.'));
                     }
                   }}>
                   {loading ? (
@@ -650,7 +652,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                           style={{ height: isIPad ? 46 : 40, width: isIPad ? 49 : 40 }}
                           resizeMode='contain'
                         />
-                        <Text style={[styles.cashTxt]}>Card</Text>
+                        <Text style={[styles.cashTxt]}>{t('Card')}</Text>
                       </View>
                       <View style={[styles.radioButton, payType == 'card' && styles.radioButtonSelected]}>
                         {payType == 'card' && <View style={styles.radioButtonInner} />}
@@ -684,9 +686,9 @@ const PaymentModal: React.FC<PaymentProps> = ({
                     const amount = Number(selectAmount);
 
                     if (!selectAmount || selectAmount.trim() === '') {
-                      Alert.alert('Please enter some amount');
+                      Alert.alert(t('Please enter some amount.'));
                     } else if (isNaN(amount)) {
-                      Alert.alert('Please enter amount greater than 0');
+                      Alert.alert(t('Please enter amount greater than 0'));
                     } else {
                       onSubmit(
                         payType,
@@ -695,7 +697,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                       );
                     }
                   }}>
-                  <Text style={styles.submitTxt}>Submit</Text>
+                  <Text style={styles.submitTxt}>{t('Submit')}</Text>
                 </TouchableOpacity>
               ) : (
                 <></>

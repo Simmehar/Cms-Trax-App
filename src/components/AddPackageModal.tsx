@@ -41,6 +41,7 @@ import { useAuth } from '../contexts';
 import tnv from 'tracking-number-validation';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { GeminiExtractionResult } from './SmartDocumentScanner';
+import { useTranslation } from 'react-i18next';
 
 // ─────────────────────────────────────────────────────────────
 // CARRIER NAME NORMALISER
@@ -152,7 +153,7 @@ const AddPackageModal: React.FC<packageModalProps> = ({
 
   const { user } = useAuth();
   const { carriers } = usePackageContext();
-
+const { t } = useTranslation();
   // ── Populate form when editing an existing package ────────
   useEffect(() => {
     if (packageValue?.trackingId) {
@@ -381,7 +382,10 @@ const onSubmit = async () => {
   // 2. Agar koi field missing hai, to Alert dikhayein aur execution ko rokein
   if (missingFields.length > 0) {
     // fields ko comma se separate karke sundar message banayein
-    Alert.alert(`Please select: ${missingFields.join(', ')}`);
+    Alert.alert(
+  t('Please select'),
+  missingFields.map(field => t(field)).join(', ')
+);
     return; // Aage ka code execute nahi hoga
   }
 
@@ -434,19 +438,19 @@ const onSubmit = async () => {
           <View style={styles.headerInfoRow}>
             {/* SHIP */}
             <View style={styles.headerInfoBox}>
-              <Text style={styles.headerLabel}>Ship</Text>
+              <Text style={styles.headerLabel}>{t('Ship')}</Text>
               <Text style={styles.headerValue}>
-                {shipName?.name || 'Not selected'}
+                {shipName?.name || t('Not selected')}
               </Text>
             </View>
             
             {/* RECIPIENT */}
             <View style={[styles.headerInfoBox, { marginLeft: 10 }]}>
-              <Text style={styles.headerLabel}>Recipient</Text>
+              <Text style={styles.headerLabel}>{t('Recipient')}</Text>
               <Text style={styles.headerValue}>
                 {receipientName 
                   ? `${receipientName.first_name} ${receipientName.last_name}` 
-                  : 'Not selected'}
+                  : t('Not selected')}
               </Text>
             </View>
           </View>
@@ -454,7 +458,7 @@ const onSubmit = async () => {
           {/* LOCATION */}
           {location && (
             <View style={styles.locationBox}>
-              <Text style={styles.headerLabel}>Location</Text>
+              <Text style={styles.headerLabel}>{t('Location')}</Text>
               <Text style={styles.headerValue}>
                 {location}
               </Text>
@@ -483,14 +487,14 @@ const onSubmit = async () => {
             {isBackgroundProcessing && (
               <View style={styles.processingBanner}>
                 <ActivityIndicator size="small" color="#223890" style={{ marginRight: 8 }} />
-                <Text style={styles.processingTxt}>Extracting label data in background…</Text>
+                <Text style={styles.processingTxt}> {t('Extracting label data in background...')}</Text>
               </View>
             )}
 
             {/* Tracking ID */}
             <InputPicker
               isPicker={false} maxLength={30} isQrCode={true}
-              placeholder={'Tracking ID*'} style={{}} onPickerClick={() => { }}
+              placeholder={t('Tracking ID*')} style={{}} onPickerClick={() => { }}
               pickerValue={trackingId}
               onChangeText={val => {
                 // 💡 CHANGE: Replace .trimStart() with a global space removal
@@ -501,43 +505,43 @@ const onSubmit = async () => {
 
             {/* Type */}
             <InputPicker
-              isPicker={true} isQrCode={false} placeholder={'Type'} style={{}}
+              isPicker={true} isQrCode={false} placeholder={t('Type')} style={{}}
               onPickerClick={() => { onPickerClick('Type'); setError(prev => ({ ...prev, isStatus: false })); }}
               pickerValue={type?.name} onChangeText={() => { }}
             />
-            {error.isType && <Text style={styles.errorMsg}>Please Select Package Type</Text>}
+            {error.isType && <Text style={styles.errorMsg}>{t('Please Select Package Type')}</Text>}
 
             {/* Status */}
             <InputPicker
-              isPicker={true} isQrCode={false} placeholder={'Status'} style={{}}
+              isPicker={true} isQrCode={false} placeholder={t('Status')} style={{}}
               onPickerClick={() => { onPickerClick('Status'); setError(prev => ({ ...prev, isStatus: false })); }}
               pickerValue={status?.name} onChangeText={() => { }}
             />
-            {error.isStatus && <Text style={styles.errorMsg}>Please Select Package Status</Text>}
+            {error.isStatus && <Text style={styles.errorMsg}>{t('Please Select Package Status')}</Text>}
 
             {/* Condition */}
             <InputPicker
-              isPicker={true} isQrCode={false} placeholder={'Condition'} style={{}}
+              isPicker={true} isQrCode={false} placeholder={t('Condition')} style={{}}
               onPickerClick={() => onPickerClick('Condition')}
               pickerValue={condition?.name} onChangeText={() => { }}
             />
-            {error.isCondition && <Text style={styles.errorMsg}>Please Select Package Condition</Text>}
+            {error.isCondition && <Text style={styles.errorMsg}> {t('Please Select Package Condition')}</Text>}
 
             {/* Carrier */}
             <InputPicker
-              isPicker={true} isQrCode={false} placeholder={'Carrier'} style={{}}
+              isPicker={true} isQrCode={false} placeholder={t('Carrier')} style={{}}
               onPickerClick={() => onPickerClick('Carrier')}
               pickerValue={carrier?.name} onChangeText={() => { }}
             />
 
             {/* Message */}
             <InputPicker
-              isPicker={false} isQrCode={false} placeholder={'Message'} style={{}}
+              isPicker={false} isQrCode={false} placeholder={t('Message')} style={{ paddingVertical:10}}
               onPickerClick={() => { }} pickerValue={message} onChangeText={val => setMessage(val)}
             />
 
             {error.isImages && (
-              <Text style={[styles.errorMsg, { marginTop: 20 }]}>Add at least one photo.</Text>
+              <Text style={[styles.errorMsg, { marginTop: 20 }]}>{t('Add at least one photo.')}</Text>
             )}
 
             {/* Image Slots */}
@@ -583,7 +587,7 @@ const onSubmit = async () => {
                         style={[styles.addView, { opacity: isImageUploading ? 0.5 : 1 }]}
                         onPress={() => selectMedia(key)}
                       >
-                        <Text style={styles.addTxt}>Add Photo</Text>
+                        <Text style={styles.addTxt}> {t('Add Photo')}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -601,14 +605,14 @@ const onSubmit = async () => {
             disabled={isImageUploading}
             onPress={() => { setTrackingId(''); setPackageValue(null); clearData(); }}
           >
-            <Text style={isIPad ? styles.btnTxtI : styles.btnTxt}>Clear</Text>
+            <Text style={isIPad ? styles.btnTxtI : styles.btnTxt}> {t('Clear')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             disabled={isImageUploading}
             style={[isIPad ? styles.clearBtnI : styles.clearBtn, { backgroundColor: '#FDBE6F', marginLeft: 10, opacity: isImageUploading ? 0.5 : 1 }]}
             onPress={onSubmit}
           >
-            <Text style={isIPad ? styles.btnTxtI : styles.btnTxt}>Save</Text>
+            <Text style={isIPad ? styles.btnTxtI : styles.btnTxt}>{t('Save')}</Text>
           </TouchableOpacity>
         </View>
       </View>

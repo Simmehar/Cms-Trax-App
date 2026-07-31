@@ -4,6 +4,7 @@ import { FONTS } from '../assets';
 import { isIPad } from '../utilities/securestorage';
 import { getCustomerList } from '../utilities/ApiCalls';
 import LinearGradient from 'react-native-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 interface checkProps {
   nextClick: () => void;
@@ -27,7 +28,7 @@ const CheckoutBottom: React.FC<checkProps> = ({
     other_purchases,
     credit,
   } = amountState;
-
+  const { t } = useTranslation();
   __DEV__ && console.log('unpaid_packages :>> ', amountState);
   useEffect(() => {
     dispatch({
@@ -36,16 +37,18 @@ const CheckoutBottom: React.FC<checkProps> = ({
     });
   }, [disValue]);
 
+
   const discountValue = (Number(disValue * 100) / payable_amount).toFixed(0);
   __DEV__ && console.log('disValue', disValue)
+
   return (
     <View style={styles.bottomView}>
       <>
         <View style={styles.greyView}>
           <View style={styles.rowView}>
-            <Text style={styles.label}>Unpaid Packages:</Text>
+            <Text style={styles.label}>{t('Unpaid Packages:')}</Text>
             <Text style={styles.amount}>
-              $ {Number(unpaid_packages).toFixed(2)}
+              {t('$')} {Number(unpaid_packages).toFixed(2)}
             </Text>
           </View>
           {/* <View style={[styles.rowView, { marginTop: 10 }]}>
@@ -56,18 +59,18 @@ const CheckoutBottom: React.FC<checkProps> = ({
           </View> */}
 
           <View style={[styles.rowView, { marginTop: isIPad ? 10 : 10 }]}>
-            <Text style={styles.label}>Other Purchases:</Text>
+            <Text style={styles.label}>{t('Other Purchases:')}</Text>
             <Text style={styles.amount}>
-              $ {Number(other_purchases).toFixed(2)}
+              {t('$')} {Number(other_purchases).toFixed(2)}
             </Text>
           </View>
           <View style={[styles.rowView, { marginTop: isIPad ? 10 : 10 }]}>
-            <Text style={styles.label}>Credit:</Text>
-            <Text style={styles.amount}>$ {Number(credit).toFixed(2)}</Text>
+            <Text style={styles.label}>{t('Credit')}:</Text>
+            <Text style={styles.amount}>{t('$')} {Number(credit).toFixed(2)}</Text>
           </View>
           {payable_amount > 0 && <View style={[styles.rowView, { marginTop: isIPad ? 10 : 10 }]}>
             <Text style={styles.label}>
-              Discount:{'  '}
+              {t('Discount:')}
               {disValue > 0 && (
                 <Text style={styles.disTxt}>
                   {Number(discountValue) > 0 && `${discountValue}%`}
@@ -79,8 +82,10 @@ const CheckoutBottom: React.FC<checkProps> = ({
               onPress={!isIPad ? onAdDiscount : null}
             >
               {disValue && disValue > 0
-                ? `$${Number(disValue).toFixed(2)}`
-                : isIPad ? '-' : 'Add Discount'}
+                ? `${t('$')}${Number(disValue).toFixed(2)}`
+                : isIPad
+                  ? '-'
+                  : t('Add Discount')}
             </Text>
           </View>}
         </View>
@@ -100,12 +105,12 @@ const CheckoutBottom: React.FC<checkProps> = ({
         <View style={styles.rowView}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
             <Text style={styles.doller}>
-              $ {Math.max(0, Number(totalPayableAmount)).toFixed(2)}
+              {t('$')} {Math.max(0, Number(totalPayableAmount)).toFixed(2)}
             </Text>
-            <Text style={styles.total}> Total</Text>
+            <Text style={styles.total}> {t('Total')}</Text>
           </View>
           <TouchableOpacity style={styles.nextBtn} onPress={nextClick}>
-            <Text style={styles.nxtTxt}>Next</Text>
+            <Text style={styles.nxtTxt}>{t('Next')}</Text>
           </TouchableOpacity>
         </View>
       </View>

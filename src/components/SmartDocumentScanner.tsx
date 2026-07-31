@@ -14,6 +14,7 @@ import { Camera, useCameraDevice, useCameraPermission } from 'react-native-visio
 import MlkitOcr, { MlkitOcrResult } from 'react-native-mlkit-ocr';
 import RNFS from 'react-native-fs';
 import Svg, { G, Rect } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { GOOGLE_VISION_API_KEY, GEMINI_API_KEY } from '@env';  // ✅ dotenv
 
 const GoogleVision = GOOGLE_VISION_API_KEY;
@@ -339,13 +340,13 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
   const device = useCameraDevice('back');
   const { hasPermission, requestPermission } = useCameraPermission();
   const cameraRef = useRef<Camera>(null);
-
+  const { t } = useTranslation();
   const [zoom, setZoom] = useState(1.0);
   const zoomRef = useRef(1.0);
   const [regions, setRegions] = useState<ScoredRegion[]>([]);
   const [primaryRegion, setPrimaryRegion] = useState<ScoredRegion | null>(null);
   const regionsRef = useRef<ScoredRegion[]>([]);
-  const [scanState, setScanState] = useState<ScanState>({ phase: 'idle', guidance: 'Point camera at package label' });
+  const [scanState, setScanState] = useState<ScanState>({ phase: 'idle', guidance: t('Point camera at package label') });
   const scanStateRef = useRef<ScanState>(scanState);
   const isScanningRef = useRef(false);
   const capturedRef = useRef(false);
@@ -364,15 +365,25 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
     if (!hasPermission) {
       requestPermission().then(granted => {
         if (!granted) {
-          Alert.alert('Camera Permission Required', 'Please allow camera access.', [{ text: 'OK', onPress: onClose }]);
+          Alert.alert(
+            t('Camera Permission Required'),
+            t('Please allow camera access.'),
+            [{ text: t('OK'), onPress: onClose }]
+          );
         } else {
           setZoom(neutralZoom);
-          setScanState({ phase: 'scanning', guidance: 'Point camera at label' });
+          setScanState({
+            phase: 'scanning',
+            guidance: t('Point camera at label'),
+          });
         }
       });
     } else {
       setZoom(neutralZoom);
-      setScanState({ phase: 'scanning', guidance: 'Point camera at label' });
+      setScanState({
+        phase: 'scanning',
+        guidance: t('Point camera at label'),
+      });
     }
     return () => stopScanLoop();
   }, []); // eslint-disable-line
@@ -418,7 +429,7 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
       const imgW = photo.width ?? SW, imgH = photo.height ?? SH;
 
       if (!mlkitResult?.length) {
-        setScanState({ phase: 'scanning', guidance: 'Looking for text…' });
+        setScanState({ phase: 'scanning', guidance: t('Looking for text…') });
         setRegions([]); setPrimaryRegion(null); isScanningRef.current = false; return;
       }
 
@@ -450,10 +461,10 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
         setZoom(Math.max(minZoom, Math.min(lerp(zoomRef.current, targetZoom, ZOOM_LERP_SPEED), maxZoom)));
         const ratio = (docBbox.width * docBbox.height) / (imgW * imgH);
 
-        if (ratio < REGION_TOO_SMALL) setScanState({ phase: 'scanning', guidance: 'Getting closer…' });
-        else if (ratio > REGION_TOO_LARGE) setScanState({ phase: 'scanning', guidance: 'Move back slightly' });
+        if (ratio < REGION_TOO_SMALL) setScanState({ phase: 'scanning', guidance: t('Getting closer…') });
+        else if (ratio > REGION_TOO_LARGE) setScanState({ phase: 'scanning', guidance: t('Move back slightly') });
         else if (primary.stableFrames >= STABILITY_FRAMES && !capturedRef.current) {
-          setScanState({ phase: 'locking', guidance: '✓  Hold steady…' });
+          setScanState({ phase: 'locking', guidance: t('Hold steady…') });
           if (!captureTimerRef.current) {
             captureTimerRef.current = setTimeout(() => {
               captureTimerRef.current = null;
@@ -461,10 +472,10 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
             }, CAPTURE_DELAY_MS);
           }
         } else {
-          setScanState({ phase: 'scanning', guidance: 'Hold steady…' });
+          setScanState({ phase: 'scanning', guidance: t('Hold steady…') });
         }
       } else {
-        setScanState({ phase: 'scanning', guidance: 'Align label in frame' });
+        setScanState({ phase: 'scanning', guidance: t('Align label in frame') });
       }
     } catch (err: any) {
       if (err?.message && !err.message.includes('Camera is not ready') && !err.message.includes('capture-already-in-progress')) {
@@ -483,7 +494,7 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
     if (capturedRef.current || !cameraRef.current) return;
     capturedRef.current = true;
     stopScanLoop();
-    setScanState({ phase: 'capturing', guidance: 'Capturing image…' });
+    setScanState({ phase: 'capturing', guidance: t('Capturing image…') });
 
     try {
       const photo = await cameraRef.current.takePhoto({
@@ -492,13 +503,16 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
         flash: 'off',
       });
       const imagePath = photo.path.startsWith('file://') ? photo.path : `file://${photo.path}`;
-      setScanState({ phase: 'done', guidance: 'Done!' });
+      setScanState({ phase: 'done', guidance: t('Done!') });
       onImageCaptured(imagePath);
     } catch (err: any) {
       console.error('[Scanner] capture error:', err);
       capturedRef.current = false;
-      setScanState({ phase: 'scanning', guidance: 'Capture failed — try again' });
-      Alert.alert('Scan Failed', err?.message ?? 'Could not capture.');
+      setScanState({ phase: 'scanning', guidance: t('Capture failed — try again') });
+      Alert.alert(
+        t('Scan Failed'),
+        err?.message ?? t('Could not capture.')
+      );
       startScanLoop();
     }
   }, [onImageCaptured, startScanLoop, stopScanLoop]);
@@ -506,12 +520,12 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
   if (!hasPermission) return (
     <View style={styles.fullScreen}>
       <ActivityIndicator size="large" color="#61B3E4" />
-      <Text style={styles.permText}>Requesting camera permission…</Text>
+      <Text style={styles.permText}>{t('Requesting camera permission…')}</Text>
     </View>
   );
   if (!device) return (
     <View style={styles.fullScreen}>
-      <Text style={styles.permText}>No camera device found</Text>
+      <Text style={styles.permText}> {t('No camera device found')}</Text>
       <TouchableOpacity style={styles.closeCircle} onPress={onClose}>
         <Text style={styles.closeTxt}>✕</Text>
       </TouchableOpacity>
@@ -579,7 +593,7 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
         <View style={styles.busyOverlay}>
           <View style={styles.busyCard}>
             <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.busyTxt}>Capturing…</Text>
+            <Text style={styles.busyTxt}>{t('Capturing…')}</Text>
           </View>
         </View>
       )}
@@ -608,7 +622,7 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
           <Text style={styles.hintTxt}>
             {primaryRegion
               ? `Auto-capture in ${Math.max(0, STABILITY_FRAMES - primaryRegion.stableFrames + 1)} stable frames  •  or tap ⬤`
-              : 'Tap ⬤ to capture manually'}
+              : t('Tap ⬤ to capture manually')}
           </Text>
         </View>
       )}

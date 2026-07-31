@@ -1,10 +1,12 @@
 import React from 'react';
-import {Modal, Text, View, StyleSheet, TouchableOpacity} from 'react-native';
-import {Checkout, AdvancedForms} from '../db/db.crud';
+import { Modal, Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Checkout, AdvancedForms } from '../db/db.crud';
+import { useTranslation } from 'react-i18next';
 // import { Checkout } from "../processors/db/db.crud";
 
-const SyncModal = ({visible, setModalVisible, navigation}: any) => {
+const SyncModal = ({ visible, setModalVisible, navigation }: any) => {
   const [showModal, setShowModal] = React.useState(false);
+  const { t } = useTranslation();
   const handleClose = () => {
     if (setModalVisible) {
       setModalVisible(false);
@@ -43,12 +45,14 @@ const SyncModal = ({visible, setModalVisible, navigation}: any) => {
       onRequestClose={handleClose}>
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <Text style={styles.title}>Sync Data</Text>
+          <Text style={styles.title}>{t('Sync Data')}</Text>
           <Text style={styles.message}>
-            Please synchronize data before proceeding from the top-right menu.
+            {t(
+              'Please synchronize data before proceeding from the top-right menu.',
+            )}
           </Text>
           <TouchableOpacity onPress={handleClose} style={styles.button}>
-            <Text style={styles.buttonText}>OK</Text>
+            <Text style={styles.buttonText}>{t('OK')}</Text>
           </TouchableOpacity>
         </View>
       </View>

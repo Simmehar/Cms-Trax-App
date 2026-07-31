@@ -11,6 +11,7 @@ import {
   sendEmail,
   uploadImg,
   formSync,
+  getAllCustomer,
 } from "../util/apiCalls";
 import { Alert } from "react-native";
 import {
@@ -33,7 +34,8 @@ import { SearchContext } from "../contexts/SearchContext";
 import { PackageContext } from "../contexts/PackageContext";
 import CustomerList from "./dbcrud/dbcustomerList.crud";
 import deletedPackage from "./dbcrud/dbDeletepackage.curd";
-
+import { useTranslation } from 'react-i18next';
+import CustomersStorage from './dbcrud/CustomersStorage';
 const ModeContext = createContext();
 
 export const OfflineModeProvider = ({ children }) => {
@@ -55,7 +57,8 @@ export const OfflineModeProvider = ({ children }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [initialOffline, setInitialOffline] = useState(false);
   const [sortingOrder, setSortingOrder] = useState(false);
-
+  
+  const { t } = useTranslation();
   const {
     setSearchPhrase,
     setSearchedPackages,
@@ -218,9 +221,9 @@ export const OfflineModeProvider = ({ children }) => {
       __DEV__ && console.log("dsdsdddd", unsyncedAdvanced);
 
       if (unsyncedCheckouts.length === 0 && unsyncedAdvanced.length === 0) {
-        Alert.alert("No Data to sync", "", [
+        Alert.alert(t("No Data to sync"), "", [
           {
-            text: "Ok",
+            text: t("OK"),
           },
         ]);
       } else {
@@ -238,18 +241,20 @@ export const OfflineModeProvider = ({ children }) => {
             if (unsyncedAdvanced.length > 0) {
               messageParts.push(`${unsyncedAdvanced.length} unsynced forms`);
             }
-            const message = `Found ${messageParts.join(' and ')}.`;
+            const message = t("Found {{items}}.", {
+              items: messageParts.join(` ${t("and")} `),
+            });
 
             Alert.alert(
-              "Unsynced Entries",
+              t("Unsynced Entries"),
               message,
               [
                 {
-                  text: "Cancel",
+                  text: t("Cancel"),
                   style: "cancel",
                 },
                 {
-                  text: "Sync Now",
+                  text: t("Sync Now"),
                   onPress: async () => {
                     setTotalProgress(
                       unsyncedCheckouts.length + unsyncedAdvanced.length || 1
@@ -270,11 +275,11 @@ export const OfflineModeProvider = ({ children }) => {
             );
           } else {
             Alert.alert(
-              "You are not connected with WiFi",
-              "Join Crew Mail WiFi",
+              t("You are not connected with WiFi"),
+              t("Join Crew Mail WiFi"),
               [
                 {
-                  text: "OK",
+                  text: t("OK"),
                   onPress: async () => {
                     __DEV__ && console.log("OK Pressed");
                   },
@@ -376,8 +381,8 @@ export const OfflineModeProvider = ({ children }) => {
 
         if (logoutResponse === '400') {
           Alert.alert(
-            "Couldn't Connect",
-            'There may be a problem with the server.'
+            t("Couldn't Connect"),
+            t("There may be a problem with the server.")
           );
           return;
         }
@@ -595,10 +600,16 @@ export const OfflineModeProvider = ({ children }) => {
 
       await AdvancedForms.deleteSyncedRecords();
 
-      Alert.alert('Sync Successful', 'Data synced successfully');
+      Alert.alert(
+        t("Sync Successful"),
+        t("Data synced successfully")
+      );
     } catch (error) {
       console.log('Sync Error:', error);
-      Alert.alert('Sync Error', 'Please try again later.');
+      Alert.alert(
+        t("Sync Error"),
+        t("Please try again later.")
+      );
     } finally {
       setProgress(0);
       setTotalProgress();
@@ -722,28 +733,36 @@ export const OfflineModeProvider = ({ children }) => {
     user,
     shipId,
     setIsProgressOn,
-    setIsLoadingData
+    setIsLoadingData,
+    shipIntId
   ) => {
     // Show confirmation alert
     Alert.alert(
-      "Download Data",
-      "Are you sure you want to download?",
+      t("Download Data"),
+      t("Are you sure you want to download?"),
       [
         {
-          text: "Cancel",
+          text: t("Cancel"),
           style: "cancel",
           onPress: () => setIsProgressOn(false),
         },
         {
-          text: "Yes",
+          text: t("Yes"),
           onPress: async () => {
             try {
               await deleteDataRelatedToShip(shipId);
               setIsLoadingData(true);
               const response = await getPackagesForDbSetup(user, shipId, 10210);
+               const getAllCustomerData = await getAllCustomer(user,shipIntId);
+              console.log('getAllCustomerData=====',getAllCustomerData)
+              // await Customers.saveCustomers(getAllCustomerData);
+              // const customers = await Customers.getAllCustomers();
+              await CustomersStorage.saveCustomers(getAllCustomerData);
+              const customers = await CustomersStorage.getAllCustomers();
+         console.log('getAllCustomerfinalllllllll======Data',customers)
 
               if (!response?.results?.length) {
-                Alert.alert("No packages available for download.");
+                Alert.alert(t("No packages available for download."));
                 return;
               }
               setIsLoadingData(false);
@@ -755,10 +774,13 @@ export const OfflineModeProvider = ({ children }) => {
 
               await initializeDatabase();
 
-              Alert.alert("Success", "Download Completed");
+              Alert.alert(
+                t("Success"),
+                t("Download Completed")
+              );
             } catch (error) {
               __DEV__ && console.log("Error syncing packages:", error);
-              Alert.alert("Download failed");
+              Alert.alert(t("Download failed"));
             } finally {
               setTotalProgress();
               setProgress(0);
@@ -799,11 +821,11 @@ export const OfflineModeProvider = ({ children }) => {
       netInfoState.isConnected === true &&
       netInfoState.isInternetReachable !== false;
 
-      console.log('NetInfo State:', {
-  isConnected: netInfoState.isConnected,
-  isInternetReachable: netInfoState.isInternetReachable,
-  type: netInfoState.type,
-});
+    console.log('NetInfo State:', {
+      isConnected: netInfoState.isConnected,
+      isInternetReachable: netInfoState.isInternetReachable,
+      type: netInfoState.type,
+    });
     if (online) {
       setIsOnline((prevMode) => !prevMode);
 
@@ -853,8 +875,8 @@ export const OfflineModeProvider = ({ children }) => {
     } else {
       setIsOnline(false);
       Alert.alert(
-        "Offline Mode",
-        "Toggle is not possible because you are not online."
+        t("Offline Mode"),
+        t("Toggle is not possible because you are not online.")
       );
     }
     await initializeDatabase();
@@ -915,7 +937,7 @@ export const OfflineModeProvider = ({ children }) => {
 export const useMode = () => {
   const context = useContext(ModeContext);
   if (!context) {
-    throw new Error("useMode must be used within an OfflineModeProvider");
+    throw new Error(t("useMode must be used within an OfflineModeProvider"));
   }
   return context;
 };

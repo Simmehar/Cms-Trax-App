@@ -9,6 +9,7 @@ import {
 import { SvgXml } from 'react-native-svg';
 import { FONTS, ICONS, IMAGES } from '../assets';
 import { isIPad } from '../utilities/securestorage';
+import { useTranslation } from 'react-i18next';
 
 interface SearchHeaderProps {
   onSelectAll: (value: string) => void;
@@ -35,6 +36,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
   onClickOfflineMenu,
   downloadCSV,
 }) => {
+  const { t } = useTranslation();
   return (
     <View>
       {/* Count + Clear */}
@@ -45,12 +47,12 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
             { marginHorizontal: isIPad ? 25 : 15, marginVertical: 20 },
           ]}>
           <Text style={[styles.countNu, { fontSize: isIPad ? 20 : 14 }]}>
-            {count} Selected
+            {count} {t('Selected')}
           </Text>
           <Text
             onPress={onClear}
             style={[styles.clear, { fontSize: isIPad ? 20 : 14 }]}>
-            Clear
+            {t('Clear')}
           </Text>
         </View>
       )}
@@ -73,7 +75,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
               />
               {isOnline && (
                 <Text style={[styles.actionText, { fontSize: isIPad ? 20 : 13 }]}>
-                  Sort
+                  {t('Sort')}
                 </Text>
               )}
             </TouchableOpacity>
@@ -92,7 +94,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
               />
               {isOnline && (
                 <Text style={[styles.actionText, { fontSize: isIPad ? 20 : 13 }]}>
-                  Filter
+                  {t('Filter')}
                 </Text>
               )}
             </TouchableOpacity></>}
@@ -101,7 +103,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
           {isOnline && (
             <TouchableOpacity
               activeOpacity={0.4}
-              style={[styles.selectAllContainer, { marginLeft: 15 }]}
+              style={[styles.selectAllContainer, { marginLeft: 0 }]}
               onPress={() => onSelectAll(selectAllChecked ? 'Yes' : 'No')}>
               {selectAllChecked ? (
                 <View style={isIPad ? styles.selectcheckboxI : styles.selectcheckbox}>
@@ -115,7 +117,9 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
               )}
               <Text
                 style={[styles.selectAllText, { fontSize: isIPad ? 20 : 12 }]}>
-                {selectAllChecked ? ' Deselect All' : 'Select All'}
+                {selectAllChecked
+                  ? ` ${t('Deselect All')}`
+                  : t('Select All')}
               </Text>
             </TouchableOpacity>
           )}
@@ -143,7 +147,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
               />
               {isOnline && (
                 <Text style={[styles.actionText, { fontSize: isIPad ? 20 : 13 }]}>
-                  Sort
+                  {t('Sort')}
                 </Text>
               )}
             </TouchableOpacity>
@@ -162,7 +166,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
               />
               {isOnline && (
                 <Text style={[styles.actionText, { fontSize: isIPad ? 20 : 13 }]}>
-                  Filter
+                  {t('Filter')}
                 </Text>
               )}
             </TouchableOpacity></>}
@@ -178,7 +182,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
                     fontFamily: FONTS.RICORDORegular,
                     color: 'black',
                   }}>
-                  Checkouts
+                  {t('Checkouts')}
                 </Text>
               </TouchableOpacity>
 
@@ -193,19 +197,19 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
                     marginLeft: isIPad ? 15 : 7,
                     backgroundColor: '#fff'
                   }}>
-                  Advanced
+                  {t('Advanced')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-            style={{
-              backgroundColor: "#223890",
-              padding: isIPad ? 14 : 7,
-              borderRadius: isIPad ? 14 : 8,
-              alignSelf: "center",
-            }}
-            onPress={downloadCSV}
-          >
-           <Image
+                style={{
+                  backgroundColor: "#223890",
+                  padding: isIPad ? 14 : 7,
+                  borderRadius: isIPad ? 14 : 8,
+                  alignSelf: "center",
+                }}
+                onPress={downloadCSV}
+              >
+                <Image
                   source={IMAGES.downloadForm}
                   style={{
                     height: isIPad ? 32 : 18,
@@ -214,8 +218,8 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
                   }}
                   tintColor={'white'}
                 />
-                
-          </TouchableOpacity>
+
+              </TouchableOpacity>
             </>
           )}
         </View>
@@ -223,7 +227,7 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
 
       {/* Offline Select All (separate row) */}
       {!isOnline && (
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 15 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 5 }}>
           <TouchableOpacity
             activeOpacity={0.4}
             style={[styles.selectAllContainer, { marginStart: isIPad ? 20 : 10 }]}
@@ -239,10 +243,12 @@ const SearchHeader: React.FC<SearchHeaderProps> = ({
               <View style={isIPad ? styles.checkboxI : styles.checkbox} />
             )}
             <Text style={[styles.selectAllText, { fontSize: isIPad ? 20 : 12 }]}>
-              {selectAllChecked ? ' Deselect All' : 'Select All'}
+              {selectAllChecked
+                ? ` ${t('Deselect All')}`
+                : t('Select All')}
             </Text>
           </TouchableOpacity>
-          
+
 
         </View>
       )}
@@ -255,9 +261,9 @@ const styles = StyleSheet.create({
   selectAllContainer: { flexDirection: 'row', alignItems: 'center' },
   checkbox: { width: 22, height: 22, borderWidth: 1, borderColor: '#D6D6D6', borderRadius: 4 },
   checkboxI: { width: 26, height: 26, borderWidth: 1, borderColor: '#D6D6D6', borderRadius: 4 },
-  selectcheckbox: { width: 22, height: 22, backgroundColor: '#223890', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
+  selectcheckbox: { width: 20, height: 20, backgroundColor: '#223890', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
   selectcheckboxI: { width: 28, height: 28, backgroundColor: '#223890', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
-  selectAllText: { color: 'black', fontFamily: FONTS.RICORDORegular, marginLeft: 10, fontWeight: '600' },
+  selectAllText: { color: 'black', fontFamily: FONTS.RICORDORegular, marginLeft: 2, fontWeight: '600' },
   actionsContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   actionButton: { width: 90, height: 40, borderRadius: 20, marginRight: 5, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 1.84 },
   actionButtonI: { width: 180, height: 70, borderRadius: 40, marginRight: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 1.84 },
@@ -267,7 +273,7 @@ const styles = StyleSheet.create({
   countNu: { fontSize: 14, color: 'black', fontFamily: FONTS.RICORDOSemiBold, flex: 1 },
   clear: { fontSize: 14, color: '#223890', fontFamily: FONTS.RICORDORegular },
   network: { height: 25, width: 25, tintColor: 'green', marginRight: 10 },
-  networkI: { height: isIPad?40:20, width: isIPad?40:20, tintColor: '#c93a3a', marginRight: 10 },
+  networkI: { height: isIPad ? 40 : 20, width: isIPad ? 40 : 20, tintColor: '#c93a3a', marginRight: 10 },
   actionButtonCheck: { paddingHorizontal: 10, height: 40, borderRadius: 30, marginEnd: 5, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 1.84 },
   actionButtonCheckI: { paddingHorizontal: 10, height: 70, borderRadius: 40, marginEnd: 15, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E0E0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 1.84 },
 });

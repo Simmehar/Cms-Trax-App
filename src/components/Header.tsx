@@ -13,6 +13,7 @@ import { useNavigationContext } from '../contexts/navigationcontext';
 import { useNavigation } from '@react-navigation/native';
 import { CheckIpad, isIPad } from '../utilities/securestorage';
 import ScanBarCodeModal from './ScanBarCodeModal';
+import { useTranslation } from 'react-i18next';
 
 let isPad = CheckIpad();
 interface headProps {
@@ -37,6 +38,7 @@ const Header: React.FC<headProps> = ({
     setSearchActive(true);
     navigation.navigate('Search');
   };
+  const { t } = useTranslation();
 
   const handleCancelSearch = () => {
     if (isOnline) {
@@ -98,7 +100,7 @@ const Header: React.FC<headProps> = ({
                   />
                   <TextInput
                     style={[styles.input, { fontSize: isPad ? 24 : 14, }]}
-                    placeholder="Tracking or Name"
+                    placeholder={t('Tracking or Name')}
                     placeholderTextColor="#999"
                     value={showvalue}
                     onChangeText={val => searchRecipientHandler(val)}

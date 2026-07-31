@@ -40,11 +40,12 @@ import deletedPackage from '../db/dbcrud/dbDeletepackage.curd';
 import { MaskedInput } from '../components/Maskedmail';
 import { getCustomerList } from '../util/apiCalls';
 import LinearGradient from 'react-native-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 const CheckoutData: React.FC = ({ navigation, route }: any) => {
   const { user } = useAuth();
   const { isOnline, initializeDatabase } = useMode();
-
+const {t} = useTranslation();
   const [isNotify, setIsNotify] = useState(true);
   const [visible, setVisible] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
@@ -555,7 +556,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
 
   return (
     <View style={styles.mainView}>
-      <BackHeader title="Checkout" />
+      <BackHeader title={t('Checkout')} />
 
       <SignatureModal
         visible={visible}
@@ -567,9 +568,9 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
         <SuccessModal
           visible={successVisible}
           content={{
-            heading: 'SUCCESS!',
+            heading: t('SUCCESS'),
             middle: '',
-            lable: 'Your checkout was successful.',
+            lable: t('Checkout Success'),
           }}
           onClose={() => setSuccessVisible(!successVisible)}
           isOnline={isOnline}
@@ -617,7 +618,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={'Status'}
+             placeholder={t('Status')}
               style={{}}
               onPickerClick={() => {
                 setStatusModalVisible(true);
@@ -640,7 +641,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
               ) : (
                 <MaskedInput
                   pickerValue={email}
-                  placeholder="Email"
+                  placeholder={t('Email')}
                   onChangeText={(text) => { setEmail(text) }}
                   editable={true}
                   placeholderTextColor="white"
@@ -653,14 +654,14 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
             {(!email || email == null) &&
               <Text
                 style={{ color: 'red', marginHorizontal: 30, fontSize: 16, fontWeight: 'bold' }}>
-                Please add email address
+                {t('Please add email address')}
               </Text>
             }
 
             <InputPicker
               isPicker={false}
               isQrCode={false}
-              placeholder={'Notes'}
+              placeholder={t('Notes')}
               style={{}}
               // onPickerClick={setNotes}
               onChangeText={setNotes}
@@ -676,7 +677,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
                   </View>
                 )}
               </TouchableOpacity>
-              <Text style={styles.sendTxt}>Send notification</Text>
+              <Text style={styles.sendTxt}> {t('Send notification')}  </Text>
             </View>
 
             {error?.isImages ? (
@@ -742,7 +743,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
                     onPress={() => {
                       isOnline ? selectMedia(1) : offlineselectMedia(1);
                     }}>
-                    <Text style={styles.addTxt}>Add Photo</Text>
+                    <Text style={styles.addTxt}>{t('Add Photo')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -790,7 +791,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
                     onPress={() => {
                       isOnline ? selectMedia(2) : offlineselectMedia(2)
                     }}>
-                    <Text style={styles.addTxt}>Add Photo</Text>
+                    <Text style={styles.addTxt}>{t('Add Photo')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -838,7 +839,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
                     onPress={() => {
                       isOnline ? selectMedia(3) : offlineselectMedia(3)
                     }}>
-                    <Text style={styles.addTxt}>Add Photo</Text>
+                    <Text style={styles.addTxt}>{t('Add Photo')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -847,9 +848,9 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
           </KeyboardScroll>
         </View>
       </View>
-      <Text style={styles.topTitle}>Payment Completed</Text>
+      <Text style={styles.topTitle}>{t('Payment Completed')}</Text>
       <Text style={styles.congrats}>
-        {`$${Math.max(
+        {`${t('$')}${Math.max(
           isCredit ? Number(selectAmount ?? 0) : Number(amountState?.paidAmount ?? 0) - Number(amountState.totalPayableAmount) > 0
             ? Number(amountState.totalPayableAmount)
             : Number(amountState?.paidAmount ?? 0),
@@ -888,7 +889,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
             style={StyleSheet.absoluteFill}
           />
           <Text style={styles.singTxt}>
-            Add Signature
+             {t('Add Signature')}
           </Text>
         </TouchableOpacity>
       )}
@@ -911,7 +912,7 @@ const CheckoutData: React.FC = ({ navigation, route }: any) => {
           }}
           disabled={apiLoading}>
           <Text style={styles.txch}>
-            {apiLoading ? 'Processing...' : 'Checkout'}
+            {apiLoading ? t('Processing') : t('Checkout')}
           </Text>
         </TouchableOpacity>
       </View>

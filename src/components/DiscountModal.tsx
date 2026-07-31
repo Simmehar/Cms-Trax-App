@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,11 @@ import {
   FlatList,
   Image,
 } from 'react-native';
-import {FONTS, ICONS, IMAGES} from '../assets';
-import {InputPicker} from './InputPicker';
-import {KeyboardScroll} from './KeyboardScroll';
+import { FONTS, ICONS, IMAGES } from '../assets';
+import { InputPicker } from './InputPicker';
+import { KeyboardScroll } from './KeyboardScroll';
 import { isIPad } from '../utilities/securestorage';
+import { useTranslation } from 'react-i18next';
 interface SignatureProps {
   visible: boolean;
   onClose: () => void;
@@ -42,9 +43,9 @@ const DiscountModal: React.FC<SignatureProps> = ({
   const [selectedDiscount, setSelectedDiscount] = useState(-1);
 
 
- 
+
   const handleNumberPress = number => {
-    setSelectAmount(selectAmount+number)
+    setSelectAmount(selectAmount + number)
   };
 
   const handleDeletePress = () => {
@@ -53,20 +54,20 @@ const DiscountModal: React.FC<SignatureProps> = ({
     }
   };
 
-  const NumberButton = ({number, onPress}) => (
+  const NumberButton = ({ number, onPress }) => (
     <TouchableOpacity
       style={styles.numberButton}
       onPress={() => onPress(number.toString())}>
       <Text style={styles.numberText}>{number}</Text>
     </TouchableOpacity>
   );
-
+  const { t } = useTranslation();
 
   return (
-    <Modal visible={visible}  transparent={true}>
+    <Modal visible={visible} transparent={true}>
       <View style={styles.modalContainer}>
         <KeyboardScroll
-          contentContainerStyle={{flex: 1, justifyContent: 'flex-end'}}>
+          contentContainerStyle={{ flex: 1, justifyContent: 'flex-end' }}>
           <View style={styles.modalContent}>
             <TouchableOpacity style={styles.crossView} onPress={onClose}>
               <Image source={IMAGES.close} style={styles.closeImg} />
@@ -77,10 +78,10 @@ const DiscountModal: React.FC<SignatureProps> = ({
                 // flex: 1,
                 flexDirection: 'row',
                 justifyContent: 'space-between',
-                marginVertical: isIPad?20:10,
+                marginVertical: isIPad ? 20 : 10,
                 zIndex: 1,
               }}>
-                <TouchableOpacity
+              <TouchableOpacity
                 style={
                   selectedDiscount == 0 ? styles.amountView : styles.amountLView
                 }
@@ -142,58 +143,60 @@ const DiscountModal: React.FC<SignatureProps> = ({
               </TouchableOpacity>
             </View>
 
-            <View style={{margin: isIPad?30:'2%',borderBottomWidth:1,borderColor:'lightgrey',marginBottom:20}}>
-              <Text style={styles.pinDisplay}>{selectAmount || 'Discount Amount ($)'}</Text>
+            <View style={{ margin: isIPad ? 30 : '2%', borderBottomWidth: 1, borderColor: 'lightgrey', marginBottom: 20 }}>
+              <Text style={styles.pinDisplay}>
+                {selectAmount || t('Discount Amount ($)')}
+              </Text>
             </View>
 
             <View style={styles.container}>
 
-      <View style={styles.numberPad}>
-      <View style={styles.row}>
-          {[1, 2, 3].map(num => (
-            <NumberButton key={num} number={num} onPress={handleNumberPress} />
-          ))}
-        </View>
-        
+              <View style={styles.numberPad}>
+                <View style={styles.row}>
+                  {[1, 2, 3].map(num => (
+                    <NumberButton key={num} number={num} onPress={handleNumberPress} />
+                  ))}
+                </View>
 
-        <View style={styles.row}>
-          {[4, 5, 6].map(num => (
-            <NumberButton key={num} number={num} onPress={handleNumberPress} />
-          ))}
-        </View>
 
-        <View style={styles.row}>
-          {[7, 8, 9].map(num => (
-            <NumberButton key={num} number={num} onPress={handleNumberPress} />
-          ))}
-        </View>
+                <View style={styles.row}>
+                  {[4, 5, 6].map(num => (
+                    <NumberButton key={num} number={num} onPress={handleNumberPress} />
+                  ))}
+                </View>
 
-        <View style={styles.lastRow}>
-          <TouchableOpacity
-            style={styles.doubleButton}
-            onPress={() => setSelectAmount(selectAmount+'.')}>
-            <Text style={styles.numberText}>.</Text>
-          </TouchableOpacity>
+                <View style={styles.row}>
+                  {[7, 8, 9].map(num => (
+                    <NumberButton key={num} number={num} onPress={handleNumberPress} />
+                  ))}
+                </View>
 
-          <NumberButton number={0} onPress={handleNumberPress} />
+                <View style={styles.lastRow}>
+                  <TouchableOpacity
+                    style={styles.doubleButton}
+                    onPress={() => setSelectAmount(selectAmount + '.')}>
+                    <Text style={styles.numberText}>.</Text>
+                  </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDeletePress}>
-            <Image
-               source={IMAGES.Back}
-              style={styles.deleteIcon}
-              tintColor={'grey'}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
+                  <NumberButton number={0} onPress={handleNumberPress} />
+
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={handleDeletePress}>
+                    <Image
+                      source={IMAGES.Back}
+                      style={styles.deleteIcon}
+                      tintColor={'grey'}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
 
             <TouchableOpacity
               style={styles.saveBtn}
               onPress={() => onSave(selectAmount)}>
-              <Text style={styles.saveTxt}>Submit</Text>
+              <Text style={styles.saveTxt}>{t('Submit')}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardScroll>
@@ -213,12 +216,12 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    paddingBottom: isIPad?40:20,
-    height:'80%',
+    paddingBottom: isIPad ? 40 : 20,
+    height: '80%',
     maxHeight: '75%',
   },
   saveBtn: {
-    height: isIPad?80:60,
+    height: isIPad ? 80 : 60,
     backgroundColor: '#FDBE6F',
     borderRadius: 40,
     justifyContent: 'center',
@@ -226,23 +229,23 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   saveTxt: {
-    fontSize: isIPad?25:18,
+    fontSize: isIPad ? 25 : 18,
     fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
   crossView: {
-    height: isIPad?60:40,
-    width: isIPad?60:40,
-    borderRadius:50,
+    height: isIPad ? 60 : 40,
+    width: isIPad ? 60 : 40,
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F4F4F4',
     alignSelf: 'flex-end',
-    marginVertical:isIPad?20:0
+    marginVertical: isIPad ? 20 : 0
   },
   closeImg: {
-    height: isIPad?20:10,
-    width: isIPad?20:10,
+    height: isIPad ? 20 : 10,
+    width: isIPad ? 20 : 10,
     tintColor: 'black',
   },
   signatureView: {
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   amountView: {
-    height: isIPad?100:50,
+    height: isIPad ? 100 : 50,
     flex: 1,
     backgroundColor: '#223890',
     borderRadius: 14,
@@ -273,7 +276,7 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   amountLView: {
-    height: isIPad?100:50,
+    height: isIPad ? 100 : 50,
     flex: 1,
     borderColor: '#223890',
     borderRadius: 14,
@@ -284,16 +287,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   amountTxt: {
-    fontSize: isIPad?30:19,
+    fontSize: isIPad ? 30 : 19,
     fontFamily: FONTS.RICORDORegular,
     color: 'white',
-    fontWeight:'700'
+    fontWeight: '700'
   },
   amountWTxt: {
-    fontSize:isIPad?30:19,
+    fontSize: isIPad ? 30 : 19,
     fontFamily: FONTS.RICORDORegular,
     color: '#223890',
-    fontWeight:'700'
+    fontWeight: '700'
   },
   container: {
     flex: 1,
@@ -302,34 +305,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pinDisplay: {
-    fontSize: isIPad?50:30,
+    fontSize: isIPad ? 50 : 30,
     marginBottom: 12,
     color: 'grey',
     alignSelf: 'flex-start',
   },
   numberPad: {
     width: '100%',
-    maxWidth:isIPad?'50%':'70%',
+    maxWidth: isIPad ? '50%' : '70%',
   },
   row: {
-    marginBottom: isIPad?20:20,
+    marginBottom: isIPad ? 20 : 20,
     flexDirection: 'row',
     justifyContent: 'space-evenly',
   },
   numberButton: {
-    width: isIPad?70:40,
-    height: isIPad?60:40,
+    width: isIPad ? 70 : 40,
+    height: isIPad ? 60 : 40,
     marginHorizontal: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth:0.5,
-    borderRadius:6,
-    borderColor:'lightgrey'
+    borderWidth: 0.5,
+    borderRadius: 6,
+    borderColor: 'lightgrey'
   },
   numberText: {
     color: 'grey',
-    fontSize: isIPad?30:20,
-    fontWeight:'700',
+    fontSize: isIPad ? 30 : 20,
+    fontWeight: '700',
   },
   lastRow: {
     flexDirection: 'row',
@@ -337,23 +340,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
   },
   doubleButton: {
-    width: isIPad?90:50,
-    height: isIPad?90:50,
+    width: isIPad ? 90 : 50,
+    height: isIPad ? 90 : 50,
     alignItems: 'center',
     marginHorizontal: 5,
     justifyContent: 'center',
   },
   deleteButton: {
-    width: isIPad?90:50,
-    height: isIPad?90:50,
+    width: isIPad ? 90 : 50,
+    height: isIPad ? 90 : 50,
     alignItems: 'center',
-    
+
     justifyContent: 'center',
   },
   deleteIcon: {
-    width: isIPad?35:24,
-    height: isIPad?35:24,
-    tintColor:'grey'
+    width: isIPad ? 35 : 24,
+    height: isIPad ? 35 : 24,
+    tintColor: 'grey'
   },
 });
-export {DiscountModal};
+export { DiscountModal };

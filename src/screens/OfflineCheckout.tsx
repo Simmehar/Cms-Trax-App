@@ -11,6 +11,7 @@ import { useNavigationContext } from '../contexts/navigationcontext';
 import { isIPad } from '../utilities/securestorage';
 import { FONTS, ICONS } from '../assets';
 import { SvgXml } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 
 const OfflineCheckout = ({ navigation }: any) => {
   const { user } = useContext(AuthContext);
@@ -166,7 +167,7 @@ const OfflineCheckout = ({ navigation }: any) => {
 
   const [packageItem, setPackageItem] = useState<Package | null>(null);
   const [isPackageInfo, setIsPackageInfo] = useState(false);
-
+ const { t } = useTranslation();
   const onArrowClick = (item: Package) => {
     // __DEV__ && console.log('item==', item);
     setPackageItem(item);
@@ -185,7 +186,7 @@ const OfflineCheckout = ({ navigation }: any) => {
 
   return (
     <View style={styles.mainView}>
-      <BackHeader title="Offline Checkouts" />
+      <BackHeader title={t("Offline Checkouts")}/>
       {/* <Text>OfflineCheckout</Text> */}
       <View style={styles.inputContier}>
         <View style={[styles.iconsContainer, { flex: 1 }]}>
@@ -197,7 +198,7 @@ const OfflineCheckout = ({ navigation }: any) => {
           />
           <TextInput
             style={[styles.input, { fontSize: isIPad ? 24 : 14, }]}
-            placeholder="Tracking or Name"
+            placeholder={t("Tracking or Name")}
             placeholderTextColor="#999"
             value={searchInDB}
             onChangeText={val => FilterPackages(val)}

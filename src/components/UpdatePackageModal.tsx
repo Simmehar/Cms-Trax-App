@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -12,17 +12,19 @@ import {
   Keyboard,
   Alert,
   DeviceEventEmitter,
+  Platform,
 } from 'react-native';
-import {FONTS, ICONS, IMAGES} from '../assets';
-import {InputPicker} from './InputPicker';
-import {KeyboardScroll} from './KeyboardScroll';
-import {ShipListModal} from './ShipListModal';
-import {isIPad} from '../utilities/securestorage';
-import {sendEmail} from '../utilities/ApiCalls';
-import {useAuth} from '../contexts';
-import {updatePackage} from '../util/apiCalls';
-import {SearchContext} from '../contexts/SearchContext';
+import { FONTS, ICONS, IMAGES } from '../assets';
+import { InputPicker } from './InputPicker';
+import { KeyboardScroll } from './KeyboardScroll';
+import { ShipListModal } from './ShipListModal';
+import { isIPad } from '../utilities/securestorage';
+import { sendEmail } from '../utilities/ApiCalls';
+import { useAuth } from '../contexts';
+import { updatePackage } from '../util/apiCalls';
+import { SearchContext } from '../contexts/SearchContext';
 import LottieModal from './SuccessPackageSubmitModal';
+import { useTranslation } from 'react-i18next';
 
 interface SignatureProps {
   visible: boolean;
@@ -50,17 +52,17 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
   const [status, setStatus] = useState<any>();
   const [type, setType] = useState<any>();
   const [location, setLocation] = useState<any>();
-    const [message, setMessage]=useState('');
+  const [message, setMessage] = useState('');
   const [email, setEmail] = useState(
-      // customerData?.[0]?.email,
-    );
-  
+    // customerData?.[0]?.email,
+  );
+
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const {user} = useAuth();
-
-  const {clearSelectedPackages} = useContext(SearchContext);
+  const { user } = useAuth();
+  const { t } = useTranslation();
+  const { clearSelectedPackages } = useContext(SearchContext);
 
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [updateResponse, setUpdateResponse] = useState([]);
@@ -74,7 +76,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
   //   }
 
   //   // setInvalidFields(false);
-    
+
   //   setIsLoading(true);
   //   const packagesData = {
   //     ids: uniqueIds,
@@ -156,27 +158,27 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
   // };
 
   const updateEventHandler = async () => {
-    __DEV__ && console.log('efdsfdsfdsfdsfdsfdsfdsfdsfdsfds', )
+    __DEV__ && console.log('efdsfdsfdsfdsfdsfdsfdsfdsfdsfds',)
     const uniqueIds = [...new Set(selectedPackages.map(p => p?.id))]; // Remove duplicates
-  
+
     if (!location && !shipName && !receipientName && !status && !type && !message) {
-      return Alert.alert('Please update at least one value');
+      return Alert.alert(t('Please update at least one value'));
     }
-  
+
     // Show confirmation alert
     Alert.alert(
-      'Are you sure you want to update?',
+      t('Are you sure you want to update?'),
       '',
       [
         {
-          text: 'Cancel',
+          text: t('Cancel'),
           style: 'cancel',
         },
         {
-          text: 'Yes',
+          text: t('Yes'),
           onPress: async () => {
             setIsLoading(true);
-  
+
             const packagesData = {
               ids: uniqueIds,
               ship: shipName?.id,
@@ -185,43 +187,43 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
               // current_status: status?.id,
               current_status: status?.id != null ? String(status?.id) : undefined,
               package_type: type?.id,
-              custom_message:message
+              custom_message: message
             };
-  __DEV__ && console.log('packagesData', packagesData)
+            __DEV__ && console.log('packagesData', packagesData)
             const isSubmitted = await updatePackage(user, packagesData);
             __DEV__ && console.log('isSubmitted', isSubmitted)
             if (isSubmitted == '400') {
               setIsLoading(false);
               return;
             }
-  
+
             setUpdateResponse([...selectedPackages]);
             onClear();
             clearSelectedPackages();
             setSuccessModalVisible(true);
             setIsLoading(false);
-  
-          
-  
+
+
+
             const mailData = {
               ids: uniqueIds,
               package_status: status?.id,
             };
-  
+
             __DEV__ && console.log('mailData', mailData);
-  
+
             if (isNotify) {
               const emailRes = await sendEmail(user, mailData);
               __DEV__ && console.log('update packages emailRes', emailRes);
             }
-  
+
             refetchData();
           },
         },
       ]
     );
   };
-  
+
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -230,7 +232,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
           isVisible={successModalVisible}
           setVisible={setSuccessModalVisible}
           responseData={updateResponse}
-          message={'Package/s Updated Successfully'}
+          message={t('Package/s Updated Successfully')}
           onCloseSuccessModal={() => {
             setVisible(false);
           }}
@@ -253,12 +255,12 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
               activeDropdownTab == 'Rceipient'
                 ? setReceipientName(val)
                 : activeDropdownTab == 'Ship'
-                ? setShipName(val)
-                : activeDropdownTab == 'Status'
-                ? setStatus(val)
-                : activeDropdownTab == 'Type'
-                ? setType(val)
-                : setReceipientName(val);
+                  ? setShipName(val)
+                  : activeDropdownTab == 'Status'
+                    ? setStatus(val)
+                    : activeDropdownTab == 'Type'
+                      ? setType(val)
+                      : setReceipientName(val);
             }}
           />
           <TouchableOpacity
@@ -281,8 +283,8 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={'Select Recipient'}
-              style={{marginHorizontal: 30, marginTop: 28}}
+              placeholder={t('Select Recipient')}
+              style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => {
                 setDropdownActiveTab('Rceipient'), setIsDropdownVisible(true);
               }}
@@ -291,12 +293,12 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
                   ? receipientName?.first_name + ' ' + receipientName?.last_name
                   : null
               }
-              onChangeText={() => {}}
+              onChangeText={() => { }}
             />
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={'Select Status'}
+              placeholder={t('Select Status')}
               style={{}}
               onPickerClick={() => {
                 setDropdownActiveTab('Status'), setIsDropdownVisible(true);
@@ -307,18 +309,18 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={'Ship/department'}
-              style={{marginHorizontal: 30, marginTop: 28}}
+              placeholder={t('Ship/department')}
+              style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => {
                 setIsDropdownVisible(), setDropdownActiveTab('Ship');
               }}
-              onChangeText={() => {}}
+              onChangeText={() => { }}
               pickerValue={shipName?.name}
             />
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={'Select Type'}
+              placeholder={t('Select Type')}
               style={{}}
               onPickerClick={() => {
                 setDropdownActiveTab('Type'), setIsDropdownVisible(true);
@@ -337,9 +339,9 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={false}
               isQrCode={false}
-              placeholder={'Location'}
-              style={{marginHorizontal: 0, marginTop: 0}}
-              onPickerClick={() => {}}
+              placeholder={t('Location')}
+              style={{  marginVertical: Platform.OS === 'ios' ? 10 : 0,}}
+              onPickerClick={() => { }}
               pickerValue={location}
               autoCapitalize={'words'}
               onChangeText={val => {
@@ -347,11 +349,11 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
               }}
             />
 
- <InputPicker
+            <InputPicker
               isPicker={false}
               isQrCode={false}
-              placeholder={'Message'}
-              style={{ marginHorizontal: 0, marginTop: 0 }}
+              placeholder={t('Message')}
+              style={{ marginVertical: Platform.OS === 'ios' ? 10 : 0, }}
               onPickerClick={() => { }}
               pickerValue={message}
               autoCapitalize={'words'}
@@ -359,7 +361,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
                 setMessage(val.trimStart());
               }}
             />
-            <View style={[styles.roView, {marginTop: 20}]}>
+            <View style={[styles.roView, { marginTop: 20 }]}>
               <TouchableOpacity onPress={() => setIsNotify(!isNotify)}>
                 {!isNotify ? (
                   <View style={styles.unSelBox}></View>
@@ -369,18 +371,20 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
                   </View>
                 )}
               </TouchableOpacity>
-              <Text style={[styles.sendTxt, {fontSize: isIPad ? 20 : 14}]}>
-                Send notification
+              <Text style={[styles.sendTxt, { fontSize: isIPad ? 20 : 14 }]}>
+                {t('Send notification')}
               </Text>
             </View>
-          </KeyboardScroll>
+          </KeyboardScroll> 
 
           <TouchableOpacity
             disabled={isLoading}
             style={styles.saveBtn}
             onPress={updateEventHandler}>
-            <Text style={[styles.saveTxt, {fontSize: isIPad ? 20 : 18}]}>
-              {isLoading ? 'Updating Packages... ' : ' Update Package'}
+            <Text style={[styles.saveTxt, { fontSize: isIPad ? 20 : 18 }]}>
+              {isLoading
+                ? t('Updating Packages...')
+                : t('Update Package')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -406,7 +410,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     //padding: 20,
     paddingBottom: 20,
-    height:'100%',
+    height: '100%',
     maxHeight: '75%',
   },
   saveBtn: {
@@ -417,7 +421,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
     marginHorizontal: 17,
-    
+
   },
   saveTxt: {
     fontSize: 18,
@@ -447,8 +451,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   closeImg: {
-    height: isIPad?20:10,
-    width: isIPad?20:10,
+    height: isIPad ? 20 : 10,
+    width: isIPad ? 20 : 10,
     tintColor: 'black',
   },
   roView: {
@@ -484,4 +488,4 @@ const styles = StyleSheet.create({
     tintColor: 'white',
   },
 });
-export {UpdatePackageModal};
+export { UpdatePackageModal };

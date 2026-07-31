@@ -234,6 +234,24 @@ export const getPackagesForDbSetup = async (
   }
 };
 
+export const getAllCustomer = async (user, shipIntId) => {
+  try {
+    const res = await axios.get(
+      `${Backend_URL}/customers-by-ship?shipId=${shipIntId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      },
+    );
+console.log('get all customers datatatata',res.data.results)
+    return res.data.results;
+  } catch (e) {
+    console.error(e);
+    return "400";
+  }
+};
+
 export const bulkPackageLogout = async (user, data) => {
   try {
     const res = await axios.post(Backend_URL + "/bulk-package-logout", data, {

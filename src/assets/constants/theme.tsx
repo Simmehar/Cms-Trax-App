@@ -110,6 +110,8 @@ export const IMAGES = {
   },
   package: {
     packagesnotfound: require('../images/packagesnotfound.png'),
+    packagesnotfoundspain:require('../images/SpanishNoPackage.png'),
+
   },
   delete: require('../images/delete_icon.png'),
   // camera: require('../images/camera_icon2.png'),
@@ -155,6 +157,8 @@ export const IMAGES = {
   unSelect:require('../images/unselectRadio.png'), 
   downloadForm:require('../images/download.png'), 
   Ocr:require('../images/ocr.png'), 
+  US:require('../images/us.png'),
+  Spain:require('../images/spain.png')
 
 };
 

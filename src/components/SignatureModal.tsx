@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
   Alert,
 } from 'react-native';
 import Signature from 'react-native-signature-canvas';
-import {IMAGES} from '../assets';
-import {isIPad} from '../utilities/securestorage';
+import { IMAGES } from '../assets';
+import { isIPad } from '../utilities/securestorage';
+import { useTranslation } from 'react-i18next';
 
 interface SignatureProps {
   visible: boolean;
@@ -25,7 +26,7 @@ const SignatureModal: React.FC<SignatureProps> = ({
 }) => {
   const [signature, setSignature] = useState<string | null>(null);
   const signatureRef = useRef<any>(null);
-
+  const { t } = useTranslation();
   const handleOK = (signatureData: string) => {
     __DEV__ && console.log('Signature captured');
     setSignature(signatureData);
@@ -43,7 +44,7 @@ const SignatureModal: React.FC<SignatureProps> = ({
       signatureRef.current.readSignature();
     } else {
       __DEV__ && console.log('No signature ref available');
-      Alert.alert('Error', 'Unable to save signature. Please try again.');
+      Alert.alert(t('Error'), t('Unable to save signature. Please try again.'));
     }
   };
 
@@ -54,7 +55,10 @@ const SignatureModal: React.FC<SignatureProps> = ({
       onSave(signature);
     } else {
       __DEV__ && console.log('No signature to save');
-      Alert.alert('Error', 'No signature to save. Please sign before saving.');
+      Alert.alert(
+        t('Error'),
+        t('No signature to save. Please sign before saving.')
+      );
     }
   };
 
@@ -87,7 +91,7 @@ const SignatureModal: React.FC<SignatureProps> = ({
 
 
   return (
-    <Modal visible={visible}  transparent={true}>
+    <Modal visible={visible} transparent={true}>
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <TouchableOpacity style={styles.crossView} onPress={onClose}>
@@ -96,11 +100,11 @@ const SignatureModal: React.FC<SignatureProps> = ({
 
           <View style={styles.signatureView}>
             <Signature
-            // style={{height:300,backgroundColor:'red'}}
+              // style={{height:300,backgroundColor:'red'}}
               ref={signatureRef}
               onOK={handleOK}
               onClear={handleClear}
-              descriptionText="Sign here"
+              descriptionText={t('Sign here')}
               webStyle={style}
             />
           </View>
@@ -109,12 +113,12 @@ const SignatureModal: React.FC<SignatureProps> = ({
             <TouchableOpacity
               style={[styles.button, styles.clearButton]}
               onPress={() => signatureRef.current?.clearSignature()}>
-              <Text style={styles.buttonText}>Clear</Text>
+              <Text style={styles.buttonText}>{t('Clear')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.saveButton]}
               onPress={handleSave}>
-              <Text style={styles.buttonText}>Save</Text>
+              <Text style={styles.buttonText}>{t('Save')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -142,7 +146,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 20,
     paddingBottom: 40,
-    height:'50%',
+    height: '50%',
     maxHeight: '75%',
   },
   crossView: {
@@ -202,4 +206,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export {SignatureModal};
+export { SignatureModal };

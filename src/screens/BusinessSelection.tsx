@@ -141,7 +141,7 @@ const handleContinue = async () => {
 
           <View style={styles.inputWrapper}>
             <TextInput
-              placeholder="Enter 10 digit phone number"
+              placeholder="Enter phone number"
               placeholderTextColor="#7A7A7A"
               autoCapitalize="none"
               value={businessPhoneNumber}
@@ -165,7 +165,7 @@ const handleContinue = async () => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.versionText}>v1.0.11</Text>
+        <Text style={styles.versionText}>v1.3</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   </LinearGradient>
@@ -271,6 +271,6 @@ const styles = StyleSheet.create({
     fontSize: isPad ? 20 : 14,
     opacity: 0.7,
     fontFamily: FONTS.RICORDORegular,
-    marginTop: 20, // Safe margin agar screen choti ho toh content se na chipke
+    marginTop: 20, 
   },
 });

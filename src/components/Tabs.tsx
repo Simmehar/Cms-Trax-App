@@ -8,6 +8,7 @@ import {
   View,
   Platform,
 } from "react-native";
+import { useTranslation } from "react-i18next"; 
 
 interface Action {
   key: string;
@@ -23,6 +24,7 @@ interface Props {
 
 const Tabs: React.FC<Props> = ({ actions, selected, onSelect }) => {
   const isIPad = Platform.OS === "ios" && Platform.isPad;
+  const { t } = useTranslation(); 
 
   return (
     <View style={[styles.wrapper, isIPad && styles.wrapperI]}>
@@ -48,7 +50,7 @@ const Tabs: React.FC<Props> = ({ actions, selected, onSelect }) => {
                 style={[styles.icon, isActive && styles.activeIcon, isIPad && styles.iconI]}
               />
               <Text style={[styles.tabText, isActive && styles.activeTabText, isIPad && styles.tabTextI]}>
-                {item.name}
+                {t(item.name)} 
               </Text>
             </TouchableOpacity>
           );

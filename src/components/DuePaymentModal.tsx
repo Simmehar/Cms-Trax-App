@@ -12,6 +12,7 @@ import {
 import {FONTS, ICONS, IMAGES} from '../assets';
 import {useNavigation} from '@react-navigation/native';
 import {isIPad} from '../utilities/securestorage';
+import { useTranslation } from 'react-i18next';
 
 interface SuccessProps {
   visible: boolean;
@@ -34,7 +35,7 @@ const DuePaymentModal: React.FC<SuccessProps> = ({
 }) => {
   
   let navigation = useNavigation<any>();
-
+const { t } = useTranslation();
   // Removed unnecessary credit dispatch logic
 
   return (
@@ -44,7 +45,7 @@ const DuePaymentModal: React.FC<SuccessProps> = ({
           <TouchableOpacity style={styles.crossView} onPress={onClose}>
             <Image source={IMAGES.close} style={styles.closeImg} />
           </TouchableOpacity>
-          <Text style={styles.topTitle}>Payment Completed</Text>
+          <Text style={styles.topTitle}> {t('Payment Completed')}</Text>
           <View style={{marginTop: isIPad?34:14}}>
             <Image
               source={IMAGES.coins}
@@ -56,12 +57,12 @@ const DuePaymentModal: React.FC<SuccessProps> = ({
             Number(amountState.totalPayableAmount) >
             0 && (
             <Text style={styles.congrats}>
-              ${' '}
+             {t('$')}
               {Number(
                 Number(amountState.paidAmount) -
                   Number(amountState.totalPayableAmount),
               ).toFixed(2)}{' '}
-              CHANGE DUE
+              {t('CHANGE DUE')}
             </Text>
           )}
 
@@ -82,7 +83,7 @@ const DuePaymentModal: React.FC<SuccessProps> = ({
                   <Image style={styles.tick} source={IMAGES.check} />
                 </TouchableOpacity>
               )}
-              <Text style={styles.miLable}>Add to Credit</Text>
+              <Text style={styles.miLable}>{t('Add to Credit')}</Text>
             </View>
           ) : (
             <></>
@@ -93,7 +94,7 @@ const DuePaymentModal: React.FC<SuccessProps> = ({
               onDone();
             }}
             style={styles.subBtn}>
-            <Text style={styles.subTxt}>Next</Text>
+            <Text style={styles.subTxt}> {t('Next')}</Text>
           </TouchableOpacity>
         </View>
       </View>

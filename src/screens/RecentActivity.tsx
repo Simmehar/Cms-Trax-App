@@ -9,6 +9,7 @@ import { isIPad } from '../utilities/securestorage';
 import { useFocusEffect } from '@react-navigation/native';
 import { SvgXml } from 'react-native-svg';
 import { FONTS, ICONS } from '../assets';
+import { useTranslation } from 'react-i18next';
 
 let searchTimeout: NodeJS.Timeout;
 const RecentActivity: React.FC = ({ navigation }: any) => {
@@ -44,6 +45,7 @@ useEffect(() => {
 }, [inputValue]);
 
 const constructParams = (value: string) => (value ? `keyword=${value}` : '');
+ const { t } = useTranslation();
 
   const [packageItem, setPackageItem] = useState<Package | null>(null);
   const [isPackageInfo, setIsPackageInfo] = useState(false);
@@ -80,7 +82,7 @@ const constructParams = (value: string) => (value ? `keyword=${value}` : '');
   //   );
   return (
     <View style={styles.mainView}>
-      <BackHeader title="Recent Checkouts" />
+      <BackHeader title={t("Recent Checkouts")} />
 <View style={styles.inputContier}>
         <View style={[styles.iconsContainer, { flex: 1 }]}>
           <SvgXml
@@ -91,7 +93,7 @@ const constructParams = (value: string) => (value ? `keyword=${value}` : '');
           />
           <TextInput
             style={[styles.input, { fontSize: isIPad ? 24 : 14, }]}
-            placeholder="Tracking or Name"
+            placeholder={t("Tracking or Name")}
             placeholderTextColor="#999"
             value={inputValue}
             onChangeText={val => setInputValue(val)}

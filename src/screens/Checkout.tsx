@@ -29,6 +29,7 @@ import axios from 'axios';
 import { Backend_URL } from '../util/apiCalls';
 import { useStripe } from '@stripe/stripe-react-native';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
+import { useTranslation } from 'react-i18next';
 
 let isPad = CheckIpad();
 
@@ -40,7 +41,7 @@ const Checkout: React.FC = ({ route }: any) => {
   // __DEV__ && console.log('route.params', route.params);
 
   const { arr, msg } = route.params;
-
+  const { t } = useTranslation();
   const { isOnline, initializeDatabase } = useMode();
   // const  isOnline=false;
   // __DEV__ && console.log('isOnline', isOnline);
@@ -176,7 +177,10 @@ const Checkout: React.FC = ({ route }: any) => {
       .catch(err => {
         __DEV__ && console.log('err', err);
         setLoading(false);
-        Alert.alert('Server error', 'Please try again later!');
+        Alert.alert(
+          t('server_error'),
+          t('please_try_again_later')
+        );
       });
   };
 
@@ -196,7 +200,10 @@ const Checkout: React.FC = ({ route }: any) => {
     });
     if (error) {
       // handle error
-      Alert.alert('Error while making payment with card.', 'Please try again');
+    Alert.alert(
+  t('payment_error'),
+  t('please_try_again')
+);
 
       __DEV__ && console.log('error', error);
     } else {
@@ -283,7 +290,7 @@ const Checkout: React.FC = ({ route }: any) => {
               }>
               <View style={styles.rowView}>
                 <Image source={IMAGES.cash} style={styles.cashImg} />
-                <Text style={styles.cashTxt}>Cash</Text>
+                <Text style={styles.cashTxt}>{t('cash')}</Text>
               </View>
               <View style={[styles.radioButton, payType == 'cash' && styles.radioButtonSelected]}>
                 {payType == 'cash' && <View style={styles.radioButtonInner} />}
@@ -319,12 +326,12 @@ const Checkout: React.FC = ({ route }: any) => {
                         fontWeight: '600'
                       }}>
 
-                      Total due ${' '}
+                      {t('total_due')} {t('$')}
                       {Math.max(Number(amountState?.totalPayableAmount), 0).toFixed(2)}
                     </Text>
                   </View>
                   <View style={{ margin: 5, borderBottomWidth: 1, borderColor: 'lightgrey' }}>
-                    <Text style={styles.pinDisplay}>{selectAmount || 'Amount Received'}</Text>
+                    <Text style={styles.pinDisplay}>{selectAmount || t('amount_received')}</Text>
                   </View>
 
                   {Number(selectAmount) > 0 &&
@@ -335,7 +342,7 @@ const Checkout: React.FC = ({ route }: any) => {
                           marginBottom: 10,
                         }}>
                         <Text>
-                          Balance due is ${' '}
+                          {t('balance_due')} {t('$')}
                           {Math.max(
                             Number((Number(amountState?.totalPayableAmount) - Number(selectAmount)).toFixed(2)),
                             0
@@ -427,7 +434,7 @@ const Checkout: React.FC = ({ route }: any) => {
                     source={IMAGES.card}
                     style={{ height: 46, width: 49, marginLeft: isIPad ? 35 : 15 }}
                   />
-                  <Text style={[styles.cashTxt]}>POS</Text>
+                  <Text style={[styles.cashTxt]}>{t('pos')}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -444,7 +451,7 @@ const Checkout: React.FC = ({ route }: any) => {
                     onTestPress();
                     setPayType('card');
                   } else {
-                    Alert.alert('Please enter some amount.');
+                   Alert.alert(t('please_enter_some_amount'));
                   }
                 }}>
                 {loading ? (
@@ -460,7 +467,7 @@ const Checkout: React.FC = ({ route }: any) => {
                         source={IMAGES.card}
                         style={{ height: 50, width: 50, resizeMode: 'contain' }}
                       />
-                      <Text style={[styles.cashTxt]}>Card</Text>
+                      <Text style={[styles.cashTxt]}>{t('card')}</Text>
                     </View>
                     <View style={[styles.radioButton, payType == 'card' && styles.radioButtonSelected]}>
                       {payType == 'card' && <View style={styles.radioButtonInner} />}
@@ -501,8 +508,8 @@ const Checkout: React.FC = ({ route }: any) => {
                 }
               }>
               {disValue && disValue > 0
-                ? `Discount:($${Number(disValue).toFixed(1)})`
-                : 'Add Discount'}
+                ? `${t('discount')}: (${t('$')}${Number(disValue).toFixed(1)})`
+                : t('add_discount')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -541,12 +548,13 @@ const Checkout: React.FC = ({ route }: any) => {
     { name: 'I Pen', isReceived: true, price: '$20.00' },
   ]);
 
+
   return (
     <View style={styles.mainView}>
       <GestureHandlerRootView>
         <View style={{ marginVertical: isPad ? 10 : 'noun', justifyContent: 'flex-end', backgroundColor: null }}>
 
-          <BackHeader title="Review" />
+          <BackHeader title={t('review')} />
 
           <View
             style={{ position: 'absolute', right: 25, alignSelf: 'center', bottom: 10 }}>
@@ -596,9 +604,9 @@ const Checkout: React.FC = ({ route }: any) => {
                       style={styles.packageView}
                       onPress={() => { }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.tagTxt}>Tag# {item.tag_number}</Text>
+                        <Text style={styles.tagTxt}>{t('tag')}# {item.tag_number}</Text>
                         <Text style={styles.bluTxt}>
-                          Tracking ID:{' '}
+                          {t('tracking_id')}:{' '}
                           <Text style={styles.numTxt}>{item.tracking_no}</Text>{' '}
                         </Text>
 
@@ -632,9 +640,9 @@ const Checkout: React.FC = ({ route }: any) => {
                     style={styles.packageView}
                     onPress={() => { }}>
                     <View style={{ flex: 1, flexDirection: 'column' }}>
-                      <Text style={styles.tagTxt}>Tag# {item.tag_number}</Text>
+                      <Text style={styles.tagTxt}>{t('Tag#')} {item.tag_number}</Text>
                       <Text style={styles.bluTxt}>
-                        Tracking ID:{' '}
+                        {t("Tracking ID")}:
                         <Text style={styles.numTxt}>{item.tracking_no}</Text>{' '}
                       </Text>
 
@@ -733,7 +741,7 @@ const Checkout: React.FC = ({ route }: any) => {
                       selectAllChecked ? '4' : '1',
                     );
                   } else {
-                    Alert.alert('Please enter some amount');
+                    Alert.alert(t('please_enter_some_amount'));
                   }
                 }
                 else {
@@ -766,14 +774,14 @@ const Checkout: React.FC = ({ route }: any) => {
                 textAlign: 'center',
                 fontFamily: FONTS.RICORDOBold,
                 fontWeight: '600'
-              }}>Warning!!</Text>
+              }}>{t('warning')}</Text>
               <Text style={{
                 fontSize: isIPad ? 25 : 15,
                 marginTop: isIPad ? 30 : 20,
                 color: 'grey',
                 textAlign: 'center',
                 fontFamily: FONTS.RICORDORegular,
-              }}>There are 1 or more packages NOT selected !</Text>
+              }}>{t('packages_not_selected')}</Text>
             </View>
 
           </View>

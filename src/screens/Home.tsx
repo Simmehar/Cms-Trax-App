@@ -61,6 +61,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getLoggedToday, getTotalReceived } from '../utilities/ApiCalls';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import { useTranslation } from 'react-i18next';
 interface Package {
   id: number;
   track_id: string;
@@ -87,6 +88,7 @@ function countReducer(state: any, action: any) {
 
 const Home: React.FC = ({ navigation }: any) => {
   const { user } = useAuth();
+  console.log('user', user);
   const { setIsInternet, setShowLoader } = useNavigationContext();
 
   const [isVisible, setIsVisible] = useState(false);
@@ -299,8 +301,8 @@ const Home: React.FC = ({ navigation }: any) => {
       // ✅ ALERT FORCE SHOW
       setTimeout(() => {
         Alert.alert(
-          'Something went wrong',
-          'Package creation failed.',
+          t('Something went wrong'),  
+          t('Package creation failed.'),
         );
       }, 100);
       setSubmitLoading(false);
@@ -337,7 +339,7 @@ const Home: React.FC = ({ navigation }: any) => {
       setRefreshing(false);
     }
   };
-
+  const { t } = useTranslation();
   // ─────────────────────────────────────────────────────────
   // ✅ Auto-search recipient when Gemini extraction completes
   // ─────────────────────────────────────────────────────────
@@ -451,11 +453,11 @@ const Home: React.FC = ({ navigation }: any) => {
           <View style={modalStyles.overlay}>
             <View style={modalStyles.container}>
               <Text style={modalStyles.title}>
-               belongs to another ship.
+                {t('belongs to another ship.')}
               </Text>
 
               <Text style={modalStyles.message}>
-                Do you still want to proceed?
+                {t('Do you still want to proceed?')}
               </Text>
 
               <View style={modalStyles.buttonRow}>
@@ -463,7 +465,7 @@ const Home: React.FC = ({ navigation }: any) => {
                   style={[modalStyles.button, modalStyles.cancelBtn]}
                   onPress={() => setShowShipAlert(false)}
                 >
-                  <Text style={modalStyles.cancelText}>Cancel</Text>
+                  <Text style={modalStyles.cancelText}> {t('Cancel')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -481,7 +483,7 @@ const Home: React.FC = ({ navigation }: any) => {
                     onCreatePackage(submitData);
                   }}
                 >
-                  <Text style={modalStyles.yesText}>Yes</Text>
+                  <Text style={modalStyles.yesText}> {t('Yes')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -532,7 +534,7 @@ const Home: React.FC = ({ navigation }: any) => {
         >
           <TouchableOpacity activeOpacity={1} style={{ flex: 1 }}>
             <Dashboard
-              userName={user?.firstname || 'CMS'}
+             userName={user?.firstname || t('CMS')}
               dashboard={dashboardinfo}
               isInternet={isInternet}
               navigation={navigation}
@@ -550,7 +552,7 @@ const Home: React.FC = ({ navigation }: any) => {
                     source={IMAGES.Ocr}
                     style={{ height: isIPad ? 50 : 30, width: isIPad ? 50 : 35, resizeMode: 'contain' }}
                   />
-                  <Text style={styles.ocrTxt}>Capture Label - OCR</Text>
+                  <Text style={styles.ocrTxt}>{t('Capture Label - OCR')}</Text>
                 </TouchableOpacity>
               )}
 
@@ -606,7 +608,7 @@ const Home: React.FC = ({ navigation }: any) => {
                 style={StyleSheet.absoluteFill}
               />
               <Text style={isPad ? styles.buttonTextI : styles.buttonText}>
-                {'+Add Package'}
+                {t('+Add Package')}
               </Text>
             </TouchableOpacity>
 
@@ -619,7 +621,11 @@ const Home: React.FC = ({ navigation }: any) => {
                 if (!isValid) {
                   if (submitLoading) return;
                   if (packages.length === 0) {
-                    showToast('Please add at least one Package information', '', 3000);
+                    showToast(
+                      t('Please add at least one Package information'),
+                      '',
+                      3000,
+                    );
                     return;
                   } else if (val?.receipientName?.ship != val?.shipName?.name) {
                     // Alert.alert(
@@ -638,7 +644,7 @@ const Home: React.FC = ({ navigation }: any) => {
               }}
             >
               <Text style={isPad ? styles.buttonTextI : styles.buttonText}>
-                {submitLoading ? 'Processing...' : 'Submit'}
+                {submitLoading ? t('Processing...') : t('Submit')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -662,13 +668,14 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ userName, dashboard, isInternet, }) => {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
 
       <View style={styles.header}>
         <View style={styles.greetingContainer}>
           <Text style={[styles.greeting, { fontSize: isPad ? 27 : 17 }]}>
-            Welcome back,
+            {t('Welcome back',)}
           </Text>
           {userName.length > 0 && (
             <Text style={[styles.userName, { fontSize: isPad ? 50 : 32 }]}>
@@ -702,7 +709,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, dashboard, isInternet, 
             {formatNumber(dashboard?.scannedToday || 0)}
           </Text>
           <Text style={[isPad ? styles.statLabelIpad : styles.statLabel, { fontFamily: FONTS.RICORDOBold }]}>
-            Logged Today
+            {t('Logged Today')}
           </Text>
         </TouchableOpacity>
         {/* </View> */}
@@ -723,7 +730,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, dashboard, isInternet, 
             {formatNumber(dashboard?.todayCollection || 0)}
           </Text>
           <Text style={[isPad ? styles.statLabelIpad : styles.statLabel, { fontFamily: FONTS.RICORDOBold }]}>
-            Total Summary
+            {t('Total Summary')}
           </Text>
         </TouchableOpacity>
         {/* </View> */}

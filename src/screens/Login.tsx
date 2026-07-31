@@ -14,6 +14,7 @@ import {
   Dimensions,
   Alert,
   StatusBar,
+  Modal,
 } from 'react-native';
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
@@ -30,6 +31,11 @@ import { useNavigationContext } from '../contexts/navigationcontext';
 import RNRestart from 'react-native-restart';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18n from '../localization/i18n';
+import { useTranslation } from 'react-i18next';
+
+
 let isPad = CheckIpad();
 const LoginSchema = Yup.object().shape({
   username: Yup.string().required('Username is required'),
@@ -46,10 +52,12 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
   const { login, setUser } = useAuth();
 
   const { showLoader, setShowLoader } = useNavigationContext();
+  const [language, setLanguage] = useState('en');
   const [isLoading, setIsLoading] = useState(false);
+  
   const [sendData, setSendData] = useState({
-    // username: 'simran',
-    // password: 'Crew1029!',
+    // username: 'sim',
+    // password: 'Abcd@123',
     username: '',
     password: '',
   });
@@ -57,10 +65,42 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
     username: '',
     password: '',
   });
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const languages = [
+    {
+      label: 'USA',
+      value: 'en',
+      flag: IMAGES.US,
+    },
+    {
+      label: 'Spain',
+      value: 'es',
+      flag: IMAGES.Spain,
+    },
+  ];
+  const changeLanguage = async (lang: 'en' | 'es') => {
+    setLanguage(lang);
 
+    await AsyncStorage.setItem('language', lang);
+
+    await i18n.changeLanguage(lang);
+  };
+  useEffect(() => {
+    loadLanguage();
+  }, []);
+
+  const loadLanguage = async () => {
+    const lang = await AsyncStorage.getItem('language');
+
+    if (lang) {
+      setLanguage(lang);
+      await i18n.changeLanguage(lang);
+    }
+  };
   const { user, logout } = useContext(AuthContext);
 
   const [tokenExpired, setTokenExpired] = useState(false);
+  const { t } = useTranslation();
 
   let isLoggingOut = false;
 
@@ -115,10 +155,10 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
 
   const onLogin = async () => {
     if (!sendData.username) {
-      setError({ ...error, username: 'Username is required' });
+      setError({ ...error, username: t('Username is required') });
       return;
     } else if (!sendData.password) {
-      setError({ ...error, password: 'Password is required' });
+      setError({ ...error, password: t('password is required') });
       return;
     }
 
@@ -134,7 +174,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
           __DEV__ && console.log('err', err);
           Alert.alert('Email or password is incorrect', 'Please try again');
         });
-        
+
 
       if (response?.data) {
         login(response?.data);
@@ -188,107 +228,218 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         barStyle={'light-content'}
       />
       {/* <ImageBackground source={IMAGES.background.bg} style={styles.background}> */}
+      <Modal
+        visible={showLanguagePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLanguagePicker(false)}>
+
+        <TouchableOpacity
+          style={styles.modalContainer}
+          activeOpacity={1}
+          onPress={() => setShowLanguagePicker(false)}>
+
+          <View style={styles.dropdown}>
+
+            {languages.map(item => (
+              <TouchableOpacity
+                key={item.value}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  changeLanguage(item.value);
+                  setShowLanguagePicker(false);
+                }}>
+
+                <Image
+                  source={item.flag}
+                  style={styles.flag}
+                  resizeMode="contain"
+                />
+
+                <Text
+                  style={[
+                    styles.dropdownText,
+                    language === item.value && {
+                      color: '#FDBE6F',
+                      fontFamily: FONTS.RICORDOSemiBold,
+                    },
+                  ]}>
+                  {item.label}
+                </Text>
+
+              </TouchableOpacity>
+            ))}
+
+          </View>
+        </TouchableOpacity>
+      </Modal>
       <LinearGradient
         colors={['#1C2C5B', '#1F3C73', '#2B5DAA']} // gradient colors
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.background}
       >
-      <View style={styles.container}>
-        <Image style={isPad ? styles.logoIPad : styles.logo} source={IMAGES.logos.logo} />
-        {/* <Image style={isPad ? styles.logoIwave : styles.logowave} source={IMAGES.line} tintColor={'#FDBE6F'} /> */}
-        <View style={styles.inputGroup}>
-          <View style={isPad ? styles.iPadInput : styles.inputI}>
-            <TextInput
-              style={isPad ? styles.input : styles.inputIPad}
-              placeholder="Username"
-              placeholderTextColor={COLORS.label}
-              textAlignVertical="center"
-              value={sendData.username}
-              autoCapitalize="none"
-              onChangeText={newUsername => {
-                setError({ username: '', password: '' });
-                setSendData(prevValue => {
-                  return { ...prevValue, username: newUsername };
-                });
-              }}
-            />
-          </View>
-          <Text style={styles.errorText}>
-            {error?.password == 'Not a valid user'
-              ? error?.password
-              : error.username}
-          </Text>
-          <View style={isPad ? styles.iPadInput : styles.inputI}>
-            <TextInput
-              style={isPad ? styles.input : styles.inputIPad}
-              placeholder="Password"
-              placeholderTextColor={COLORS.label}
-              textAlignVertical="center"
-              value={sendData.password}
-              secureTextEntry={securePassword}
-              onChangeText={newPass => {
-                setError({ username: '', password: '' });
-                setSendData(prevValue => {
-                  return { ...prevValue, password: newPass };
-                });
-              }}
-            />
+        <View style={styles.container}>
+          <Image style={isPad ? styles.logoIPad : styles.logo} source={IMAGES.logos.logo} />
+          {/* <Image style={isPad ? styles.logoIwave : styles.logowave} source={IMAGES.line} tintColor={'#FDBE6F'} /> */}
+
+          {/* <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              marginBottom: 20,
+            }}>
+
             <TouchableOpacity
-              onPress={() => setSecurePassword(!securePassword)}
-              style={styles.eye}>
+              onPress={() => changeLanguage('en')}
+              style={{
+                marginHorizontal: 10,
+                borderWidth: language === 'en' ? 2 : 0,
+                borderColor: '#FDBE6F',
+                 borderRadius: 2,
+              }}>
               <Image
-                source={
-                  securePassword
-                    ? require('../assets/images/eyeclose.png')
-                    : require('../assets/images/eyeopen.png')
-                }
+                source={IMAGES.US}
                 style={{
-                  width: isPad ? 35 : 25,
-                  height: isPad ? 35 : 25,
-                  resizeMode: 'contain',
+                  width: 36,
+                  height: 30,
                 }}
-              // tintColor={'red'}
+                resizeMode="contain"
               />
             </TouchableOpacity>
-          </View>
-          <Text style={styles.errorText}>
-            {error?.password != 'Not a valid user' && error?.password}
-          </Text>
-        </View>
-        <View
-          style={[
-            isPad ? styles.iPadInputBtn : styles.inputIbtn,
-            { backgroundColor: '#FDBE6F' },
-          ]}>
+
+            <TouchableOpacity
+              onPress={() => changeLanguage('es')}
+              style={{
+                marginHorizontal: 10,
+                borderWidth: language === 'es' ? 2 : 0,
+                borderColor: '#FDBE6F',
+                borderRadius: 2,
+                // backgroundColor:'red'
+              }}>
+              <Image
+                source={IMAGES.Spain}
+                style={{
+                  width: 36,
+                  height: 30,
+                  // backgroundColor:'green'
+                }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+
+          </View> */}
           <TouchableOpacity
-            style={styles.button}
-            onPress={() => {
-              onLogin();
-            }}>
-            {isLoading ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
-            ) : (
-              <Text style={isPad ? styles.padText : styles.buttonText}>Login</Text>
-            )}
+            style={styles.languageSelector}
+            activeOpacity={0.8}
+            onPress={() => setShowLanguagePicker(true)}>
+
+            <View style={styles.languageRow}>
+              <Image
+                source={languages.find(x => x.value === language)?.flag}
+                style={styles.flag}
+                resizeMode="contain"
+              />
+
+              <Text style={styles.languageText}>
+                {languages.find(x => x.value === language)?.label}
+              </Text>
+            </View>
+
+            <Text style={styles.arrow}>▼</Text>
           </TouchableOpacity>
+          <View style={styles.inputGroup}>
+            <View style={isPad ? styles.iPadInput : styles.inputI}>
+              <TextInput
+                style={isPad ? styles.input : styles.inputIPad}
+                placeholder={t('Username')}
+                placeholderTextColor={COLORS.label}
+                textAlignVertical="center"
+                value={sendData.username}
+                autoCapitalize="none"
+                onChangeText={newUsername => {
+                  setError({ username: '', password: '' });
+                  setSendData(prevValue => {
+                    return { ...prevValue, username: newUsername };
+                  });
+                }}
+              />
+            </View>
+            <Text style={styles.errorText}>
+              {error?.password == 'Not a valid user'
+                ? error?.password
+                : error.username}
+            </Text>
+            <View style={isPad ? styles.iPadInput : styles.inputI}>
+              <TextInput
+                style={isPad ? styles.input : styles.inputIPad}
+                placeholder={t('Password')}
+                placeholderTextColor={COLORS.label}
+                textAlignVertical="center"
+                value={sendData.password}
+                secureTextEntry={securePassword}
+                onChangeText={newPass => {
+                  setError({ username: '', password: '' });
+                  setSendData(prevValue => {
+                    return { ...prevValue, password: newPass };
+                  });
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setSecurePassword(!securePassword)}
+                style={styles.eye}>
+                <Image
+                  source={
+                    securePassword
+                      ? require('../assets/images/eyeclose.png')
+                      : require('../assets/images/eyeopen.png')
+                  }
+                  style={{
+                    width: isPad ? 35 : 25,
+                    height: isPad ? 35 : 25,
+                    resizeMode: 'contain',
+                  }}
+                // tintColor={'red'}
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.errorText}>
+              {error?.password != 'Not a valid user' && error?.password}
+            </Text>
+          </View>
+          <View
+            style={[
+              isPad ? styles.iPadInputBtn : styles.inputIbtn,
+              { backgroundColor: '#FDBE6F' },
+            ]}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                onLogin();
+              }}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <Text style={isPad ? styles.padText : styles.buttonText}>{t('Login')}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+
         </View>
-
-
-      </View>
-      <Text
-        style={{
-          // marginTop: 50,
-          color: 'white',
-          fontSize: isPad ? 25 : 18,
-          fontWeight: 'bold',
-          bottom: isPad ? 90 : 70,
-          alignSelf: 'center'
-        }}>
-        v1.0.11
-      </Text>
+        <Text
+          style={{
+            color: COLORS.white,
+            fontSize: isPad ? 20 : 14,
+            opacity: 0.7,
+            fontFamily: FONTS.RICORDORegular,
+            bottom: isPad ? 90 : 70,
+            alignSelf: 'center'
+          }}>
+          v1.3
+        </Text>
       </LinearGradient>
-    {/* </ImageBackground> */}
+      {/* </ImageBackground> */}
     </KeyboardScroll >
   );
 };
@@ -457,5 +608,69 @@ const styles = StyleSheet.create({
     marginStart: 5,
     fontFamily: FONTS.RICORDOSemiBold,
   },
-  eye: { width: '20%', alignItems: 'center', justifyContent: 'center' }
+  eye: { width: '20%', alignItems: 'center', justifyContent: 'center' },
+  languageSelector: {
+    width: isPad ? '35%' : '50%',
+    height: 40,
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    borderWidth: 1,
+    // borderColor: '#FDBE6F',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+
+  languageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  flag: {
+    width: 30,
+    height: 22,
+    marginRight: 10,
+  },
+
+  languageText: {
+    color: '#1C2C5B',
+    fontSize: isPad ? 22 : 18,
+    fontFamily: FONTS.RICORDOSemiBold,
+  },
+
+  arrow: {
+    color: '#1C2C5B',
+    fontSize: 16,
+  },
+
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  dropdown: {
+    width: isPad ? '40%' : '70%',
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ECECEC',
+  },
+
+  dropdownText: {
+    color: '#000',
+    fontSize: 18,
+    fontFamily: FONTS.RICORDORegular,
+  },
 });

@@ -23,6 +23,7 @@ import { Package } from '../db/db.crud';
 import { recipientSearchApi } from '../utilities/ApiCalls';
 import { useKeepAwake } from '@sayem314/react-native-keep-awake';
 import LinearGradient from 'react-native-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 const sortList = [
   'Ship',
@@ -90,7 +91,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
 
   const [selectedItem, setSelectedItem] = useState('');
   const [selectedOptions, setSelectedOptions] = useState<any[]>([]);
-
+  console.log('selectedItem========', selectedItem)
   useKeepAwake();
   console.log('filterType', filterType)
   const [isLoading, setIsLoading] = useState(false);
@@ -138,6 +139,14 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
     setTimeOut(setTimeout(() => updateRecipientSearch(text), 700));
   };
 
+  // Check karega ki current tab item select hai ya nahi
+  const checkIsSelected = (item: any) => {
+    if (activeTab === 'Ship') return selectedShip === item.id;
+    if (activeTab === 'Recipient') return selectedRecipient === item.id;
+    if (activeTab === 'Status') return selectedStatus === item.id;
+    if (activeTab === 'Type') return selectedPackageType === item.id;
+    return false;
+  };
   useEffect(() => {
     let data = [];
     if (activeTab === 'Ship') data = isOnline ? shipList : dbShips;
@@ -169,21 +178,41 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
     setSortingOrder,
   } = useMode();
 
+  // const onItemClick = (item: any) => {
+  //   const id = item.id;
+  //   setSelectedItem(id);
+
+  //   if (activeTab === 'Ship') {
+  //     setShipsArr(prev => prev.map(s => ({ ...s, isSelect: s.id === id ? !s.isSelect : false })));
+  //     setSelectedShip(prev => (prev === id ? null : id));
+  //   } else if (activeTab === 'Recipient') {
+  //     setRecipientArr(prev => prev.map(r => ({ ...r, isSelect: r.id === id ? !r.isSelect : false })));
+  //     setSelectedRecipient(prev => (prev === id ? null : id));
+  //   } else if (activeTab === 'Status') {
+  //     setStatusArr(prev => prev.map(s => ({ ...s, isSelect: s.id === id ? !s.isSelect : false })));
+  //     setSelectedStatus(prev => (prev === id ? null : id));
+  //   } else if (activeTab === 'Type') {
+  //     setTypeArr(prev => prev.map(t => ({ ...t, isSelect: t.id === id ? !t.isSelect : false })));
+  //     setSelectedPackageType(prev => (prev === id ? null : id));
+  //   }
+
+  //   setSelectedOptions(prev => {
+  //     const isAlreadySelected = prev.some(opt => opt.id === id);
+  //     return isAlreadySelected ? prev.filter(opt => opt.id !== id) : [...prev, item];
+  //   });
+  // };
+
   const onItemClick = (item: any) => {
     const id = item.id;
     setSelectedItem(id);
 
     if (activeTab === 'Ship') {
-      setShipsArr(prev => prev.map(s => ({ ...s, isSelect: s.id === id ? !s.isSelect : false })));
       setSelectedShip(prev => (prev === id ? null : id));
     } else if (activeTab === 'Recipient') {
-      setRecipientArr(prev => prev.map(r => ({ ...r, isSelect: r.id === id ? !r.isSelect : false })));
       setSelectedRecipient(prev => (prev === id ? null : id));
     } else if (activeTab === 'Status') {
-      setStatusArr(prev => prev.map(s => ({ ...s, isSelect: s.id === id ? !s.isSelect : false })));
       setSelectedStatus(prev => (prev === id ? null : id));
     } else if (activeTab === 'Type') {
-      setTypeArr(prev => prev.map(t => ({ ...t, isSelect: t.id === id ? !t.isSelect : false })));
       setSelectedPackageType(prev => (prev === id ? null : id));
     }
 
@@ -192,7 +221,6 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
       return isAlreadySelected ? prev.filter(opt => opt.id !== id) : [...prev, item];
     });
   };
-
   const onApply = () => {
     onClose(true, selectedOptions);
   };
@@ -222,7 +250,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
   console.log('user===========', user)
   const onDownloadPress = async ({ user, shipId }: any) => {
     if (shipId) {
-      await setupDBPackages(user, `?ship=${shipId}`, setIsProgressOn, setIsLoadingData);
+      await setupDBPackages(user, `?ship=${shipId}`, setIsProgressOn, setIsLoadingData, shipId);
     }
   };
 
@@ -297,7 +325,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
       default: return [];
     }
   };
-
+  const { t } = useTranslation();
   return (
     <Modal visible={visible} statusBarTranslucent transparent={true}>
       <View style={styles.modalContainer}>
@@ -306,13 +334,20 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
             {filterType === '2' ? (
               <View style={[styles.shipView, { flex: 1, marginRight: isIPad ? 20 : 10, }]}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center', padding: 5 }}>
-                  {['Ship', 'Recipient', 'Status', 'Type'].map((tab) => (
-                    (tab === 'Ship' || isOnline) && (
+                  {[
+                    { key: 'Ship', label: t('Ship') },
+                    { key: 'Recipient', label: t('Recipient') },
+                    { key: 'Status', label: t('Status') },
+                    { key: 'Type', label: t('Type') },
+                  ].map((tab) => (
+                    (tab.key === 'Ship' || isOnline) && (
                       <TouchableOpacity
-                        key={tab}
-                        style={activeTab === tab ? styles.activeView : styles.inActiveView}
-                        onPress={() => handleTabSwitch(tab)}>
-                        <Text style={[styles.shipTxt, { marginHorizontal: 15 }]}>{tab}</Text>
+                        key={tab.key}
+                        style={activeTab === tab.key ? styles.activeView : styles.inActiveView}
+                        onPress={() => handleTabSwitch(tab.key)}>
+                        <Text style={[styles.shipTxt, { marginHorizontal: 15 }]}>
+                          {tab.label}
+                        </Text>
                       </TouchableOpacity>
                     )
                   ))}
@@ -332,7 +367,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
               <SvgXml xml={ICONS.header.search} width={isIPad ? 32 : '20'} height={isIPad ? 32 : '20'} style={styles.icon} />
               <TextInput
                 style={styles.input}
-                placeholder="Search"
+                placeholder={t('Search')}
                 placeholderTextColor={'#919191'}
                 value={searchQuery}
                 onChangeText={item => setSearchQuery(item)}
@@ -342,7 +377,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
 
           {filterType === '1' ? (
             <>
-              <TouchableOpacity style={styles.clear} onPress={() => { setSelectedSortOption(''), onClose(true); }}><Text>Clear</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.clear} onPress={() => { setSelectedSortOption(''), onClose(true); }}><Text>{t('Clear')}</Text></TouchableOpacity>
               <FlatList
                 data={isOnline ? sortList : offlineSortList}
                 style={{ marginTop: 20 }}
@@ -359,7 +394,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
                           setModalVisible(false);
                         }
                       }}>
-                      <Text style={isIPad ? styles.itemTextI : styles.itemText}>{item}</Text>
+                      <Text style={isIPad ? styles.itemTextI : styles.itemText}> {t(item)}</Text>
                       <Image source={IMAGES.sort} style={isIPad ? styles.sorIconI : styles.sorIcon} />
                     </TouchableOpacity>
                     <View style={styles.lineView}></View>
@@ -370,31 +405,62 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
           ) : (
             <>
               {!isLoadingData ? (
+                // <FlatList
+                //   data={getCurrentData()}
+                //   keyExtractor={item => item.id.toString()}
+                //   showsVerticalScrollIndicator={false}
+                //   renderItem={({ item }) => {
+                //     console.log('Item0:=========', item);
+                //     return (
+
+                //       <>
+                //         <TouchableOpacity
+                //           style={{ flexDirection: 'row', alignItems: 'center' }}
+                //           onPress={() => onItemClick(item)}>
+                //           <Text style={[styles.itemText, { color: item?.isSelect ? '#223890' : 'black' }]}>
+                //             {activeTab === 'Recipient' ? `${item?.first_name} ${item?.last_name}` : item?.name}
+                //           </Text>
+                //           <TouchableOpacity style={styles.radioButton} onPress={() => onItemClick(item)}>
+                //             {item?.isSelect && <View style={styles.radioButtonSelected} />}
+                //           </TouchableOpacity>
+                //         </TouchableOpacity>
+                //         <View style={styles.lineView}></View>
+                //       </>
+                //     )
+                //   }}
+                //   ListHeaderComponent={isLoading ? <ActivityIndicator color={'black'} /> : <></>}
+                // />
                 <FlatList
                   data={getCurrentData()}
                   keyExtractor={item => item.id.toString()}
                   showsVerticalScrollIndicator={false}
-                  renderItem={({ item }) => (
-                    <>
-                      <TouchableOpacity
-                        style={{ flexDirection: 'row', alignItems: 'center' }}
-                        onPress={() => onItemClick(item)}>
-                        <Text style={[styles.itemText, { color: item?.isSelect ? '#223890' : 'black' }]}>
-                          {activeTab === 'Recipient' ? `${item?.first_name} ${item?.last_name}` : item?.name}
-                        </Text>
-                        <TouchableOpacity style={styles.radioButton} onPress={() => onItemClick(item)}>
-                          {item?.isSelect && <View style={styles.radioButtonSelected} />}
+                  // extraData pass karne se FlatList ko pata chalega kab re-render hona hai
+                  extraData={[selectedShip, selectedRecipient, selectedStatus, selectedPackageType]}
+                  renderItem={({ item }) => {
+                    const isSelected = checkIsSelected(item);
+
+                    return (
+                      <>
+                        <TouchableOpacity
+                          style={{ flexDirection: 'row', alignItems: 'center' }}
+                          onPress={() => onItemClick(item)}>
+                          <Text style={[styles.itemText, { color: isSelected ? '#223890' : 'black' }]}>
+                            {activeTab === 'Recipient' ? `${item?.first_name} ${item?.last_name}` : item?.name}
+                          </Text>
+                          <TouchableOpacity style={styles.radioButton} onPress={() => onItemClick(item)}>
+                            {isSelected && <View style={styles.radioButtonSelected} />}
+                          </TouchableOpacity>
                         </TouchableOpacity>
-                      </TouchableOpacity>
-                      <View style={styles.lineView}></View>
-                    </>
-                  )}
-                  ListHeaderComponent={isLoading ? <ActivityIndicator color={'black'} /> : <></>}
+                        <View style={styles.lineView} />
+                      </>
+                    );
+                  }}
+                  ListHeaderComponent={isLoading ? <ActivityIndicator color={'black'} /> : null}
                 />
               ) : (
                 <View style={{ justifyContent: 'center', alignItems: 'center', zIndex: 1111, position: 'absolute', alignSelf: 'center', top: '50%' }}>
                   <ActivityIndicator size="large" color="#223890" />
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#000', marginTop: 12 }}>Please wait, data is loading...</Text>
+                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#000', marginTop: 12 }}> {t('Please wait, data is loading...')}</Text>
                 </View>
               )}
             </>
@@ -411,7 +477,7 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
                     {
                       // Background color hata diya hai
                       opacity: isLoadingData || selectedItem == '' ? 0.5 : 1,
-                      overflow: 'hidden' // Radius barqarar rakhne ke liye
+                      overflow: 'hidden'
                     }
                   ]}
                   onPress={() => onDownloadPress({ user, shipId: selectedShip })}>
@@ -424,21 +490,21 @@ const FiltersModal: React.FC<FiltersModalProps> = ({
                     style={StyleSheet.absoluteFill}
                   />
 
-                  <Text style={styles.applyButtonText}>Download</Text>
+                  <Text style={styles.applyButtonText}>{t('Download')}</Text>
                 </TouchableOpacity>
               ) : null}
 
               {filterType !== '1' &&
                 !(filterType === '2' && activeTab === 'Ship' && isOnline) ? (
                 <TouchableOpacity style={styles.clearButton} onPress={onClear}>
-                  <Text style={styles.clearButtonText}>Clear</Text>
+                  <Text style={styles.clearButtonText}>{t('Clear')}</Text>
                 </TouchableOpacity>
               ) : null}
 
               {/* Apply */}
               {filterType !== '1' ? (
                 <TouchableOpacity style={styles.applyButton} onPress={onApply}>
-                  <Text style={styles.applyButtonText}>Apply</Text>
+                  <Text style={styles.applyButtonText}>{t('Apply')}</Text>
                 </TouchableOpacity>
               ) : null}
 

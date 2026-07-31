@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -9,34 +9,36 @@ import {
   Alert,
   Keyboard,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
-import {BackHeader} from '../components/Header';
-import {FONTS, IMAGES} from '../assets';
-import {ShipListModal} from '../components/ShipListModal';
-import {SuccessModal} from '../components/SuccessModal';
-import {KeyboardScroll} from '../components/KeyboardScroll';
-import {InputPicker} from '../components/InputPicker';
-import {isIPad} from '../utilities/securestorage';
+import { BackHeader } from '../components/Header';
+import { FONTS, IMAGES } from '../assets';
+import { ShipListModal } from '../components/ShipListModal';
+import { SuccessModal } from '../components/SuccessModal';
+import { KeyboardScroll } from '../components/KeyboardScroll';
+import { InputPicker } from '../components/InputPicker';
+import { isIPad } from '../utilities/securestorage';
 import axios from 'axios';
-import {Backend_URL} from '../util/apiCalls';
-import {AuthContext} from '../contexts';
+import { Backend_URL } from '../util/apiCalls';
+import { AuthContext } from '../contexts';
+import { useTranslation } from 'react-i18next';
 
-const AddRecipient: React.FC = ({navigation}: any) => {
+const AddRecipient: React.FC = ({ navigation }: any) => {
   const [visible, setVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('');
   const [successVisible, setSuccessVisible] = useState(false);
   const [shipName, setShipName] = useState<any>();
   const [departmentName, setDepartmentName] = useState<any>();
   const [email, setEmail] = useState<any>();
-  const[idUnit,setIdUnit]=useState<any>();
+  const [idUnit, setIdUnit] = useState<any>();
   const [isLoading, setIsLoading] = useState(false);
-
+  const { t } = useTranslation();
   const [name, setName] = useState({
     firstName: '',
     lastName: '',
   });
 
-  const {user} = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   const validateEmail = (email: any) => {
     return String(email)
@@ -64,22 +66,22 @@ const AddRecipient: React.FC = ({navigation}: any) => {
     ) {
       if (!name.firstName) {
         obj.firstName = 'This field is required!';
-        Alert.alert('Please enter the first name');
+        Alert.alert(t('Please enter the first name'));
         return;
       }
       if (!name.lastName) {
         obj.lastName = 'This field is required!';
-        Alert.alert('Please enter the last name');
+        Alert.alert(t('Please enter the last name'));
         return;
       }
       if (!shipName?.name) {
         obj.ship = 'This field is required!';
-        Alert.alert('Please select the ship!');
+        Alert.alert(t('Please select the ship!'));
         return;
       }
       if (!departmentName?.name) {
         obj.department = 'This field is required!';
-        Alert.alert('Please select the division!');
+        Alert.alert(t('Please select the division!'));
         return;
       }
 
@@ -87,21 +89,23 @@ const AddRecipient: React.FC = ({navigation}: any) => {
     }
     if (email && !validateEmail(email)) {
       obj.email = 'Please provide a valid email.';
+      Alert.alert(t('Please provide a valid email.'));
     }
     if (name.firstName && !validateName(name.firstName)) {
       obj.firstName =
         "Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.";
       Alert.alert(
-        `Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.`,
+        t("Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.")
       );
+
       return;
     }
     if (name.lastName && !validateName(name.lastName)) {
       obj.lastName =
         "Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.";
       Alert.alert(
-        `Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.`,
-      );
+  t("Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.")
+);
       return;
     }
     if (obj?.email || obj?.firstName || obj?.lastName) return;
@@ -116,9 +120,9 @@ const AddRecipient: React.FC = ({navigation}: any) => {
           last_name: name.lastName,
           ship_id: shipName.id,
           dept: departmentName.id,
-          ...(email && {email: email}),
+          ...(email && { email: email }),
         },
-        {headers: {Authorization: 'Bearer ' + user?.token}},
+        { headers: { Authorization: 'Bearer ' + user?.token } },
       )
       .then(response => {
         if (response?.data) {
@@ -145,7 +149,7 @@ const AddRecipient: React.FC = ({navigation}: any) => {
           'user with this email already exists.'
         ) {
           obj.email = 'user with this email already exists.';
-          Alert.alert('User with this email already exists.');
+          Alert.alert(t('User with this email already exists.'));
           return;
         }
         if (
@@ -160,7 +164,7 @@ const AddRecipient: React.FC = ({navigation}: any) => {
         ) {
           obj.lastName = 'This field may not be blank.';
         }
-        Alert.alert('Something went wrong!', 'Please try again later.');
+        Alert.alert(t('Something went wrong!'), t('Please try again later.'));
       })
       .finally(() => {
         setIsLoading(false);
@@ -169,7 +173,7 @@ const AddRecipient: React.FC = ({navigation}: any) => {
 
   return (
     <View style={styles.mainView}>
-      <BackHeader title="Add Recipient" />
+      <BackHeader title={t('Add Recipient')} />
 
       <ShipListModal
         visible={visible}
@@ -181,8 +185,8 @@ const AddRecipient: React.FC = ({navigation}: any) => {
           activeTab == 'Ship'
             ? setShipName(val)
             : activeTab == 'Division'
-            ? setDepartmentName(val)
-            : '';
+              ? setDepartmentName(val)
+              : '';
         }}
       />
 
@@ -190,9 +194,9 @@ const AddRecipient: React.FC = ({navigation}: any) => {
         <SuccessModal
           visible={successVisible}
           content={{
-            heading: 'GREAT WORK!',
+            heading: t('GREAT WORK!'),
             middle: name.firstName + ' ' + name.lastName,
-            lable: 'is added as recipient.',
+            lable: t('is added as recipient.'),
           }}
           onClose={() => setSuccessVisible(!successVisible)}
         />
@@ -205,9 +209,9 @@ const AddRecipient: React.FC = ({navigation}: any) => {
           isPicker={false}
           autoCapitalize={'word'}
           isQrCode={false}
-          placeholder={'First Name*'}
-          onPickerClick={() => {}}
-          style={{marginHorizontal: 0, marginTop: 28}}
+         placeholder={t('First Name*')}
+          onPickerClick={() => { }}
+          style={{ marginHorizontal: 0, marginTop: 28,paddingVertical:Platform.OS === 'ios' ? 10 : 0, }}
           pickerValue={name.firstName}
           onChangeText={val => {
             setName(prev => {
@@ -223,9 +227,9 @@ const AddRecipient: React.FC = ({navigation}: any) => {
           isPicker={false}
           isQrCode={false}
           autoCapitalize={'word'}
-          placeholder={'Last Name*'}
-          onPickerClick={() => {}}
-          // style={{marginHorizontal: 0, marginVertical: 10}}
+          placeholder={t('Last Name*')}
+          onPickerClick={() => { }}
+          style={{marginHorizontal: 0, marginVertical: Platform.OS === 'ios' ? 10 : 0,}}
           pickerValue={name.lastName}
           onChangeText={val => {
             setName(prev => {
@@ -239,31 +243,32 @@ const AddRecipient: React.FC = ({navigation}: any) => {
         <InputPicker
           isPicker={true}
           isQrCode={false}
-          placeholder={'Select Ship/department*'}
-          style={{marginHorizontal: 30, marginTop: 28}}
+          placeholder={t('Select Ship/department*')}
+          style={{ paddingTop: isIPad ? 20 : 10 }}
           onPickerClick={() => {
             setVisible(true), setActiveTab('Ship');
           }}
-          onChangeText={() => {}}
+          onChangeText={() => { }}
           pickerValue={shipName?.name}
         />
-        <View style={{marginTop:10}} />
+        {/* <View style={{marginTop:10}} /> */}
         <InputPicker
           isPicker={true}
           isQrCode={false}
-          placeholder={'Select Department*'}
-          style={{}}
+          placeholder={t('Select Department*')}
+          style={{ paddingTop: isIPad ? 20 : 10, }}
           onPickerClick={() => {
             setActiveTab('Division'), setVisible(true);
           }}
           pickerValue={departmentName?.name}
         />
-         <InputPicker
+        <InputPicker
           isPicker={false}
           autoCapitalize={'word'}
           isQrCode={false}
-          placeholder={'ID #/ Unit #*'}
-          onPickerClick={() => {}}
+          style={{marginHorizontal: 0, marginVertical: Platform.OS === 'ios' ? 10 : 0,}}
+          placeholder={t('ID #/ Unit #*')}
+          onPickerClick={() => { }}
           pickerValue={idUnit}
           onChangeText={val => {
             setIdUnit(val);
@@ -272,14 +277,14 @@ const AddRecipient: React.FC = ({navigation}: any) => {
         <InputPicker
           isPicker={false}
           isQrCode={false}
-          placeholder={'Email Address'}
-          onPickerClick={() => {}}
-          style={{marginHorizontal: 0, marginVertical: 10}}
+          placeholder={t('Email Address')}
+          onPickerClick={() => { }}
+          style={{marginHorizontal: 0, marginVertical: Platform.OS === 'ios' ? 10 : 0,}}
           pickerValue={email}
           onChangeText={setEmail}
         />
       </KeyboardScroll>
-      <View style={{flex: 1, justifyContent: 'flex-end', marginBottom: 20}}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', marginBottom: 20 }}>
         <TouchableOpacity
           style={styles.btnView}
           disabled={isLoading}
@@ -343,4 +348,4 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 });
-export {AddRecipient};
+export { AddRecipient };

@@ -5,6 +5,7 @@ import {FONTS, ICONS, IMAGES} from '../assets';
 import {useNavigation} from '@react-navigation/native';
 import {useAuth} from '../contexts';
 import {useNavigationContext} from '../contexts/navigationcontext';
+import {useTranslation} from 'react-i18next';
 
 interface OffProps {
   onClose: () => void;
@@ -14,7 +15,7 @@ interface OffProps {
 
 const OfflineMode: React.FC<OffProps> = ({onClose, isRedView, onRedView}) => {
   const navigation = useNavigation<any>();
-
+const {t} = useTranslation();
   const onOKPress = (key: string) => {
     let isCross = true;
     navigation.navigate(key, isCross);
@@ -30,12 +31,12 @@ const OfflineMode: React.FC<OffProps> = ({onClose, isRedView, onRedView}) => {
               <Image style={styles.xImg} source={IMAGES.close} />
             </TouchableOpacity>
             <Image style={styles.animteImg} source={IMAGES.OffLineImg} />
-            <Text style={styles.ofline}>OFFLINE</Text>
+            <Text style={styles.ofline}>{t('OFFLINE')}</Text>
             <Text style={styles.content}>
-              You are in offline mode, no internet connection available.
+              {t('You are in offline mode, no internet connection available.')}
             </Text>
             <TouchableOpacity onPress={onClose} style={styles.btnView}>
-              <Text style={styles.okTxt}>Ok</Text>
+              <Text style={styles.okTxt}>{t('OK')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -43,10 +44,10 @@ const OfflineMode: React.FC<OffProps> = ({onClose, isRedView, onRedView}) => {
         // Replaced BlurView with a semi-transparent overlay View
         <View style={styles.absoluteend}>
           <View style={styles.redView}>
-            <Text style={styles.uhTxt}>Uh Oh!</Text>
+            <Text style={styles.uhTxt}>{t('Uh Oh!')}</Text>
             <View style={styles.rowView}>
               <Text style={styles.label}>
-                Please save the package details to avoid duplicate records.
+                {t('Please save the package details to avoid duplicate records.')}
               </Text>
               <TouchableOpacity onPress={onRedView} style={styles.xView}>
                 <Image style={styles.xImg} source={IMAGES.close} />

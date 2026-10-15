@@ -457,7 +457,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                     color: '#db6363',
                     fontSize: isIPad ? 30 : 20,
                     textAlign: 'center',
-                    fontFamily: 'OctoberCompressRegular',
+                     fontFamily: FONTS.RICORDOSemiBold,
                     fontWeight: '600'
                   }}>
                   {t('Total Due')} {t('$')}
@@ -579,7 +579,7 @@ const PaymentModal: React.FC<PaymentProps> = ({
                         style={{
                           color: '#db6363',
                           fontSize: isIPad ? 30 : 23,
-                          fontFamily: 'OctoberCompressRegular',
+                           fontFamily: FONTS.RICORDOSemiBold,
                           fontWeight: '600'
                         }}>
                         {t('Balance due is')} {t('$')}
@@ -897,6 +897,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     color: 'grey',
     alignSelf: 'flex-start',
+     fontFamily: FONTS.RICORDORegular,
   },
   numberPad: {
     width: '100%',

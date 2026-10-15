@@ -181,33 +181,32 @@ const Search = () => {
   }, [packageList, dbPackages, sortingOrder]);
 
 
-  const onItemPress = (item: Package, index: number) => {
-    // Pure item object ko safety ke sath naye reference ke sath copy karein
-    let arr = flatListData.map((pkg: Package, idx: number) =>
-      idx === index ? { ...pkg, isSelect: !pkg.isSelect } : pkg
-    );
+ const onItemPress = (item: Package, index: number) => {
+  // Direct reference mutate hone se dbPackages ka object bhi update ho jata hai
+  let arr = [...flatListData];
+  let selectArr = [...selectedArr];
+  let count = selectCount;
 
-    let selectArr = [...selectedArr];
-    let count = selectCount;
+  arr[index].isSelect = !arr[index].isSelect;
 
-    if (!flatListData[index].isSelect) { // Checked logic state safely
-      if (!selectArr.some(i => i.id === item.id)) {
-        selectArr.push({ ...item, isSelect: true });
-        count += 1;
-      }
-    } else {
-      let dex = selectArr.findIndex(i => i.id === item.id);
-      if (dex > -1) {
-        selectArr.splice(dex, 1);
-        count = Math.max(0, count - 1);
-      }
+  if (arr[index].isSelect) {
+    if (!selectArr.some(i => i.id === item.id)) {
+      selectArr.push(arr[index]);
+      count += 1;
     }
+  } else {
+    let dex = selectArr.findIndex(i => i.id === item.id);
+    if (dex > -1) {
+      selectArr.splice(dex, 1);
+      count = Math.max(0, count - 1);
+    }
+  }
 
-    setPackageListData(arr);
-    setFlatListData(arr);
-    setSelectedArr(selectArr);
-    setSelectCount(count);
-  };
+  setPackageListData(arr);
+  setFlatListData(arr);
+  setSelectedArr(selectArr);
+  setSelectCount(count);
+};
 
 
   // __DEV__ && console.log('selectArr', selectedArr);

@@ -1,25 +1,29 @@
-import React, {useState, useEffect} from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Modal,
-  TextInput,
-  FlatList,
-  Image,
   Dimensions,
+  useWindowDimensions,
 } from 'react-native';
-import {FONTS, ICONS, IMAGES} from '../assets';
+import {FONTS} from '../assets';
 import {useNavigation} from '@react-navigation/native';
 import {useNavigationContext} from '../contexts/navigationcontext';
 import {isIPad} from '../utilities/securestorage';
 import LottieView from 'lottie-react-native';
+import {useTranslation} from 'react-i18next';
 
 interface SuccessProps {
   visible: boolean;
   onClose: () => void;
-  content: {heading: string; middle: string; lable: string};
+  content: {
+    heading: string;
+    middle: string;
+    lable: string;
+  };
+  isOnline?: boolean;
 }
 
 const SuccessModal: React.FC<SuccessProps> = ({
@@ -28,82 +32,174 @@ const SuccessModal: React.FC<SuccessProps> = ({
   content,
   isOnline,
 }) => {
-  let navigation = useNavigation<any>();
-  const {searchActive, setSearchActive} = useNavigationContext();
+  const navigation = useNavigation<any>();
+  const {setSearchActive} = useNavigationContext();
+  const {t} = useTranslation();
+
+  const {width, height} = useWindowDimensions();
+
+  // Detect current orientation dynamically
+  const isLandscape = width > height;
 
   const onPress = () => {
     onClose();
 
-    if (isOnline) {
-      // setSearchActive(false);
-      // navigation.navigate('Home');
-       setSearchActive(true);
-      navigation.navigate('Search');
-    } else {
-       setSearchActive(true);
-      navigation.navigate('Search');
-    }
+    setSearchActive(true);
+    navigation.navigate('Search');
   };
 
-  // useEffect(() => {
-  //   let timer = setTimeout(() => {
-  //     onClose();
+  /*
+   * Responsive sizes
+   */
+  const modalWidth = isIPad
+    ? isLandscape
+      ? width * 0.6
+      : width * 0.85
+    : '100%';
 
-  //     if (isOnline) {
-  //       setSearchActive(false);
-  //       navigation.navigate('Home');
-  //     } else {
-  //       navigation.navigate('Search');
-  //     }
-  //   }, 2200);
+  const modalHeight = isIPad
+    ? isLandscape
+      ? height * 0.88
+      : height * 0.6
+    : isLandscape
+    ? height * 0.75
+    : height * 0.6;
 
-  //   return () => {
-  //     //timer.clarTIme
-  //   };
-  // }, []);
+  const lottieSize = isIPad
+    ? isLandscape
+      ? Math.min(width * 0.18, height * 0.45)
+      : Math.min(width * 0.35, height * 0.3)
+    : isLandscape
+    ? Math.min(width * 0.25, height * 0.4)
+    : width * 0.4;
+
+  const headingFontSize = isIPad
+    ? isLandscape
+      ? 32
+      : 40
+    : isLandscape
+    ? 26
+    : 30;
+
+  const middleFontSize = isIPad
+    ? isLandscape
+      ? 22
+      : 25
+    : isLandscape
+    ? 14
+    : 16;
+
+  const bottomFontSize = isIPad
+    ? isLandscape
+      ? 22
+      : 30
+    : isLandscape
+    ? 14
+    : 16;
+
+  const buttonWidth = isIPad
+    ? isLandscape
+      ? width * 0.35
+      : width * 0.65
+    : isLandscape
+    ? width * 0.45
+    : width * 0.7;
 
   return (
-    <Modal visible={visible}  transparent={true}>
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      supportedOrientations={[
+        'portrait',
+        'portrait-upside-down',
+        'landscape',
+        'landscape-left',
+        'landscape-right',
+      ]}>
       <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          {/* <TouchableOpacity style={styles.crossView}
-                        onPress={onClose} >
-                        <Image source={IMAGES.close} style={styles.closeImg} />
-                    </TouchableOpacity> */}
-          {/* <View style={styles.gifImg}>
-            <Image source={IMAGES.greenCheck} style={styles.gifImg} />
-          </View> */}
-           <LottieView
-                        style={styles.icon}
-                        source={require('../assets/animations/LottieAnimation.json')}
-                        autoPlay
-                        loop
-                      />
-          <Text style={styles.congrats}>{content?.heading} </Text>
-          {content?.middle ? (
-            <Text style={styles.miLable}>{content?.middle}</Text>
-          ) : (
-            <></>
-          )}
-          <Text style={styles.botTle}>{content.lable}</Text>
+        <View
+          style={[
+            styles.modalContent,
+            {
+              width: modalWidth,
+              height: modalHeight,
+              paddingHorizontal: isIPad ? 30 : 20,
+              paddingVertical: isLandscape ? 20 : 30,
+            },
+          ]}>
+          
+          {/* Success Animation */}
+          <LottieView
+            style={{
+              width: lottieSize,
+              height: lottieSize,
+            }}
+            source={require('../assets/animations/LottieAnimation.json')}
+            autoPlay
+            loop
+          />
 
+          {/* Heading */}
+          <Text
+            style={[
+              styles.congrats,
+              {
+                fontSize: headingFontSize,
+                marginTop: isLandscape ? 5 : 15,
+              },
+            ]}>
+            {t(content?.heading)}
+          </Text>
+
+          {/* Middle Label */}
+          {content?.middle ? (
+            <Text
+              style={[
+                styles.miLable,
+                {
+                  fontSize: middleFontSize,
+                  marginVertical: isLandscape ? 5 : 10,
+                },
+              ]}>
+              {t(content?.middle)}
+            </Text>
+          ) : null}
+
+          {/* Bottom Label */}
+          <Text
+            style={[
+              styles.botTle,
+              {
+                fontSize: bottomFontSize,
+                marginVertical: isLandscape ? 5 : 10,
+              },
+            ]}>
+            {t(content?.lable)}
+          </Text>
+
+          {/* OK Button */}
           <TouchableOpacity
             onPress={onPress}
-            style={{
-              alignSelf: 'center',
-              backgroundColor: '#FDBE6F',
-              width: width * 0.7,
-              paddingVertical: 10,
-              borderRadius: 10,
-            }}>
+            style={[
+              styles.okButton,
+              {
+                width: buttonWidth,
+                paddingVertical: isLandscape ? 8 : 10,
+              },
+            ]}>
             <Text
-              style={{
-                textAlign: 'center',
-                fontSize: isIPad ? 30 :16,
-                fontWeight: 'bold',
-                color: 'white',
-              }}>
-              Ok
+              style={[
+                styles.okText,
+                {
+                  fontSize: isIPad
+                    ? isLandscape
+                      ? 22
+                      : 30
+                    : 16,
+                },
+              ]}>
+              {t('Ok')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -112,71 +208,56 @@ const SuccessModal: React.FC<SuccessProps> = ({
   );
 };
 
-const {height, width} = Dimensions.get('screen');
-
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
+    alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
+
   modalContent: {
-    // flex: 1,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 40,
-    // maxHeight: '75%',
-    height: height * 0.6,
-    justifyContent: 'space-around',
-    alignItems:'center'
-  },
-  crossView: {
-    height: 48,
-    width: 48,
-    borderRadius: 48 / 2,
-    justifyContent: 'center',
+
+    justifyContent: 'space-evenly',
     alignItems: 'center',
-    backgroundColor: '#F4F4F4',
-    alignSelf: 'flex-end',
+
+    paddingBottom: 30,
   },
-  closeImg: {
-    height: 10,
-    width: 10,
-    tintColor: 'black',
-  },
-  gifImg: {
-    height: isIPad ? 250:170,
-    width: isIPad ? 250 :170,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-  },
+
   congrats: {
-    fontSize: isIPad ? 40 :30,
     fontFamily: FONTS.OpenSansMedium,
     color: 'black',
     textAlign: 'center',
-    marginTop: 20,
+    marginHorizontal: 20,
   },
+
+  miLable: {
+    fontFamily: FONTS.RICORDOSemiBold,
+    color: '#FDBE6F',
+    textAlign: 'center',
+    marginHorizontal: 20,
+  },
+
   botTle: {
-    fontSize: isIPad ? 30 : 16,
     fontFamily: FONTS.RICORDORegular,
     color: '#6F7884',
     textAlign: 'center',
-    marginVertical:isIPad?10:10,
+    marginHorizontal: 20,
   },
-  miLable: {
-    fontSize: isIPad ? 25 : 16,
-    fontFamily: FONTS.RICORDOSemiBold,
-    marginVertical:isIPad?10:10,
-    color: '#FDBE6F',
+
+  okButton: {
+    alignSelf: 'center',
+    backgroundColor: '#FDBE6F',
+    borderRadius: 10,
+  },
+
+  okText: {
     textAlign: 'center',
-  },
-   icon: {
-    width: width * 0.4,
-    height: width * 0.4,
-    marginHorizontal: 5,
+    fontWeight: 'bold',
+    color: 'white',
   },
 });
 

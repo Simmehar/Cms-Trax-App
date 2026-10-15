@@ -147,8 +147,8 @@ const ShipListModal: React.FC<ShipListProps> = ({
   return [
     { id: 1, name: 'Logged IN', isHeader: true },
     ...loggedInList,
-    { id: 2, name: 'Logged OUT', isHeader: true },
-    ...loggedOutList,
+    // { id: 2, name: 'Logged OUT', isHeader: true },
+    // ...loggedOutList,
   ];
 };
 

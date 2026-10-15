@@ -320,5 +320,18 @@ export default {
     "Está en modo sin conexión. No hay conexión a Internet disponible.",
   "Uh Oh!": "¡Ups!",
   "Please save the package details to avoid duplicate records.":
-    "Guarde los detalles del paquete para evitar registros duplicados."
+    "Guarde los detalles del paquete para evitar registros duplicados.",
+    "Authentication Failed":"Error de autenticación",
+    "Subscription Expired": "Suscripción Expirada",
+    "Your subscription has expired.\nPlease renew your subscription\nto continue using CMS Trax.": "Tu suscripción ha expirado.\nPor favor, renueva tu suscripción\npara continuar usando CMS Trax.",
+  "Please call or email": "Por favor, llame o envíe un correo electrónico a",
+  "Our system is\nunder maintenance": "Nuestro sistema está\nen mantenimiento",
+  "We're making some improvements to serve you better.": "Estamos realizando mejoras para servirte mejor.",
+  "Please try again in a few minutes.": "Por favor, inténtalo de nuevo en unos minutos.",
+  "Email or password is incorrect. Please try again.": "El correo electrónico o la contraseña son incorrectos. Por favor, inténtalo de nuevo.",
+  "Access Restricted": "Acceso Restringido",
+  "Your subscription has expired.\nPlease contact your Superuser\nor Admin for assistance.": "Su suscripción ha expirado.\nComuníquese con su Superusuario\no Administrador para obtener ayuda.",
+  "We’re making some improvements to provide you with a better experience.": "Estamos realizando mejoras para brindarle una mejor experiencia.",
+  "For additional support, contact us at": "Para soporte adicional, contáctenos en",
+  "Password is required": "La contraseña es obligatoria",
 };

@@ -320,5 +320,18 @@ export default {
     "You are in offline mode, no internet connection available.",
   "Uh Oh!": "Uh Oh!",
   "Please save the package details to avoid duplicate records.":
-    "Please save the package details to avoid duplicate records."
+    "Please save the package details to avoid duplicate records.",
+    "Authentication Failed":"Authentication Failed",
+    "Subscription Expired": "Subscription Expired",
+  "Your subscription has expired.\nPlease renew your subscription\nto continue using CMS Trax.": "Your subscription has expired.\nPlease renew your subscription\nto continue using CMS Trax.",
+  "Please call or email": "Please call or email",
+  "Our system is\nunder maintenance": "Our system is\nunder maintenance",
+  "We're making some improvements to serve you better.": "We're making some improvements to serve you better.",
+  "Please try again in a few minutes.": "Please try again in a few minutes.",
+  "Email or password is incorrect. Please try again.": "Email or password is incorrect. Please try again.",
+  "Access Restricted": "Access Restricted",
+  "Your subscription has expired.\nPlease contact your Superuser\nor Admin for assistance.": "Your subscription has expired.\nPlease contact your Superuser\nor Admin for assistance.",
+  "We’re making some improvements to provide you with a better experience.": "We’re making some improvements to provide you with a better experience.",
+  "For additional support, contact us at": "For additional support, contact us at",
+  "password is required": "Password is required",
 };

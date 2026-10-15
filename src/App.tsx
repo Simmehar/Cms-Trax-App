@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {StackNavigator} from './navigation';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {StatusBar, Text, View} from 'react-native';
+import {StatusBar, Text, TextInput,View} from 'react-native';
 
 import {
   AuthProvider,
@@ -13,7 +13,6 @@ import {NavigationProvider} from './contexts/navigationcontext';
 import {PackageProvider} from './contexts/packagecontext';
 
 import FlashMessage from 'react-native-flash-message';
-import {StripeProvider} from '@stripe/stripe-react-native';
 import {OfflineModeProvider} from './db/db.context';
 
 import SQLite from 'react-native-sqlite-storage';
@@ -23,7 +22,23 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {loadBackendUrl} from './util/apiCalls';
 import { WithSplashScreen } from './components/splash';
 import './localization/i18n';
+// App.tsx ya index.js ke starting me
 
+interface TextWithDefaultProps extends Text {
+  defaultProps?: { allowFontScaling?: boolean; maxFontSizeMultiplier?: number };
+}
+
+((Text as unknown) as TextWithDefaultProps).defaultProps =
+  ((Text as unknown) as TextWithDefaultProps).defaultProps || {};
+((Text as unknown) as TextWithDefaultProps).defaultProps!.allowFontScaling = false;
+
+interface TextInputWithDefaultProps extends TextInput {
+  defaultProps?: { allowFontScaling?: boolean; maxFontSizeMultiplier?: number };
+}
+
+((TextInput as unknown) as TextInputWithDefaultProps).defaultProps =
+  ((TextInput as unknown) as TextInputWithDefaultProps).defaultProps || {};
+((TextInput as unknown) as TextInputWithDefaultProps).defaultProps!.allowFontScaling = false;
 SQLite.enablePromise(false);
 
 const Routes = () => {
@@ -48,26 +63,20 @@ const Routes = () => {
   }
 
   return (
-    <StripeProvider
-      publishableKey={'pk_live_51T7IhYQesY9Hh8zgFg7vFERFzZPHIpn7gBEM4gn7vhs7TUZLc9lcmugiSh3j8gZCC4qmBBHSnPKj4hIQnkZ1daPU00nwHKEskU'}
-      merchantIdentifier="merchant.identifier"
-      urlScheme="your-url-scheme">
-
+    <>
       <StatusBar barStyle={'dark-content'} />
       <WithSplashScreen isAppReady={isAppReady}>
-
-      <SafeAreaProvider>
-        <SearchProvider>
-          <OfflineModeProvider>
-            <NavigationContainer>
-              <StackNavigator isLoggedIn={isLoggedIn} />
-            </NavigationContainer>
-          </OfflineModeProvider>
-        </SearchProvider>
-      </SafeAreaProvider>
+        <SafeAreaProvider>
+          <SearchProvider>
+            <OfflineModeProvider>
+              <NavigationContainer>
+                <StackNavigator isLoggedIn={isLoggedIn} />
+              </NavigationContainer>
+            </OfflineModeProvider>
+          </SearchProvider>
+        </SafeAreaProvider>
       </WithSplashScreen>
-
-    </StripeProvider>
+    </>
   );
 };
 

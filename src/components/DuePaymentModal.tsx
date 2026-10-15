@@ -42,9 +42,9 @@ const { t } = useTranslation();
     <Modal visible={visible}  transparent={true}>
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <TouchableOpacity style={styles.crossView} onPress={onClose}>
+          {/* <TouchableOpacity style={styles.crossView} onPress={onClose}>
             <Image source={IMAGES.close} style={styles.closeImg} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <Text style={styles.topTitle}> {t('Payment Completed')}</Text>
           <View style={{marginTop: isIPad?34:14}}>
             <Image

@@ -182,7 +182,7 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-               {t('Division')}{' '}
+               {t('Division')}:{' '}
                 <Text style={styles.rightTxt}>
                   {item?.user?.department_name}
                 </Text>{' '}
@@ -190,8 +190,8 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
             </View>
 
             <View style={[styles.rowView, { marginTop: 10 }]}>
-              <Text style={styles.leftTxt}>
-                {t('Carrier')} <Text style={styles.rightTxt}>{item?.carrier}</Text>{' '}
+              <Text style={styles.leftTxt}>{' '}
+                {t('Carrier')}:<Text style={styles.rightTxt}>{item?.carrier}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
@@ -202,7 +202,7 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-               {t('Log-In')}
+               {t('Log-In')}{' '}
                 <Text style={styles.rightTxt}>
                   {/* {getFormattedDate( */}
                   {item?.package_tracking?.[0]?.created_at || item?.logInDate}
@@ -212,7 +212,7 @@ const checkoutImages: any[] = Array.isArray(item?.checkout_images) ? item?.check
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                {t('Log-In By')}
+                {t('Log-In By')}{' '}
                 <Text style={styles.rightTxt}>
                   {item?.package_tracking?.[0]?.done_by_user || item?.logInBy}
                 </Text>{' '}

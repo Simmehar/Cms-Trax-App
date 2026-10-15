@@ -1,4 +1,4 @@
-import React, {cloneElement, useState} from 'react';
+import React, { cloneElement, useState } from 'react';
 import {
   View,
   Text,
@@ -19,160 +19,163 @@ import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-import {COLORS, FONTS, IMAGES} from '../assets';
-import {KeyboardScroll} from '../components/KeyboardScroll';
-import {CheckIpad, isIPad} from '../utilities/securestorage';
+import { COLORS, FONTS, IMAGES } from '../assets';
+import { KeyboardScroll } from '../components/KeyboardScroll';
+import { CheckIpad, isIPad } from '../utilities/securestorage';
 import { setBackendUrl } from '../util/apiCalls';
 
-const {width, height} = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const isPad = CheckIpad();
 
 interface Props {
   navigation: any;
 }
 
-const BusinessSelect: React.FC<Props> = ({navigation}) => {
+const BusinessSelect: React.FC<Props> = ({ navigation }) => {
   const [businessPhoneNumber, setBusinessPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
 
   // =========================
   // API CALL FUNCTION
   // =========================
-const handleContinue = async () => {
-  try {
-    if (!businessPhoneNumber?.trim()) {
-      Alert.alert('Please enter your 10 digit phone number');
-      return;
-    }
+  const handleContinue = async () => {
+    try {
+      if (!businessPhoneNumber?.trim()) {
+        Alert.alert('Please enter your 10 digit phone number');
+        return;
+      }
 
-    setLoading(true);
+      setLoading(true);
 
-    const response = await axios.post(
-      'https://cmslogistics.app.cmstrax.com/api/billing/validate-business-id/',
-      {
-        phone_number: businessPhoneNumber,
-      },
-    );
-
-    console.log('response =====>', response?.data);
-
-    // ==========================
-    // INVALID BUSINESS EMAIL
-    // ==========================
-
-    if (
-      response?.data?.success === false ||
-      response?.data?.valid === false
-    ) {
-      setLoading(false);
-
-      Alert.alert(
-        'Phone Number not found. Please verify your Number and try again.'
+      const response = await axios.post(
+        'https://cmslogistics.app.cmstrax.com/api/billing/validate-business-id/',
+        {
+          phone_number: businessPhoneNumber,
+        },
       );
 
-      return;
+      console.log('response =====>', response?.data);
+
+      // ==========================
+      // INVALID BUSINESS EMAIL
+      // ==========================
+
+      if (
+        response?.data?.success === false ||
+        response?.data?.valid === false
+      ) {
+        setLoading(false);
+
+        Alert.alert(
+          'Phone Number not found. Please verify your Number and try again.'
+        );
+
+        return;
+      }
+
+      // ==========================
+      // VALID phone number
+      // ==========================
+
+      const tenantDomain = response?.data?.tenant_domain;
+
+      await setBackendUrl(tenantDomain);
+
+      await AsyncStorage.setItem('BUSINESS_SELECTED', 'true');
+
+      setLoading(false);
+
+      navigation.replace('Login');
+
+    } catch (error: any) {
+      console.log('Phone Number not found. Please verify your Number and try again.');
+
+      setLoading(false);
+
+      // ==========================
+      // API ERROR MESSAGE
+      // ==========================
+      Alert.alert('Phone Number not found. Please verify your Number and try again.');
     }
+  };
 
-    // ==========================
-    // VALID phone number
-    // ==========================
+  return (
+    <LinearGradient
+      colors={['#13254C', '#1D4178', '#2E67B8']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientContainer}>
 
-    const tenantDomain = response?.data?.tenant_domain;
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
 
-    await setBackendUrl(tenantDomain);
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
-    await AsyncStorage.setItem('BUSINESS_SELECTED', 'true');
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
 
-    setLoading(false);
+          <View style={styles.contentContainer}>
+            <Image
+              source={IMAGES.logos.logo}
+              style={isPad ? styles.logoIpad : styles.logo}
+            />
 
-    navigation.replace('Login');
-
-  } catch (error: any) {
-    console.log('Phone Number not found. Please verify your Number and try again.');
-
-    setLoading(false);
-
-    // ==========================
-    // API ERROR MESSAGE
-    // ==========================
-    Alert.alert('Phone Number not found. Please verify your Number and try again.');
-  }
-};
-
- return (
-  <LinearGradient
-    colors={['#13254C', '#1D4178', '#2E67B8']}
-    start={{x: 0, y: 0}}
-    end={{x: 1, y: 1}}
-    style={styles.gradientContainer}>
-
-    <StatusBar
-      translucent
-      backgroundColor="transparent"
-      barStyle="light-content"
-    />
-
-    <KeyboardAvoidingView
-      style={{flex: 1}}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-
-        <View style={styles.contentContainer}>
-          <Image
-            source={IMAGES.logos.logo}
-            style={isPad ? styles.logoIpad : styles.logo}
-          />
-
-          {/* <Image
+            {/* <Image
             source={IMAGES.line}
             tintColor={'#FDBE6F'}
             style={isPad ? styles.waveIpad : styles.wave}
           /> */}
 
-          <Text style={styles.title}>Business Setup</Text>
+            <Text style={styles.title}>Business Setup</Text>
 
-          <Text style={styles.subTitle}>
-            Enter the phone number registered with your organization.
-          </Text>
+            <Text style={styles.subTitle}>
+              Enter the phone number registered with your organization.
+            </Text>
 
-          <View style={styles.inputWrapper}>
-            <TextInput
-              placeholder="Enter phone number"
-              placeholderTextColor="#7A7A7A"
-              autoCapitalize="none"
-              value={businessPhoneNumber}
-              onChangeText={setBusinessPhoneNumber}
-              style={styles.input}
-              keyboardType='number-pad'
-            />
+            <View style={styles.inputWrapper}>
+              <TextInput
+                placeholder="Enter phone number"
+                placeholderTextColor="#7A7A7A"
+                autoCapitalize="none"
+                value={businessPhoneNumber}
+                onChangeText={setBusinessPhoneNumber}
+                style={styles.input}
+                keyboardType='number-pad'
+              />
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.button}
+              onPress={handleContinue}
+              disabled={loading}>
+
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.buttonText}>Continue to Login</Text>
+              )}
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.button}
-            onPress={handleContinue}
-            disabled={loading}>
-
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.buttonText}>Continue to Login</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.versionText}>v1.3</Text>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  </LinearGradient>
-);
+          <Text style={styles.versionText}>
+            v1.17
+            {/* v1.0.15 */}
+          </Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
+  );
 };
 
-export {BusinessSelect};
+export { BusinessSelect };
 
 const styles = StyleSheet.create({
   gradientContainer: {
@@ -182,13 +185,13 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     alignItems: 'center',
-    justifyContent: 'space-between', 
-    paddingBottom: 35, 
+    justifyContent: 'space-between',
+    paddingBottom: 35,
   },
 
   contentContainer: {
     width: '88%',
-   paddingTop: isPad ? 80 : 120,
+    paddingTop: isPad ? 80 : 120,
     alignItems: 'center',
   },
 
@@ -223,7 +226,7 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: isPad ? 34 : 28,
     fontFamily: FONTS.RICORDOSemiBold,
-    marginTop:20
+    marginTop: 20
   },
 
   subTitle: {
@@ -271,6 +274,6 @@ const styles = StyleSheet.create({
     fontSize: isPad ? 20 : 14,
     opacity: 0.7,
     fontFamily: FONTS.RICORDORegular,
-    marginTop: 20, 
+    marginTop: 20,
   },
 });

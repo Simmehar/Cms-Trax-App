@@ -241,7 +241,8 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             type,
             shipName,
             receipientName,
-            message
+            message,
+            location
           }}
         />
         <View style={styles.modalContent}>
@@ -309,7 +310,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={t('Ship/department')}
+              placeholder={t('Ship/Building')}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => {
                 setIsDropdownVisible(), setDropdownActiveTab('Ship');

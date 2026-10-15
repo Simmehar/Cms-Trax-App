@@ -143,7 +143,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
   const [selected, setSelected] = useState("addCustomer");
   const { t } = useTranslation();
   const { dbPackages } = useMode();
-   const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([]);
   console.log('dbPackages=====++++++++++++=====', dbPackages)
   useEffect(() => {
     const loadCustomers = async () => {
@@ -1275,10 +1275,10 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
             {/* Customer Info */}
             <View style={styles.customerInfoBox}>
               <Text style={styles.sectionTitle}>{t('Customer Info')}</Text>
-              
+
               <View style={{ zIndex: 105, position: 'relative' }}>
 
-               
+
                 <CommonInput
                   label={selected === "shipToShip"
                     ? (customerInfo.name ? t("Sender Name") : `${t("Sender Name")}*`)
@@ -1286,8 +1286,8 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   }
                   value={customerInfo.name}
                   onChangeText={(t) => {
-                    setCustomerInfo({ ...customerInfo, name: t,email:"" });
-                    setShowAllDropdown(false); 
+                    setCustomerInfo({ ...customerInfo, name: t, email: "" });
+                    setShowAllDropdown(false);
                     if (t.trim() === "") {
                       setFilteredNames([]);
                     } else {
@@ -1300,14 +1300,14 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   autoCapitalize="words"
                 />
 
-               
+
                 <TouchableOpacity
                   style={{
                     position: 'absolute',
                     right: 10,
                     bottom: isIPad ? 20 : 25,
                     padding: 5,
-                    paddingStart:10,
+                    paddingStart: 10,
                     justifyContent: 'center',
                     alignItems: 'center',
                   }}
@@ -1325,60 +1325,73 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                     style={{
                       height: isIPad ? 22 : 14,
                       width: isIPad ? 22 : 14,
-                      transform: [{ rotate: (showAllDropdown || filteredNames.length > 0) ? '180deg' : '0deg' }], 
+                      transform: [{ rotate: (showAllDropdown || filteredNames.length > 0) ? '180deg' : '0deg' }],
                     }}
                   />
                 </TouchableOpacity>
 
-               
-                {(showAllDropdown || filteredNames.length > 0) && (
-                  <View style={{
-                    position: 'absolute',
-                    top: isIPad ? 75 : 58, 
-                    left: 0,
-                    right: 0,
-                    backgroundColor: '#fff',
-                    borderWidth: 1,
-                    borderColor: '#ccc',
-                    borderRadius: 6,
-                    maxHeight: 450,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 3 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 4,
-                    elevation: 5,
-                    zIndex: 999
-                  }}>
-                    <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
-                      
-                      {(showAllDropdown ? users : filteredNames).map((user) => (
-                        <TouchableOpacity
-                          key={user.id}
-                          style={{
-                            paddingVertical: isIPad ? 16 : 12,
-                            paddingHorizontal: 15,
-                            borderBottomWidth: 1,
-                            borderBottomColor: '#eee',
-                            backgroundColor: customerInfo.name === user.name ? '#f0f4ff' : '#fff' 
-                          }}
-                          onPress={() => {
-                            setCustomerInfo({ ...customerInfo, name: user.name, email:user.email });
-                            setFilteredNames([]);
-                            setShowAllDropdown(false);
-                          }}
-                        >
-                          <Text style={{
-                            fontSize: isIPad ? 18 : 14,
-                            color: '#333',
-                            fontWeight: customerInfo.name === user.name ? '600' : '400'
-                          }}>
-                            {user.name}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
+
+                <Modal
+                  visible={showAllDropdown || filteredNames.length > 0}
+                  transparent
+                  animationType="none"
+                  onRequestClose={() => {
+                    setShowAllDropdown(false);
+                    setFilteredNames([]);
+                  }}
+                >
+                  <TouchableOpacity
+                    style={styles.customerDropdownOverlay}
+                    activeOpacity={1}
+                    onPress={() => {
+                      setShowAllDropdown(false);
+                      setFilteredNames([]);
+                    }}
+                  >
+                    <View style={styles.customerDropdownContainer}>
+                      <ScrollView
+                        nestedScrollEnabled={true}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={true}
+                      >
+                        {(showAllDropdown ? users : filteredNames).map((user) => (
+                          <TouchableOpacity
+                            key={user.id}
+                            style={{
+                              paddingVertical: isIPad ? 16 : 12,
+                              paddingHorizontal: 15,
+                              borderBottomWidth: 1,
+                              borderBottomColor: '#eee',
+                              backgroundColor:
+                                customerInfo.name === user.name ? '#f0f4ff' : '#fff',
+                            }}
+                            onPress={() => {
+                              setCustomerInfo({
+                                ...customerInfo,
+                                name: user.name,
+                                email: user.email,
+                              });
+
+                              setFilteredNames([]);
+                              setShowAllDropdown(false);
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: isIPad ? 18 : 14,
+                                color: '#333',
+                                fontWeight:
+                                  customerInfo.name === user.name ? '600' : '400',
+                              }}
+                            >
+                              {user.name}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  </TouchableOpacity>
+                </Modal>
               </View>
               <CommonInput
                 label={selected === "shipToShip"
@@ -1409,8 +1422,10 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   }}
                 >
                   <Text style={{ flex: 1, fontSize: isIPad ? 20 : 14, color: "#000", paddingBottom: 5 }}>{customerInfo.ship_name || ''}</Text>
-                  <Image source={IMAGES.down_arrow} style={{  height: isIPad ? 22 : 14,
-                      width: isIPad ? 22 : 14,marginEnd:15, transform: [{ rotate: showCustomerShipDropdown? '180deg' : '0deg' }],  }} />
+                  <Image source={IMAGES.down_arrow} style={{
+                    height: isIPad ? 22 : 14,
+                    width: isIPad ? 22 : 14, marginEnd: 15, transform: [{ rotate: showCustomerShipDropdown ? '180deg' : '0deg' }],
+                  }} />
                 </View>
               </TouchableOpacity>
             </View>
@@ -1763,6 +1778,31 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "600",
   },
+customerDropdownOverlay: {
+  flex: 1,
+  backgroundColor: 'transparent',
+  justifyContent: 'flex-start',
+  
+},
 
+customerDropdownContainer: {
+  position: 'absolute',
+  top: isIPad ? 150 : 125,
+  left: isIPad ? 24 : 16,
+  right: isIPad ? 24 : 16,
+  backgroundColor: '#fff',
+  borderWidth: 1,
+  borderColor: '#ccc',
+  borderRadius: 6,
+  maxHeight: isIPad ? 450 : 300,
+  elevation: 10,
+  shadowColor: '#000',
+  shadowOffset: {
+    width: 0,
+    height: 3,
+  },
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+},
 });
 

@@ -158,7 +158,9 @@ export const IMAGES = {
   downloadForm:require('../images/download.png'), 
   Ocr:require('../images/ocr.png'), 
   US:require('../images/us.png'),
-  Spain:require('../images/spain.png')
+  Spain:require('../images/spain.png'),
+  Setting:require('../images/settings.jpeg'),
+  Subscription:require('../images/restricted.jpeg'),
 
 };
 

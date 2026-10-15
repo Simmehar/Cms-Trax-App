@@ -9,10 +9,12 @@ import {
   RefreshControl,
   DeviceEventEmitter,
   ActivityIndicator,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { Checkbox } from './Checkbox';
 import { FONTS, IMAGES } from '../assets';
-import { CheckIpad, isIPad } from '../utilities/securestorage';
+import { CheckIpad, isIPad as defaultIsIpad } from '../utilities/securestorage';
 import dayjs from 'dayjs';
 import { sortTrackingNumber } from '../functions/SortTrackingNumber';
 import { LoadImage } from './LoadImage';
@@ -20,6 +22,11 @@ import FastImage from 'react-native-fast-image';
 import { useMode } from '../db/db.context';
 import { useTranslation } from 'react-i18next';
 import i18n from '../localization/i18n';
+
+// Screen dimensions check for iPad + Android Tablets
+const { width, height } = Dimensions.get('window');
+const minDimension = Math.min(width, height);
+const isTablet = (Platform.OS === 'ios' && Platform.isPad) || minDimension >= 600 || defaultIsIpad;
 
 interface Ship {
   id: number;
@@ -87,12 +94,8 @@ export interface department {
   name: string;
 }
 
-let isPad = CheckIpad();
 const getFormattedDate = (dateTime: any) => {
-  const formattedDate = dayjs(dateTime, 'MMMM D,YYYY hh:mm A').format(
-    'MM/DD/YYYY',
-  );
-  return formattedDate;
+  return dayjs(dateTime, 'MMMM D,YYYY hh:mm A').format('MM/DD/YYYY');
 };
 
 interface PackageListProps {
@@ -104,11 +107,14 @@ interface PackageListProps {
   showLoader: any;
   refetching: boolean;
   showSync: boolean;
+  refetchData?: any;
   loadMoreData?: any;
   totalItems: any;
   page: any;
 }
+
 const PAGE_SIZE = 5;
+
 const PackageList = React.memo(({
   packages,
   onItemPress,
@@ -122,34 +128,30 @@ const PackageList = React.memo(({
   loadMoreData,
   totalItems,
   page,
-
 }: PackageListProps) => {
   const flatListRef = useRef(null);
   const { isOnline } = useMode();
   const { t } = useTranslation();
-  console.log('i18n.language',typeof(i18n.language))
-  // const packages: any = [];
-  const renderItem = useCallback(({ item, index }: { item: Package; index: number }) => {
-    // __DEV__ && console.log('item?.user', item);
 
-    const sortShipName = str => {
+  const renderItem = useCallback(({ item, index }: { item: Package; index: number }) => {
+    const sortShipName = (str: string) => {
+      if (!str) return '';
       if (str.length >= 22) {
-        const start = str.substring(0, 11); // First 10 characters
-        const end = str.substring(str.length - 11); // Last 10 characters
+        const start = str.substring(0, 11);
+        const end = str.substring(str.length - 11);
         return `${start}...${end}`;
       }
-
       return str;
     };
+
     return (
       <View
         style={[
           styles.itemContainer,
           {
             backgroundColor: item?.isSelect ? '#EFF9FF' : '#FAFAFA',
-            flex: isPad && 1,
-            marginHorizontal: isPad ? 2.5 : 5,
-
+            flex: isTablet ? 1 : undefined,
+            marginHorizontal: isTablet ? 2.5 : 5,
           },
         ]}>
         <View style={styles.itemHeader}>
@@ -165,10 +167,10 @@ const PackageList = React.memo(({
             <Text
               style={[
                 styles.itemName,
-                { fontSize: isIPad ? 28 : 18 },
+                { fontSize: isTablet ? 28 : 18 },
               ]}>{`${item?.user?.first_name} ${item?.user?.last_name}`}</Text>
 
-            {!item?.user?.is_active && isIPad && (
+            {!item?.user?.is_active && isTablet && (
               <View
                 style={{
                   backgroundColor: '#FFAF4A',
@@ -180,7 +182,7 @@ const PackageList = React.memo(({
                 }}>
                 <Text
                   style={{
-                    fontSize: isIPad ? 18 : 14,
+                    fontSize: isTablet ? 18 : 14,
                     color: 'white',
                     paddingHorizontal: 5,
                     paddingVertical: 3,
@@ -196,23 +198,20 @@ const PackageList = React.memo(({
             <TouchableOpacity
               style={[
                 item?.isSelect ? styles.selectBox : styles.unSelectBox,
-                {
-                  padding: 12,
-                },
+                { padding: 12 },
               ]}
               onPress={() => onItemPress(item, index)}>
               {item?.isSelect ? (
                 <Image
                   source={IMAGES.check}
-                  style={{ height: isIPad ? 13 : 9, width: isIPad ? 18 : 13, tintColor: 'white' }}
+                  style={{ height: isTablet ? 13 : 9, width: isTablet ? 18 : 13, tintColor: 'white' }}
                 />
-              ) : (
-                <></>
-              )}
+              ) : null}
             </TouchableOpacity>
           )}
         </View>
-        {!item?.user?.is_active && !isIPad && (
+
+        {!item?.user?.is_active && !isTablet && (
           <View
             style={{
               backgroundColor: '#FFAF4A',
@@ -224,7 +223,7 @@ const PackageList = React.memo(({
             }}>
             <Text
               style={{
-                fontSize: isIPad ? 18 : 14,
+                fontSize: 14,
                 color: 'white',
                 paddingHorizontal: 5,
                 paddingVertical: 3,
@@ -234,23 +233,20 @@ const PackageList = React.memo(({
             </Text>
           </View>
         )}
-        <View style={{ flexDirection: isIPad ? 'row' : 'column' }}>
-          <View style={{ width: '50%' }}>
+
+        <View style={{ flexDirection: isTablet ? 'row' : 'column' }}>
+          <View style={{ width: isTablet ? '50%' : '100%' }}>
             <View style={styles.detailcontainer}>
-              <Text style={[styles.label, { fontSize: isIPad ? 23 : 18 }]}>
+              <Text style={[styles.label, { fontSize: isTablet ? 23 : 18 }]}>
                 {t('Loc/Tag')}:
               </Text>
-              <Text
-                style={[
-                  styles.value,
-                  { fontSize: isIPad ? 23 : 18 },
-                ]}>
+              <Text style={[styles.value, { fontSize: isTablet ? 23 : 18 }]}>
                 {sortShipName(`${item?.shelf}/${item.tag_number}`)}
               </Text>
             </View>
 
             <View style={styles.detailcontainer}>
-              <Text style={[styles.label, { fontSize: isIPad ? 23 : 18 }]}>
+              <Text style={[styles.label, { fontSize: isTablet ? 23 : 18 }]}>
                 {t('Tracking#')}:
               </Text>
               <Text style={styles.value}>
@@ -258,72 +254,59 @@ const PackageList = React.memo(({
               </Text>
             </View>
 
-            {/* <View style={{flexDirection:isIPad?'row':'column'}}> */}
             <View style={styles.detailcontainer}>
               <Text style={styles.label}>{t('Ship')}:</Text>
-              <Text style={[styles.value, { width: isIPad ? '100%' : 'auto', fontSize: isIPad ? 23 : 18 }]} numberOfLines={1}>
-                {sortShipName(item?.ship?.name || item?.ship_name)}
-
+              <Text
+                style={[
+                  styles.value,
+                  { width: isTablet ? '100%' : 'auto', fontSize: isTablet ? 23 : 18 },
+                ]}
+                numberOfLines={1}>
+                {sortShipName(item?.ship?.name || (item as any)?.ship_name)}
               </Text>
             </View>
           </View>
 
+          {/* iPad aur Android Tablet dono par image gallery render hogi */}
+          {isTablet && (
+            <View style={[styles.rowView, { marginTop: 0, width: '50%' }]}>
+              {item?.images && item?.images.length > 0 ? (
+                item.images.map((val: any, imgIndex: number) => {
+                  let rawUrl = val?.local_url ? val?.local_url : val?.url;
 
-          {/* for images  */}
-          {isIPad && <View style={[styles.rowView, { marginTop: 0, width: '50%' }]}>
+                  // Android par local path ke aage 'file://' add karein
+                  const formattedUrl =
+                    rawUrl && !rawUrl.startsWith('http') && !rawUrl.startsWith('file://')
+                      ? `file://${rawUrl}`
+                      : rawUrl;
 
-            {item?.images && item?.images.length > 0 ? (
-              item.images.map((val: any, index: number) => {
-                const imageUrl = val?.local_url ? val?.local_url : val?.url;
-
-                return (
-                  <View key={index.toString()}>
-                    <View
-
-                      style={{
-                        height: isIPad ? 70 : 30,
-                        width: isIPad ? 70 : 30,
-                        marginHorizontal: isIPad ? 5 : 5,
-                      }}
-                    >
-                      <FastImage
+                  return (
+                    <View key={imgIndex.toString()}>
+                      <View
+                        style={{
+                          height: 70,
+                          width: 70,
+                          marginHorizontal: 5,
+                        }}>
+                        <FastImage
                           style={styles.imagView}
                           resizeMode={FastImage.resizeMode.cover}
-                          source={{
-                            uri: imageUrl,
-                          }}
+                          source={{ uri: formattedUrl }}
                         />
+                      </View>
                     </View>
-                  </View>
-                );
-              })
-            ) : (
-              <View>
-                <Text>No images available</Text>
-              </View>
-            )}
-
-          </View>}
+                  );
+                })
+              ) : (
+                <View>
+                  <Text>No images available</Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
-        {/* <View style={styles.detailcontainer}>
-          <Text style={[styles.label, {fontSize: isIPad ? 25 : 18}]}>
-           Log-In By:
-          </Text>
-          <Text style={styles.value}>
-          {item?.package_tracking?.[0]?.done_by_user || item?.logInBy}
-          </Text>
-        </View> */}
-        {/* </View> */}
-        {/* <View style={styles.detailcontainer}>
-        <Text style={styles.label}>Division:</Text>
-        <Text style={styles.value}>{item.user.department_name}</Text>
-      </View> */}
 
-        {/* <View style={styles.detailcontainer}>
-        <Text style={styles.label}>Date Received:</Text>
-        <Text style={styles.value}>{item.date_received}</Text>
-      </View> */}
-        {isRecent ? (
+        {isRecent && (
           <>
             <View style={styles.detailcontainer}>
               <Text style={styles.label}>Date Delivered:</Text>
@@ -342,8 +325,6 @@ const PackageList = React.memo(({
               </View>
             )}
           </>
-        ) : (
-          <></>
         )}
 
         <TouchableOpacity
@@ -356,79 +337,62 @@ const PackageList = React.memo(({
   }, [onItemPress, onArrowClick]);
 
   const renderEmptyList = () => (
-    
     <View style={styles.emptyListContainer}>
-      
       <Image
-        source={ i18n.language === 'en'
-      ? IMAGES.package.packagesnotfound 
-      : IMAGES.package.packagesnotfoundspain
-  }
+        source={
+          i18n.language === 'en'
+            ? IMAGES.package.packagesnotfound
+            : IMAGES.package.packagesnotfoundspain
+        }
         style={styles.emptyListImage}
       />
     </View>
   );
 
-
   return (
-    <>
-      <FlatList
-        showsVerticalScrollIndicator={false}
-        keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
-        key={'_'}
-        style={{ marginTop: 15, marginHorizontal: isPad && 10 }}
-        data={packages || []}
-        onEndReached={loadMoreData}
-        maxToRenderPerBatch={10}
-        onEndReachedThreshold={0.5}
-        removeClippedSubviews={true}
-        ListFooterComponent={
-          page * 10 < totalItems ? (
-            <ActivityIndicator size="large" color="black" />
-          ) : null
-        }
-        initialNumToRender={5}
-        windowSize={10}
-        numColumns={1}
-        renderItem={renderItem}
-
-
-        contentContainerStyle={{
-          paddingTop: 10,
-        }}
-        ListEmptyComponent={
-          showLoader ? (
-            <ActivityIndicator color={'black'} size={'large'} />
-          ) : (
-            renderEmptyList
-          )
-        }
-        onScroll={onscoll}
-        scrollEventThrottle={16}
-        // onRefresh={() => {
-        //   refetchData();
-        // }}
-        refreshing={refetching}
-      />
-    </>
+    <FlatList
+      showsVerticalScrollIndicator={false}
+      keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
+      key={'_'}
+      style={{ marginTop: 15, marginHorizontal: isTablet ? 10 : 0 }}
+      data={packages || []}
+      onEndReached={loadMoreData}
+      maxToRenderPerBatch={10}
+      onEndReachedThreshold={0.5}
+      removeClippedSubviews={true}
+      ListFooterComponent={
+        page * 10 < totalItems ? (
+          <ActivityIndicator size="large" color="black" />
+        ) : null
+      }
+      initialNumToRender={5}
+      windowSize={10}
+      numColumns={1}
+      renderItem={renderItem}
+      contentContainerStyle={{ paddingTop: 10 }}
+      ListEmptyComponent={
+        showLoader ? (
+          <ActivityIndicator color={'black'} size={'large'} />
+        ) : (
+          renderEmptyList
+        )
+      }
+      onScroll={onscoll}
+      scrollEventThrottle={16}
+      refreshing={refetching}
+    />
   );
 });
 
 const styles = StyleSheet.create({
   itemContainer: {
     backgroundColor: '#FAFAFA',
-    marginBottom: isIPad ? 15 : 5,
+    marginBottom: isTablet ? 15 : 5,
     marginHorizontal: 5,
-    paddingHorizontal: isIPad ? 20 : 10,
-    paddingVertical: isIPad ? 17 : 13,
+    paddingHorizontal: isTablet ? 20 : 10,
+    paddingVertical: isTablet ? 17 : 13,
     borderRadius: 16,
     paddingBottom: 25,
-    // flex : 1
-    // shadowColor: '#000',
-    // shadowOpacity: 0.1,
-    // shadowRadius: 10,
-    // shadowOffset: {width: 0, height: 5},
-    // elevation: 5,
   },
   itemHeader: {
     flexDirection: 'row',
@@ -447,14 +411,13 @@ const styles = StyleSheet.create({
     color: '#002B45',
   },
   label: {
-    fontSize: isIPad ? 23 : 18,
+    fontSize: isTablet ? 23 : 18,
     fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
-    fontWeight: '400'
+    fontWeight: '400',
   },
   value: {
-    // fontSize: isIPad ? 18 : 14,
-    fontSize: isIPad ? 23 : 18,
+    fontSize: isTablet ? 23 : 18,
     color: 'black',
     fontFamily: FONTS.RICORDOSemiBold,
     marginLeft: 5,
@@ -462,19 +425,19 @@ const styles = StyleSheet.create({
   },
   arrowButton: {
     position: 'absolute',
-    right: isIPad ? 15 : 10,
+    right: isTablet ? 15 : 10,
     top: '70%',
   },
   arrowText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: isIPad ? 25 : 18,
+    fontSize: isTablet ? 25 : 18,
   },
   detailcontainer: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    marginVertical: isIPad ? 5 : 0,
+    marginVertical: isTablet ? 5 : 0,
   },
   emptyListContainer: {
     flex: 1,
@@ -487,33 +450,33 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   emptyListText: {
-    fontSize: isIPad ? 20 : 16,
+    fontSize: isTablet ? 20 : 16,
     color: '#ccc',
   },
   doller: {
-    height: isIPad ? 28 : 20,
-    width: isIPad ? 28 : 20,
+    height: isTablet ? 28 : 20,
+    width: isTablet ? 28 : 20,
     marginRight: 8.5,
   },
   selectBox: {
-    height: isIPad ? 35 : 22,
-    width: isIPad ? 35 : 22,
+    height: isTablet ? 35 : 22,
+    width: isTablet ? 35 : 22,
     borderRadius: 4,
     backgroundColor: '#223890',
     justifyContent: 'center',
     alignItems: 'center',
   },
   unSelectBox: {
-    height: isIPad ? 35 : 22,
-    width: isIPad ? 35 : 22,
+    height: isTablet ? 35 : 22,
+    width: isTablet ? 35 : 22,
     borderRadius: 4,
     borderWidth: 1,
     borderColor: '#D6D6D6',
     backgroundColor: 'white',
   },
   arrow: {
-    height: isIPad ? 65 : 48,
-    width: isIPad ? 65 : 48,
+    height: isTablet ? 65 : 48,
+    width: isTablet ? 65 : 48,
   },
   imagView: {
     height: '100%',
@@ -524,5 +487,3 @@ const styles = StyleSheet.create({
 });
 
 export { PackageList };
-
-

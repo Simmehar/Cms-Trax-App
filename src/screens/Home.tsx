@@ -644,7 +644,7 @@ const Home: React.FC = ({ navigation }: any) => {
               }}
             >
               <Text style={isPad ? styles.buttonTextI : styles.buttonText}>
-                {submitLoading ? t('Processing...') : t('Submit')}
+                {submitLoading ? t('Processing') : t('Submit')}
               </Text>
             </TouchableOpacity>
           </View>

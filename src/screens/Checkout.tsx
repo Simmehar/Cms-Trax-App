@@ -27,9 +27,10 @@ import CustomerList from '../db/dbcrud/dbcustomerList.crud';
 import { useMode } from '../db/db.context';
 import axios from 'axios';
 import { Backend_URL } from '../util/apiCalls';
-import { useStripe } from '@stripe/stripe-react-native';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import { StripeProvider, useStripe } from '@stripe/stripe-react-native';
 
 let isPad = CheckIpad();
 
@@ -37,18 +38,15 @@ function amountReducer(state, action) {
   return action;
 }
 
-const Checkout: React.FC = ({ route }: any) => {
-  // __DEV__ && console.log('route.params', route.params);
-
+// ==========================================
+// 1. CHILD COMPONENT (useStripe Hook yahan chalega)
+// ==========================================
+const CheckoutContent: React.FC = ({ route }: any) => {
   const { arr, msg } = route.params;
   const { t } = useTranslation();
   const { isOnline, initializeDatabase } = useMode();
-  // const  isOnline=false;
-  // __DEV__ && console.log('isOnline', isOnline);
 
   const [data, setData] = useState(arr || []);
-  // __DEV__ && console.log('route.params', JSON.stringify(arr[0].package_type.name));
-
   const [isModalVisible, setModalVisible] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
   const [isCredit, setIsCredit] = useState(false);
@@ -56,28 +54,21 @@ const Checkout: React.FC = ({ route }: any) => {
   const [disValue, setDisValue] = useState(0);
   const navigation = useNavigation<any>();
 
-  // let data = ['1', '2', '3'];
-
   const onAdDiscount = () => {
-    // __DEV__ && console.log('call')
     setVisible(!visible);
   };
 
   const onSave = (val: number) => {
-    __DEV__ && console.log('val=================================================', val)
     setVisible(!visible);
     setDisValue(val);
   };
 
   const { user } = useAuth();
-
   const selectedUserId = arr;
 
   const [payableAmount, setPayableAmount] = useState(
     selectedUserId[0].user?.payable_amount,
   );
-
-  // __DEV__ && console.log('selectedUserId', payableAmount);
 
   const [amountState, dispatch] = useReducer(amountReducer, {
     totalPayableAmount: 0,
@@ -91,11 +82,6 @@ const Checkout: React.FC = ({ route }: any) => {
   const [customerData, setCustomerData] = useState<any>([]);
 
   const getCustomerData = async () => {
-    // const customerData = await getCustomerList(
-    //   user,
-    //   selectedUserId[0].user?.id,
-    // );
-
     const customerData = isOnline
       ? await getCustomerList(user, selectedUserId[0].user?.id)
       : await CustomerList.getCustomerById(selectedUserId[0].user?.id);
@@ -130,31 +116,17 @@ const Checkout: React.FC = ({ route }: any) => {
   useEffect(() => {
     getCustomerData();
   }, []);
+  
   const [payType, setPayType] = useState('cash');
-
   const [selectAllChecked, setSelectedAllChecked] = useState(false);
-
-  // __DEV__ && console.log('selectAllChecked', selectAllChecked);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setPayType('cash');
   }, [visible]);
 
-  // const {
-  //   totalPayableAmount,
-  //   payable_amount,
-  //   unpaid_packages,
-  //   other_purchases,
-  //   credit,
-  // } = amountState;
-
-  // const [] = useState();
-
-  const [loading, setLoading] = useState(false);
-
   const onTestPress = async () => {
     setLoading(true);
-    // __DEV__ && console.log('Number(selectAmount)', Number(selectAmount));
 
     await axios
       .post(
@@ -167,15 +139,12 @@ const Checkout: React.FC = ({ route }: any) => {
         },
       )
       .then(res => {
-        // __DEV__ && console.log('res', res?.data?.paymentIntent);
-
         const paymentIntent = res?.data?.paymentIntent;
-
         setup(paymentIntent);
         setLoading(false);
       })
       .catch(err => {
-        __DEV__ && console.log('err', err);
+        console.log('err', err);
         setLoading(false);
         Alert.alert(
           t('server_error'),
@@ -184,28 +153,17 @@ const Checkout: React.FC = ({ route }: any) => {
       });
   };
 
-  // useEffect(() => {
-  //   if (Number(selectAmount) > 0) {
-  //     onTestPress();
-  //   }
-  // }, [amountState]);
-
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const setup = async (paymentIntent: any) => {
     const { error } = await initPaymentSheet({
       merchantDisplayName: 'Example, Inc.',
-      paymentIntentClientSecret: paymentIntent, // retrieve this from your server
+      paymentIntentClientSecret: paymentIntent,
       returnURL: 'http://google.com',
     });
     if (error) {
-      // handle error
-    Alert.alert(
-  t('payment_error'),
-  t('please_try_again')
-);
-
-      __DEV__ && console.log('error', error);
+      Alert.alert(t('payment_error'), t('please_try_again'));
+      console.log('error', error);
     } else {
       checkout();
     }
@@ -215,52 +173,42 @@ const Checkout: React.FC = ({ route }: any) => {
     const { error } = await presentPaymentSheet();
 
     if (error) {
-      __DEV__ && console.log('presentPaymentSheet error', error);
-      // handle error
+      console.log('presentPaymentSheet error', error);
     } else {
-      // __DEV__ && console.log(
-      //   'presentPaymentSheet success',
-      //   selectAmount,
-      //   amountState.totalPayableAmount,
-      // );
       if (selectAmount > 0) {
         setLoading(false);
         handleOnSubmit(payType, Number(selectAmount), '5');
       }
-
-      // success
     }
   };
+
   const [popupVisible, setPopupVisible] = useState(false);
   const [selectAmount, setSelectAmount] = useState('');
   const [discountValue, setDiscountValues] = useState();
+
   const onPercentageChange = (val: any) => {
     const discount = (amountState?.payable_amount * Number(val)) / 100;
-    if (discount && discount != NaN) {
+    if (discount && !isNaN(discount)) {
       setSelectAmount(String(discount));
     }
     let discountValueeee = (Number(disValue * 100) / amountState?.payable_amount).toFixed(0);
     setDiscountValues(discountValueeee);
   };
 
-  // __DEV__ && console.log('seleselectAmountselectAmountctAmount', selectAmount)
-
   useEffect(() => {
     onPercentageChange('0');
   }, []);
+
   useEffect(() => {
-    // __DEV__ && console.log('data?.length  :>> ', msg);
-    if (msg && msg == true) {
-      setPopupVisible(true)
+    if (msg && msg === true) {
+      setPopupVisible(true);
     }
   }, [msg]);
 
   const [selectedDiscount, setSelectedDiscount] = useState(-1);
 
-
-
-  const handleNumberPress = number => {
-    setSelectAmount(selectAmount + number)
+  const handleNumberPress = (number: any) => {
+    setSelectAmount(selectAmount + number);
   };
 
   const handleDeletePress = () => {
@@ -269,7 +217,7 @@ const Checkout: React.FC = ({ route }: any) => {
     }
   };
 
-  const NumberButton = ({ number, onPress }) => (
+  const NumberButton = ({ number, onPress }: any) => (
     <TouchableOpacity
       style={styles.numberButton}
       onPress={() => onPress(number.toString())}>
@@ -280,52 +228,33 @@ const Checkout: React.FC = ({ route }: any) => {
   const renderPaymentView = () => {
     return (
       <View style={[styles.modalContent, { height: modalHeight }]}>
-        <View style={{ height: '90%', borderBottomColor: 'lightgrey', borderBottomWidth: 1 }} showsVerticalScrollIndicator={false}>
-
-          <View style={{ height: payType == 'cash' ? '85%' : 'auto' }}>
+        <View style={{ height: '90%', borderBottomColor: 'lightgrey', borderBottomWidth: 1 }}>
+          <View style={{ height: payType === 'cash' ? '85%' : 'auto' }}>
             <TouchableOpacity
               style={styles.cashView}
               onPress={() =>
-                payType == 'cash' ? setPayType('') : setPayType('cash')
+                payType === 'cash' ? setPayType('') : setPayType('cash')
               }>
               <View style={styles.rowView}>
                 <Image source={IMAGES.cash} style={styles.cashImg} />
                 <Text style={styles.cashTxt}>{t('cash')}</Text>
               </View>
-              <View style={[styles.radioButton, payType == 'cash' && styles.radioButtonSelected]}>
-                {payType == 'cash' && <View style={styles.radioButtonInner} />}
+              <View style={[styles.radioButton, payType === 'cash' && styles.radioButtonSelected]}>
+                {payType === 'cash' && <View style={styles.radioButtonInner} />}
               </View>
-              {/* <View style={styles.rightView}>
-                <Image
-                  source={IMAGES.left_arrow}
-                  style={[
-                    styles.arrow,
-                    {
-                      transform: [
-                        { rotate: payType == 'cash' ? '270deg' : '180deg' },
-                      ],
-                    },
-                  ]}
-                />
-              </View> */}
             </TouchableOpacity>
-            {payType == 'cash' ? (
+            {payType === 'cash' && (
               <>
-
                 <View style={{ height: '30%' }}>
-                  <View
-                    style={{
-                      marginTop: '1%',
-                    }}>
+                  <View style={{ marginTop: '1%' }}>
                     <Text
                       style={{
                         color: '#db6363',
                         fontSize: isIPad ? 22 : 20,
                         textAlign: 'center',
                         fontFamily: 'OctoberCompressRegular',
-                        fontWeight: '600'
+                        fontWeight: '600',
                       }}>
-
                       {t('total_due')} {t('$')}
                       {Math.max(Number(amountState?.totalPayableAmount), 0).toFixed(2)}
                     </Text>
@@ -336,27 +265,20 @@ const Checkout: React.FC = ({ route }: any) => {
 
                   {Number(selectAmount) > 0 &&
                     Number(selectAmount) < Number(amountState?.payable_amount) && (
-                      <View
-                        style={{
-                          marginLeft: 24,
-                          marginBottom: 10,
-                        }}>
+                      <View style={{ marginLeft: 24, marginBottom: 10 }}>
                         <Text>
                           {t('balance_due')} {t('$')}
                           {Math.max(
                             Number((Number(amountState?.totalPayableAmount) - Number(selectAmount)).toFixed(2)),
-                            0
+                            0,
                           )}
                         </Text>
                       </View>
                     )}
                 </View>
 
-
                 <View style={{ alignItems: 'center', justifyContent: 'center', height: '55%' }}>
-
                   <View style={styles.numberPad}>
-
                     <View style={styles.row}>
                       {[1, 2, 3].map(num => (
                         <NumberButton key={num} number={num} onPress={handleNumberPress} />
@@ -374,7 +296,6 @@ const Checkout: React.FC = ({ route }: any) => {
                         <NumberButton key={num} number={num} onPress={handleNumberPress} />
                       ))}
                     </View>
-
 
                     <View style={styles.lastRow}>
                       <TouchableOpacity
@@ -397,38 +318,22 @@ const Checkout: React.FC = ({ route }: any) => {
                     </View>
                   </View>
                 </View>
-
-
-
               </>
-            ) : (
-              <></>
             )}
           </View>
 
-          {amountState?.totalPayableAmount >= 0 && !isOnline && payType == 'cash' && (
+          {amountState?.totalPayableAmount >= 0 && !isOnline && payType === 'cash' && (
             <View style={{ height: '10%' }}>
               <TouchableOpacity
                 style={[styles.cashView]}
                 onPress={() => setSelectedAllChecked(!selectAllChecked)}>
                 <View style={styles.rowView}>
                   {selectAllChecked ? (
-                    <View
-                      style={
-                        isIPad
-                          ? styles.selectcheckboxI
-                          : styles.selectcheckbox
-                      }>
-                      <Image
-                        source={IMAGES.check}
-                        style={isIPad ? styles.tickI : styles.tick}
-                      />
+                    <View style={isIPad ? styles.selectcheckboxI : styles.selectcheckbox}>
+                      <Image source={IMAGES.check} style={isIPad ? styles.tickI : styles.tick} />
                     </View>
                   ) : (
-                    <View
-                      style={
-                        isIPad ? styles.checkboxI : styles.checkbox
-                      }></View>
+                    <View style={isIPad ? styles.checkboxI : styles.checkbox} />
                   )}
                   <Image
                     source={IMAGES.card}
@@ -446,12 +351,11 @@ const Checkout: React.FC = ({ route }: any) => {
                 style={styles.cashView}
                 disabled={loading}
                 onPress={() => {
-                  // checkout();
                   if (Number(selectAmount) > 0) {
                     onTestPress();
                     setPayType('card');
                   } else {
-                   Alert.alert(t('please_enter_some_amount'));
+                    Alert.alert(t('please_enter_some_amount'));
                   }
                 }}>
                 {loading ? (
@@ -469,25 +373,9 @@ const Checkout: React.FC = ({ route }: any) => {
                       />
                       <Text style={[styles.cashTxt]}>{t('card')}</Text>
                     </View>
-                    <View style={[styles.radioButton, payType == 'card' && styles.radioButtonSelected]}>
-                      {payType == 'card' && <View style={styles.radioButtonInner} />}
+                    <View style={[styles.radioButton, payType === 'card' && styles.radioButtonSelected]}>
+                      {payType === 'card' && <View style={styles.radioButtonInner} />}
                     </View>
-                    {/* <View style={[styles.rightView]}>
-                      <Image
-                        source={IMAGES.left_arrow}
-                        style={[
-                          styles.arrow,
-                          {
-                            transform: [
-                              {
-                                rotate:
-                                  payType == 'card' ? '270deg' : '180deg',
-                              },
-                            ],
-                          },
-                        ]}
-                      />
-                    </View> */}
                   </>
                 )}
               </TouchableOpacity>
@@ -499,14 +387,12 @@ const Checkout: React.FC = ({ route }: any) => {
             style={[styles.cashView, { marginTop: 10, alignItems: 'center', justifyContent: 'center' }]}
             onPress={onAdDiscount}>
             <Text
-              style={
-                {
-                  fontSize: isIPad ? 23 : 20,
-                  fontFamily: FONTS.OpenSansMedium,
-                  color: '#223890',
-                  fontWeight: '700'
-                }
-              }>
+              style={{
+                fontSize: isIPad ? 23 : 20,
+                fontFamily: FONTS.OpenSansMedium,
+                color: '#223890',
+                fontWeight: '700',
+              }}>
               {disValue && disValue > 0
                 ? `${t('discount')}: (${t('$')}${Number(disValue).toFixed(1)})`
                 : t('add_discount')}
@@ -525,51 +411,30 @@ const Checkout: React.FC = ({ route }: any) => {
     dispatch({
       ...amountState,
       paidAmount: selectAmount,
-      // credit:
-      //   Number(selectAmount) > Number(amountState.payable_amount)
-      //     ? Number(selectAmount) - Number(amountState.payable_amount)
-      //     : 0,
       payment_method,
     });
     setModalVisible(false);
     setSuccessVisible(true);
-
-
   };
+
   const { height: screenHeight } = Dimensions.get('window');
-
-  // Assume bottomViewHeight corresponds to the height taken by the CheckoutBottom component
-  const bottomViewHeight = screenHeight * 0.4; // 0.4 based on your original setup
+  const bottomViewHeight = screenHeight * 0.4;
   const modalHeight = screenHeight - bottomViewHeight - 50;
-
-  const [cmsdata, setCmsData] = useState([
-    { name: 'VELVET CAVIAR compatible with Magsafe Wallet - Magnetic Card', isReceived: true, price: '$10.00' },
-    { name: 'Neutrogena Hydro Boost Hydrating Mask and By Terry Hydrating Sheet Mask and Pixi Vitamin C Sheet Mask and Perricone MD Cold Plasma Treatment Sheet Mask', isReceived: false, price: '$15.00' },
-    { name: 'I Pen', isReceived: true, price: '$20.00' },
-  ]);
-
 
   return (
     <View style={styles.mainView}>
       <GestureHandlerRootView>
-        <View style={{ marginVertical: isPad ? 10 : 'noun', justifyContent: 'flex-end', backgroundColor: null }}>
-
+        <View style={{ marginVertical: isPad ? 10 : 0, justifyContent: 'flex-end' }}>
           <BackHeader title={t('review')} />
-
-          <View
-            style={{ position: 'absolute', right: 25, alignSelf: 'center', bottom: 10 }}>
-            {isOnline ?
-              <Image
-                source={IMAGES.internet}
-                style={styles.network}
-              /> :
-              <Image
-                source={IMAGES.Nointernet}
-                style={styles.networkI}
-              />
-            }
+          <View style={{ position: 'absolute', right: 25, alignSelf: 'center', bottom: 10 }}>
+            {isOnline ? (
+              <Image source={IMAGES.internet} style={styles.network} />
+            ) : (
+              <Image source={IMAGES.Nointernet} style={styles.networkI} />
+            )}
           </View>
         </View>
+
         {isPad ? (
           <View
             style={{
@@ -577,100 +442,52 @@ const Checkout: React.FC = ({ route }: any) => {
               alignItems: 'center',
               flex: 1,
               marginHorizontal: 15,
-              paddingBottom: 50
+              paddingBottom: 50,
             }}>
             <View style={[styles.blueView, { flex: 1, height: '95%' }]}>
-              <Text style={styles.shipNem}> {data[0].user.first_name + ' ' + data[0].user.last_name}</Text>
-              {/* {data.length > 0 &&
-                data.map(i => (
-                  <TouchableOpacity style={styles.packageView} onPress={() => { }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.tagTxt}>Tag# {item.tag_number}</Text>
-                      <Text style={styles.bluTxt}>
-                        Tracking ID:{' '}
-                        <Text style={styles.numTxt}>1LSCXON0032MHY5</Text>{' '}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))} */}
+              <Text style={styles.shipNem}>
+                {data[0]?.user?.first_name + ' ' + data[0]?.user?.last_name}
+              </Text>
               <FlatList
                 data={data}
                 showsVerticalScrollIndicator={false}
                 ListFooterComponent={() => <View style={{ height: 60 }} />}
-                renderItem={({ item, index }) => {
-                  return (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.packageView}
-                      onPress={() => { }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.tagTxt}>{t('tag')}# {item.tag_number}</Text>
-                        <Text style={styles.bluTxt}>
-                          {t('tracking_id')}:{' '}
-                          <Text style={styles.numTxt}>{item.tracking_no}</Text>{' '}
-                        </Text>
-
-                      </View>
-                      {/* <Image style={styles.delete} source={IMAGES.delete} /> */}
-                    </TouchableOpacity>
-                  );
-                }}
+                renderItem={({ item, index }) => (
+                  <TouchableOpacity key={index} style={styles.packageView}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.tagTxt}>{t('tag')}# {item.tag_number}</Text>
+                      <Text style={styles.bluTxt}>
+                        {t('tracking_id')}: <Text style={styles.numTxt}>{item.tracking_no}</Text>
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
               />
             </View>
-            {amountState?.totalPayableAmount > 0 &&
-              <View style={{ flex: 1, height: '95%' }}>
-                {renderPaymentView()}
-              </View>
-            }
+            {amountState?.totalPayableAmount > 0 && (
+              <View style={{ flex: 1, height: '95%' }}>{renderPaymentView()}</View>
+            )}
           </View>
         ) : (
           <View style={styles.blueView}>
             <Text style={styles.shipNem}>
-              {data[0].user.first_name + ' ' + data[0].user.last_name}
+              {data[0]?.user?.first_name + ' ' + data[0]?.user?.last_name}
             </Text>
-
             <FlatList
               data={data}
               showsVerticalScrollIndicator={false}
               ListFooterComponent={() => <View style={{ height: 90 }} />}
-              renderItem={({ item, index }) => {
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.packageView}
-                    onPress={() => { }}>
-                    <View style={{ flex: 1, flexDirection: 'column' }}>
-                      <Text style={styles.tagTxt}>{t('Tag#')} {item.tag_number}</Text>
-                      <Text style={styles.bluTxt}>
-                        {t("Tracking ID")}:
-                        <Text style={styles.numTxt}>{item.tracking_no}</Text>{' '}
-                      </Text>
-
-                    </View>
-                    {/* <Image style={styles.delete} source={IMAGES.delete} /> */}
-                  </TouchableOpacity>
-                );
-              }}
-
-
+              renderItem={({ item, index }) => (
+                <TouchableOpacity key={index} style={styles.packageView}>
+                  <View style={{ flex: 1, flexDirection: 'column' }}>
+                    <Text style={styles.tagTxt}>{t('Tag#')} {item.tag_number}</Text>
+                    <Text style={styles.bluTxt}>
+                      {t('Tracking ID')}: <Text style={styles.numTxt}>{item.tracking_no}</Text>
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
             />
-
-            {/* {data.length > 0 &&
-            data.map((item: Package, index: any) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.packageView}
-                onPress={() => {}}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.tagTxt}>Tag# {item.tag_number}</Text>
-                  <Text style={styles.bluTxt}>
-                    Tracking ID:{' '}
-                    <Text style={styles.numTxt}>{item.tracking_no}</Text>{' '}
-                  </Text>
-                </View>
-                <Image style={styles.delete} source={IMAGES.delete} />
-              </TouchableOpacity>
-            ))} */}
           </View>
         )}
 
@@ -687,38 +504,33 @@ const Checkout: React.FC = ({ route }: any) => {
               customerData,
               discount: disValue,
               isCredit: isCredit,
-              selectAmount: amountState?.paidAmount
+              selectAmount: amountState?.paidAmount,
             });
           }}
           amountState={amountState}
           dispatch={dispatch}
         />
 
-        {!isPad && <PaymentModal
-          visible={isModalVisible}
-          isIpad={false}
-          onClose={() => setModalVisible(false)}
-          onSubmit={handleOnSubmit}
-          amountState={amountState}
-          disValue={disValue || 0}
-          isOnline={isOnline}
-        />
-        }
-        {/* { isPad ? renderPaymentView():null} */}
-        {/* {__DEV__ && console.log('amountState?.totalPayableAmount >= 0 :>> ', amountState?.totalPayableAmount >= 0)} */}
-        <View style={{ flex: isIPad ? 0.45 : 0.3 }} >
+        {!isPad && (
+          <PaymentModal
+            visible={isModalVisible}
+            isIpad={false}
+            onClose={() => setModalVisible(false)}
+            onSubmit={handleOnSubmit}
+            amountState={amountState}
+            disValue={disValue || 0}
+            isOnline={isOnline}
+          />
+        )}
+
+        <View style={{ flex: isIPad ? 0.45 : 0.3 }}>
           <CheckoutBottom
             nextClick={() => {
-
               if (amountState?.totalPayableAmount <= 0) {
                 const payment_method = selectAllChecked ? '4' : '1';
                 dispatch({
                   ...amountState,
                   paidAmount: selectAmount,
-                  // credit:
-                  //   Number(selectAmount) > Number(amountState.payable_amount)
-                  //     ? Number(selectAmount) - Number(amountState.payable_amount)
-                  //     : 0,
                   payment_method,
                 });
                 navigation.navigate('CheckoutData', {
@@ -727,24 +539,16 @@ const Checkout: React.FC = ({ route }: any) => {
                   customerData,
                   discount: disValue,
                   isCredit: isCredit,
-                  selectAmount: selectAmount
+                  selectAmount: selectAmount,
                 });
-
               } else {
                 if (isPad) {
-                  if (
-                    selectAmount
-                  ) {
-                    handleOnSubmit(
-                      payType,
-                      Number(selectAmount),
-                      selectAllChecked ? '4' : '1',
-                    );
+                  if (selectAmount) {
+                    handleOnSubmit(payType, Number(selectAmount), selectAllChecked ? '4' : '1');
                   } else {
                     Alert.alert(t('please_enter_some_amount'));
                   }
-                }
-                else {
+                } else {
                   setModalVisible(true);
                 }
               }
@@ -756,38 +560,95 @@ const Checkout: React.FC = ({ route }: any) => {
             type={arr[0]?.package_type?.name}
           />
         </View>
+
         <DiscountModal
           visible={visible}
           onClose={() => setVisible(!visible)}
           onSave={onSave}
           payableAmount={amountState.payable_amount}
         />
+
         <Modal visible={popupVisible} transparent={true}>
           <View style={styles.modalContainer}>
-            <View style={{ backgroundColor: 'white', paddingBottom: '5%', paddingTop: '3%', width: '80%', borderRadius: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: '5%' }}>
-              <TouchableOpacity style={styles.crossView} onPress={() => { setPopupVisible(false) }}>
+            <View
+              style={{
+                backgroundColor: 'white',
+                paddingBottom: '5%',
+                paddingTop: '3%',
+                width: '80%',
+                borderRadius: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingHorizontal: '5%',
+              }}>
+              <TouchableOpacity style={styles.crossView} onPress={() => setPopupVisible(false)}>
                 <Image source={IMAGES.close} style={styles.closeImg} />
               </TouchableOpacity>
-              <Text style={{
-                color: '#db6363',
-                fontSize: isIPad ? 30 : 20,
-                textAlign: 'center',
-                fontFamily: FONTS.RICORDOBold,
-                fontWeight: '600'
-              }}>{t('warning')}</Text>
-              <Text style={{
-                fontSize: isIPad ? 25 : 15,
-                marginTop: isIPad ? 30 : 20,
-                color: 'grey',
-                textAlign: 'center',
-                fontFamily: FONTS.RICORDORegular,
-              }}>{t('packages_not_selected')}</Text>
+              <Text
+                style={{
+                  color: '#db6363',
+                  fontSize: isIPad ? 30 : 20,
+                  textAlign: 'center',
+                  fontFamily: FONTS.RICORDOBold,
+                  fontWeight: '600',
+                }}>
+                {t('warning')}
+              </Text>
+              <Text
+                style={{
+                  fontSize: isIPad ? 25 : 15,
+                  marginTop: isIPad ? 30 : 20,
+                  color: 'grey',
+                  textAlign: 'center',
+                  fontFamily: FONTS.RICORDORegular,
+                }}>
+                {t('packages_not_selected')}
+              </Text>
             </View>
-
           </View>
         </Modal>
       </GestureHandlerRootView>
     </View>
+  );
+};
+
+// ==========================================
+// 2. MAIN EXPORT WRAPPER (Stripe Key Loader)
+// ==========================================
+const Checkout: React.FC = (props: any) => {
+  const [stripeKey, setStripeKey] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+console.log('stripeKey========',stripeKey)
+  useEffect(() => {
+    loadStripeKey();
+  }, []);
+
+  const loadStripeKey = async () => {
+    try {
+      const key = await AsyncStorage.getItem('STRIPE_PUBLISHABLE_KEY');
+      setStripeKey(key);
+    } catch (e) {
+      console.log('Error loading Stripe Key:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <ActivityIndicator size="large" color="#223890" />
+      </View>
+    );
+  }
+
+  return (
+    <StripeProvider
+      publishableKey={stripeKey || 'pk_live_51T7IhYQesY9Hh8zgFg7vFERFzZPHIpn7gBEM4gn7vhs7TUZLc9lcmugiSh3j8gZCC4qmBBHSnPKj4hIQnkZ1daPU00nwHKEskU'}
+      merchantIdentifier="merchant.identifier"
+      urlScheme="your-url-scheme">
+      <CheckoutContent {...props} />
+    </StripeProvider>
   );
 };
 
@@ -797,7 +658,7 @@ const styles = StyleSheet.create({
   mainView: {
     flex: 1,
     backgroundColor: 'white',
-    paddingTop: isPad ? 50 : 30
+    paddingTop: isPad ? 50 : 30,
   },
   blueView: {
     marginHorizontal: 5,
@@ -807,7 +668,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginTop: 15,
     flex: 1,
-    // height: height * 0.3,
   },
   shipNem: {
     fontFamily: FONTS.RICORDOSemiBold,
@@ -832,7 +692,7 @@ const styles = StyleSheet.create({
     fontSize: isPad ? 21 : 14,
     fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
-    marginTop: isPad ? 10 : 'none'
+    marginTop: isPad ? 10 : 0,
   },
   numTxt: {
     fontSize: isPad ? 21 : 14,
@@ -896,7 +756,6 @@ const styles = StyleSheet.create({
   amountView: {
     height: 52,
     width: '20%',
-    // flex: 1,
     backgroundColor: '#223890',
     borderRadius: 14,
     justifyContent: 'center',
@@ -907,7 +766,6 @@ const styles = StyleSheet.create({
   amountLView: {
     height: 52,
     width: '25%',
-    // flex: 1,
     borderColor: '#223890',
     borderRadius: 14,
     justifyContent: 'center',
@@ -917,7 +775,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   amountTxt: {
-    // fontSize: 19,
     fontFamily: FONTS.OpenSansMedium,
     color: 'white',
     fontSize: isIPad ? 25 : 20,
@@ -935,11 +792,11 @@ const styles = StyleSheet.create({
     fontSize: isIPad ? 25 : 20,
     fontFamily: FONTS.OpenSansMedium,
     color: 'black',
-    textDecorationLine: 'underline'
+    textDecorationLine: 'underline',
   },
   lineView: {
     height: 1,
-    backgroundColor: '#98989830', //'#F9F9F9',
+    backgroundColor: '#98989830',
     marginVertical: 10,
   },
   icon: {
@@ -960,7 +817,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
-
   selectcheckbox: {
     width: 35,
     height: 35,
@@ -977,7 +833,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   tick: {
     height: 13,
     width: 17,
@@ -988,7 +843,6 @@ const styles = StyleSheet.create({
     width: 24,
     tintColor: 'white',
   },
-
   checkbox: {
     width: 35,
     height: 35,
@@ -1026,7 +880,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 0.5,
     borderRadius: 6,
-    borderColor: 'lightgrey'
+    borderColor: 'lightgrey',
   },
   numberText: {
     color: 'grey',
@@ -1042,36 +896,27 @@ const styles = StyleSheet.create({
     width: 57,
     height: 57,
     alignItems: 'center',
-    // marginHorizontal: 3,
     justifyContent: 'center',
   },
   deleteButton: {
     width: 57,
     height: 57,
     alignItems: 'center',
-
     justifyContent: 'center',
   },
   deleteIcon: {
     width: isIPad ? 35 : 24,
     height: isIPad ? 35 : 24,
-
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   modalContent: {
-    // backgroundColor: '#FFFFFF',
-    // backgroundColor: 'yellow',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-
-    // paddingVertical: 20,
-    // paddingBottom: 40,
-    // maxHeight: "75%",
   },
   crossView: {
     height: isIPad ? 60 : 40,
@@ -1089,7 +934,6 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingVertical: isIPad ? 15 : 10,
-    // backgroundColor: '#F9FAFB',
   },
   selectBox: {
     height: isIPad ? 25 : 18,
@@ -1129,18 +973,18 @@ const styles = StyleSheet.create({
     height: isIPad ? 34 : 24,
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: '#223890', // Custom border color
+    borderColor: '#223890',
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioButtonSelected: {
-    borderColor: '#223890', // Custom border color when selected
+    borderColor: '#223890',
   },
   radioButtonInner: {
     width: isIPad ? 17 : 12,
     height: isIPad ? 17 : 12,
     borderRadius: 12,
-    backgroundColor: '#223890', // Inner circle color
+    backgroundColor: '#223890',
   },
 });
 

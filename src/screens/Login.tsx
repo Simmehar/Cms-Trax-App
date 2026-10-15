@@ -12,9 +12,9 @@ import {
   ActivityIndicator,
   GestureResponderEvent,
   Dimensions,
-  Alert,
   StatusBar,
   Modal,
+  Linking,
 } from 'react-native';
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
@@ -35,7 +35,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n from '../localization/i18n';
 import { useTranslation } from 'react-i18next';
 
-
 let isPad = CheckIpad();
 const LoginSchema = Yup.object().shape({
   username: Yup.string().required('Username is required'),
@@ -54,10 +53,9 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
   const { showLoader, setShowLoader } = useNavigationContext();
   const [language, setLanguage] = useState('en');
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
   const [sendData, setSendData] = useState({
-    // username: 'sim',
-    // password: 'Abcd@123',
     username: '',
     password: '',
   });
@@ -65,6 +63,24 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
     username: '',
     password: '',
   });
+
+  // Dynamic Custom Modal State
+  const [modalConfig, setModalConfig] = useState<{
+    visible: boolean;
+    type: 'maintenance' | 'error' | 'subscription';
+    title: string;
+    message: string;
+    subMessage?: string;
+    supportEmail?: string;
+  }>({
+    visible: false,
+    type: 'error',
+    title: '',
+    message: '',
+    subMessage: '',
+    supportEmail: 'support@cmstrax.com',
+  });
+
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const languages = [
     {
@@ -80,18 +96,34 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
   ];
   const changeLanguage = async (lang: 'en' | 'es') => {
     setLanguage(lang);
-
     await AsyncStorage.setItem('language', lang);
-
     await i18n.changeLanguage(lang);
   };
+
   useEffect(() => {
     loadLanguage();
+
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
   }, []);
 
   const loadLanguage = async () => {
     const lang = await AsyncStorage.getItem('language');
-
     if (lang) {
       setLanguage(lang);
       await i18n.changeLanguage(lang);
@@ -113,38 +145,31 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       __DEV__ && console.log('Status in login screen:', status);
       __DEV__ && console.log('Code:', code);
 
-      // Handle token expiration only once
-      if (status === 401 && (code === 'Session expired due to inactivity.' || code === 'Invalid token.')) {
+      if (
+        status === 401 &&
+        (code === 'Session expired due to inactivity.' ||
+          code === 'Invalid token.')
+      ) {
         if (!isLoggingOut) {
           isLoggingOut = true;
           __DEV__ && console.log('Logging out due to session expiration...');
-
-          // Call logout first, then restart if needed
           await logout();
           setTokenExpired(true);
-
-          // Restart after logout completes
-          // setTimeout(() => {
           RNRestart.restart();
-          // }, 500);
         }
         return Promise.reject(error);
       } else {
         return Promise.reject(error);
       }
-    }
+    },
   );
 
-
-  // __DEV__ && console.log('tokenExpired', tokenExpired)
   useEffect(() => {
     const checkNavigation = async () => {
-
       const key = 'user.data';
       const data = await getData(key);
-      // __DEV__ && console.log('data on login screen', data)
-      if (!data?.token || data == null || data?.token == "expired") {
-        // navigation.navigate('Login');
+      if (!data?.token || data == null || data?.token == 'expired') {
+        // Stay on Login
       } else {
         setUser(data);
         navigation.replace('Home');
@@ -162,23 +187,23 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       return;
     }
 
-    __DEV__ && console.log('sendData', sendData)
+    __DEV__ && console.log('sendData', sendData);
     try {
       setShowLoader(true);
       Keyboard.dismiss();
-      const response = await api
-        .post('/login', sendData, {
-          headers: { 'Content-Type': 'application/json' },
-        })
-        .catch(err => {
-          __DEV__ && console.log('err', err);
-          Alert.alert('Email or password is incorrect', 'Please try again');
-        });
 
+      const response = await api.post('/login', sendData, {
+        headers: { 'Content-Type': 'application/json' },
+      });
 
+      console.log('response.data=========>', response?.data);
       if (response?.data) {
+        const stripeKey = response?.data?.stripe_publishable_key;
+        if (stripeKey) {
+          await AsyncStorage.setItem('STRIPE_PUBLISHABLE_KEY', stripeKey);
+          console.log('Stripe Key Stored Successfully:', stripeKey);
+        }
         login(response?.data);
-        setShowLoader(false);
         const data = {
           id: response?.data?.user?.id,
           token: response?.data?.token,
@@ -189,73 +214,98 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         setUser(data);
         setSendData({ username: '', password: '' });
         navigation.replace('Home');
-      } else {
       }
-      // setError('');
-    } catch (error: any) {
-      __DEV__ && console.log('errorr==', error);
-      setShowLoader(false);
-      if (
-        error?.response &&
-        error?.response?.data?.error === 'Invalid Credentials'
-      ) {
-        //setError('Incorrect password');
-      } else if (error?.response) {
-        setError(error?.response?.data?.error);
+    } catch (err: any) {
+      __DEV__ && console.log('errorr==', err);
+
+      const status = err?.response?.status;
+      const errorCode = err?.response?.data?.error || err?.response?.data?.detail;
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        err?.response?.data?.error ||
+        '';
+
+      const isServerDown =
+        !err?.response ||
+        err?.message === 'Network Error' ||
+        err?.code === 'ECONNABORTED' ||
+        errorCode === 'service_unavailable' ||
+        (status && status >= 500);
+
+      const isSubscriptionExpired =
+        status === 403 ||
+        errorCode === 'subscription_expired' ||
+        errorMsg.toLowerCase().includes('subscription') ||
+        errorMsg.toLowerCase().includes('expired');
+
+      if (isSubscriptionExpired) {
+        setModalConfig({
+          visible: true,
+          type: 'subscription',
+          title: t('Access Restricted'),
+          message: t(
+            'Your subscription has expired.\nPlease contact your Superuser\nor Admin for assistance.',
+          ),
+          supportEmail: 'support@cmstrax.com',
+        });
+      } else if (isServerDown) {
+        setModalConfig({
+          visible: true,
+          type: 'maintenance',
+          title: t('Our system is\nunder maintenance'),
+          message: t(
+            'We’re making some improvements to provide you with a better experience.',
+          ),
+          subMessage: t('Please try again in a few minutes.'),
+        });
+      } else {
+        const finalErrorMessage =
+          errorMsg || t('Email or password is incorrect. Please try again.');
+
+        setModalConfig({
+          visible: true,
+          type: 'error',
+          title: t('Authentication Failed'),
+          message: finalErrorMessage,
+          subMessage: '',
+        });
       }
     } finally {
       setShowLoader(false);
     }
   };
 
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     // Log out user after 10 seconds
-  //     __DEV__ && console.log('User logged out after 10 seconds of inactivity');
-  //     logout();
-  //     navigation.navigate('Login');
-  //   }, 7200000); // 10 seconds = 10000 ms
-
-  //   // Cleanup timeout if component unmounts or user logs in before timeout
-  //   return () => clearTimeout(timer);
-
-  // }, []);
   const [securePassword, setSecurePassword] = useState(true);
 
   return (
     <KeyboardScroll contentContainerStyle={{ flexGrow: 1 }}>
-      <StatusBar
-        barStyle={'light-content'}
-      />
-      {/* <ImageBackground source={IMAGES.background.bg} style={styles.background}> */}
+      <StatusBar barStyle={'light-content'} />
+
+      {/* Language Picker Modal */}
       <Modal
         visible={showLanguagePicker}
         transparent
         animationType="fade"
         onRequestClose={() => setShowLanguagePicker(false)}>
-
         <TouchableOpacity
           style={styles.modalContainer}
           activeOpacity={1}
           onPress={() => setShowLanguagePicker(false)}>
-
           <View style={styles.dropdown}>
-
             {languages.map(item => (
               <TouchableOpacity
                 key={item.value}
                 style={styles.dropdownItem}
                 onPress={() => {
-                  changeLanguage(item.value);
+                  changeLanguage(item.value as 'en' | 'es');
                   setShowLanguagePicker(false);
                 }}>
-
                 <Image
                   source={item.flag}
                   style={styles.flag}
                   resizeMode="contain"
                 />
-
                 <Text
                   style={[
                     styles.dropdownText,
@@ -266,88 +316,39 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                   ]}>
                   {item.label}
                 </Text>
-
               </TouchableOpacity>
             ))}
-
           </View>
         </TouchableOpacity>
       </Modal>
+
       <LinearGradient
-        colors={['#1C2C5B', '#1F3C73', '#2B5DAA']} // gradient colors
+        colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.background}
-      >
+        style={styles.background}>
         <View style={styles.container}>
-          <Image style={isPad ? styles.logoIPad : styles.logo} source={IMAGES.logos.logo} />
-          {/* <Image style={isPad ? styles.logoIwave : styles.logowave} source={IMAGES.line} tintColor={'#FDBE6F'} /> */}
-
-          {/* <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'center',
-              marginBottom: 20,
-            }}>
-
-            <TouchableOpacity
-              onPress={() => changeLanguage('en')}
-              style={{
-                marginHorizontal: 10,
-                borderWidth: language === 'en' ? 2 : 0,
-                borderColor: '#FDBE6F',
-                 borderRadius: 2,
-              }}>
-              <Image
-                source={IMAGES.US}
-                style={{
-                  width: 36,
-                  height: 30,
-                }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => changeLanguage('es')}
-              style={{
-                marginHorizontal: 10,
-                borderWidth: language === 'es' ? 2 : 0,
-                borderColor: '#FDBE6F',
-                borderRadius: 2,
-                // backgroundColor:'red'
-              }}>
-              <Image
-                source={IMAGES.Spain}
-                style={{
-                  width: 36,
-                  height: 30,
-                  // backgroundColor:'green'
-                }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-
-          </View> */}
+          <Image
+            style={isPad ? styles.logoIPad : styles.logo}
+            source={IMAGES.logos.logo}
+          />
           <TouchableOpacity
             style={styles.languageSelector}
             activeOpacity={0.8}
             onPress={() => setShowLanguagePicker(true)}>
-
             <View style={styles.languageRow}>
               <Image
                 source={languages.find(x => x.value === language)?.flag}
                 style={styles.flag}
                 resizeMode="contain"
               />
-
               <Text style={styles.languageText}>
                 {languages.find(x => x.value === language)?.label}
               </Text>
             </View>
-
             <Text style={styles.arrow}>▼</Text>
           </TouchableOpacity>
+
           <View style={styles.inputGroup}>
             <View style={isPad ? styles.iPadInput : styles.inputI}>
               <TextInput
@@ -359,9 +360,10 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                 autoCapitalize="none"
                 onChangeText={newUsername => {
                   setError({ username: '', password: '' });
-                  setSendData(prevValue => {
-                    return { ...prevValue, username: newUsername };
-                  });
+                  setSendData(prevValue => ({
+                    ...prevValue,
+                    username: newUsername,
+                  }));
                 }}
               />
             </View>
@@ -380,9 +382,10 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                 secureTextEntry={securePassword}
                 onChangeText={newPass => {
                   setError({ username: '', password: '' });
-                  setSendData(prevValue => {
-                    return { ...prevValue, password: newPass };
-                  });
+                  setSendData(prevValue => ({
+                    ...prevValue,
+                    password: newPass,
+                  }));
                 }}
               />
               <TouchableOpacity
@@ -394,12 +397,12 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                       ? require('../assets/images/eyeclose.png')
                       : require('../assets/images/eyeopen.png')
                   }
+                  tintColor={'grey'}
                   style={{
                     width: isPad ? 35 : 25,
                     height: isPad ? 35 : 25,
                     resizeMode: 'contain',
                   }}
-                // tintColor={'red'}
                 />
               </TouchableOpacity>
             </View>
@@ -407,43 +410,154 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
               {error?.password != 'Not a valid user' && error?.password}
             </Text>
           </View>
+
           <View
             style={[
               isPad ? styles.iPadInputBtn : styles.inputIbtn,
               { backgroundColor: '#FDBE6F' },
             ]}>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => {
-                onLogin();
-              }}>
+            <TouchableOpacity style={styles.button} onPress={onLogin}>
               {isLoading ? (
                 <ActivityIndicator size="small" color={COLORS.white} />
               ) : (
-                <Text style={isPad ? styles.padText : styles.buttonText}>{t('Login')}</Text>
+                <Text style={isPad ? styles.padText : styles.buttonText}>
+                  {t('Login')}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
-
-
         </View>
-        <Text
-          style={{
-            color: COLORS.white,
-            fontSize: isPad ? 20 : 14,
-            opacity: 0.7,
-            fontFamily: FONTS.RICORDORegular,
-            bottom: isPad ? 90 : 70,
-            alignSelf: 'center'
-          }}>
-          v1.3
-        </Text>
+
+        {!isKeyboardVisible && (
+          <Text
+            style={{
+              color: COLORS.white,
+              fontSize: isPad ? 20 : 14,
+              opacity: 0.7,
+              fontFamily: FONTS.RICORDORegular,
+              marginBottom: isPad ? 35 : 20,
+              alignSelf: 'center',
+            }}>
+            v1.17
+          </Text>
+        )}
+
+        {/* Dynamic Custom Popup Modal */}
+        <Modal
+          visible={modalConfig.visible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() =>
+            setModalConfig(prev => ({ ...prev, visible: false }))
+          }>
+          <TouchableOpacity
+            style={styles.errorModalOverlay}
+            activeOpacity={1}
+            onPress={() =>
+              setModalConfig(prev => ({ ...prev, visible: false }))
+            }>
+            <TouchableOpacity
+              activeOpacity={1}
+              style={styles.errorModalCard}
+              onPress={() => {}}>
+              {/* Top-Right Close Button */}
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                activeOpacity={0.7}
+                onPress={() =>
+                  setModalConfig(prev => ({ ...prev, visible: false }))
+                }>
+                <Text style={styles.modalCloseButtonText}>✕</Text>
+              </TouchableOpacity>
+
+              {/* Scrollable Content Container */}
+              <ScrollView
+                style={styles.modalScrollView}
+                contentContainerStyle={styles.modalScrollContent}
+                showsVerticalScrollIndicator={false}
+                bounces={false}>
+                {/* Icon Container */}
+                <View
+                  style={[
+                    styles.errorModalIconContainer,
+                    modalConfig.type === 'subscription' &&
+                      styles.subscriptionIconContainer,
+                    modalConfig.type === 'error' &&
+                      styles.errorModalErrorIconContainer,
+                  ]}>
+                  <Image
+                    source={
+                      modalConfig.type === 'subscription'
+                        ? IMAGES.Subscription
+                        : IMAGES.Setting
+                    }
+                    style={styles.modalIconImage}
+                    resizeMode="contain"
+                  />
+                </View>
+
+                {/* Title */}
+                <Text style={styles.errorModalTitle}>{modalConfig.title}</Text>
+
+                {/* Message */}
+                <Text style={styles.errorModalSubtitle}>
+                  {modalConfig.message}
+                </Text>
+
+                {modalConfig.subMessage ? (
+                  <Text style={styles.errorModalDetail}>
+                    {modalConfig.subMessage}
+                  </Text>
+                ) : null}
+
+                {/* Subscription Special Contact Support Row */}
+                {modalConfig.type === 'subscription' && (
+                  <>
+                    <View style={styles.subscriptionDivider} />
+                    <TouchableOpacity
+                      style={styles.supportContainer}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        if (modalConfig.supportEmail) {
+                          Linking.openURL(`mailto:${modalConfig.supportEmail}`);
+                        }
+                      }}>
+                      <View style={styles.emailIconWrapper}>
+                        <Text style={{ fontSize: 18 }}>✉️</Text>
+                      </View>
+                      <View style={styles.supportTextWrapper}>
+                        <Text style={styles.supportPromptText}>
+                          {t('For additional support, contact us at')}
+                        </Text>
+                        <Text
+                          style={styles.supportEmailText}
+                          numberOfLines={1}
+                          ellipsizeMode="tail">
+                          {modalConfig.supportEmail || 'support@cmstrax.com'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </ScrollView>
+
+              {/* Bottom OK Button */}
+              <View style={styles.errorModalDivider} />
+              <TouchableOpacity
+                style={styles.errorModalOkButton}
+                activeOpacity={0.7}
+                onPress={() =>
+                  setModalConfig(prev => ({ ...prev, visible: false }))
+                }>
+                <Text style={styles.errorModalOkText}>{t('OK')}</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
       </LinearGradient>
-      {/* </ImageBackground> */}
-    </KeyboardScroll >
+    </KeyboardScroll>
   );
 };
-
 
 export { Login };
 
@@ -459,7 +573,6 @@ const styles = StyleSheet.create({
     padding: '5%',
     width: '100%',
     marginTop: isPad ? '0%' : '15%',
-    // justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
@@ -472,16 +585,12 @@ const styles = StyleSheet.create({
     width: '38%',
     height: '25%',
     resizeMode: 'contain',
-
     marginBottom: height * 0.02,
   },
   logowave: {
     height: 20,
     width: 100,
-    // marginBottom: 20,
-    // marginVertical:10,
     resizeMode: 'contain',
-    // backgroundColor:'green'
   },
   logoIwave: {
     width: '30%',
@@ -492,8 +601,6 @@ const styles = StyleSheet.create({
   iPadInput: {
     height: height * 0.08,
     width: '70%',
-
-    // justifyContent: 'flex-start',
     borderRadius: 55,
     backgroundColor: 'white',
     borderWidth: 1,
@@ -516,7 +623,7 @@ const styles = StyleSheet.create({
   inputGroup: {
     width: '100%',
     marginTop: isPad ? 20 : 10,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   inputContainer: {
     marginBottom: 20,
@@ -528,9 +635,7 @@ const styles = StyleSheet.create({
     fontSize: 23,
     paddingHorizontal: 20,
     width: '80%',
-    paddingStart: 50
-    // paddingTop: 20,
-    // backgroundColor:'red',
+    paddingStart: 50,
   },
   inputIPad: {
     color: 'black',
@@ -538,29 +643,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 30,
     width: width * 0.7,
-    // paddingTop: 20,
   },
   inputI: {
     borderWidth: 1,
-    height: 60,
+    minHeight: 60,
     width: '100%',
     justifyContent: 'space-between',
     paddingRight: 20,
     borderRadius: 30,
     borderColor: COLORS.white,
-    // paddingHorizontal: 20,
     backgroundColor: COLORS.white,
     marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
   },
   inputIbtn: {
+    minHeight: 56,
     borderWidth: 1,
-    // height: 60,
     justifyContent: 'center',
     borderRadius: 30,
     borderColor: COLORS.white,
-    // paddingHorizontal: 20,
     backgroundColor: COLORS.white,
     marginTop: isPad ? 12 : 8,
     width: '100%',
@@ -589,7 +691,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   buttonText: {
-    //...FONTS.fontLg,
     color: COLORS.white,
     fontSize: isPad ? 25 : 22,
     fontFamily: FONTS.RICORDOSemiBold,
@@ -611,54 +712,46 @@ const styles = StyleSheet.create({
   eye: { width: '20%', alignItems: 'center', justifyContent: 'center' },
   languageSelector: {
     width: isPad ? '35%' : '50%',
-    height: 40,
+    minHeight: 45,
     backgroundColor: '#fff',
     borderRadius: 30,
     borderWidth: 1,
-    // borderColor: '#FDBE6F',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     marginBottom: 20,
   },
-
   languageRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   flag: {
     width: 30,
     height: 22,
     marginRight: 10,
   },
-
   languageText: {
     color: '#1C2C5B',
     fontSize: isPad ? 22 : 18,
     fontFamily: FONTS.RICORDOSemiBold,
   },
-
   arrow: {
     color: '#1C2C5B',
     fontSize: 16,
   },
-
   modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.25)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   dropdown: {
     width: isPad ? '40%' : '70%',
     backgroundColor: '#fff',
     borderRadius: 15,
     overflow: 'hidden',
   },
-
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -667,10 +760,162 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ECECEC',
   },
-
   dropdownText: {
     color: '#000',
     fontSize: 18,
     fontFamily: FONTS.RICORDORegular,
+  },
+
+  /* Custom Popup Modal Styles */
+  errorModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: 14,
+    right: 18,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  modalCloseButtonText: {
+    fontSize: 18,
+    color: '#8E9BAE',
+    fontWeight: 'bold',
+  },
+  errorModalIconContainer: {
+    width: 85,
+    height: 85,
+    borderRadius: 45,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  subscriptionIconContainer: {
+    width: 80,
+    height: 80,
+  },
+  errorModalErrorIconContainer: {
+    width: 85,
+    height: 85,
+  },
+  errorModalIconPlaceholder: {
+    fontSize: 38,
+  },
+  errorModalOkButton: {
+    width: '100%',
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorModalOkText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0066CC',
+    fontFamily: FONTS.RICORDOSemiBold,
+  },
+  subscriptionDivider: {
+    width: '88%',
+    height: 1,
+    backgroundColor: '#EAEFF5',
+    marginVertical: 14,
+  },
+  emailIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EEF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  modalIconImage: {
+    width: '100%',
+    height: '100%',
+  },
+  errorModalCard: {
+    width: isPad ? 460 : '90%',
+    maxWidth: 380,
+    maxHeight: height * 0.8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingTop: 26,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 14,
+    elevation: 10,
+    overflow: 'hidden',
+  },
+  modalScrollView: {
+    width: '100%',
+  },
+  modalScrollContent: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  errorModalTitle: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: '#0F1E36',
+    textAlign: 'center',
+    lineHeight: 28,
+    marginBottom: 10,
+    width: '100%',
+    fontFamily: FONTS.RICORDOSemiBold,
+  },
+  errorModalSubtitle: {
+    fontSize: 14.5,
+    color: '#55657E',
+    textAlign: 'center',
+    lineHeight: 21,
+    width: '100%',
+    marginBottom: 8,
+    fontFamily: FONTS.RICORDORegular,
+  },
+  errorModalDetail: {
+    fontSize: 13.5,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 19,
+    width: '100%',
+    marginBottom: 12,
+    fontFamily: FONTS.RICORDORegular,
+  },
+  supportContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  supportTextWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  supportPromptText: {
+    fontSize: 13.5,
+    color: '#55657E',
+    fontFamily: FONTS.RICORDORegular,
+    flexWrap: 'wrap',
+  },
+  supportEmailText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0052CC',
+    fontFamily: FONTS.RICORDOSemiBold,
+  },
+  errorModalDivider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginTop: 8,
   },
 });

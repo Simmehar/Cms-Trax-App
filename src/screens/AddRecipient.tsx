@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,6 @@ import { FONTS, IMAGES } from '../assets';
 import { ShipListModal } from '../components/ShipListModal';
 import { SuccessModal } from '../components/SuccessModal';
 import { KeyboardScroll } from '../components/KeyboardScroll';
-import { InputPicker } from '../components/InputPicker';
 import { isIPad } from '../utilities/securestorage';
 import axios from 'axios';
 import { Backend_URL } from '../util/apiCalls';
@@ -24,24 +23,34 @@ import { AuthContext } from '../contexts';
 import { useTranslation } from 'react-i18next';
 
 const AddRecipient: React.FC = ({ navigation }: any) => {
+  const { t } = useTranslation();
+  const { user } = useContext(AuthContext);
+
   const [visible, setVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('');
   const [successVisible, setSuccessVisible] = useState(false);
-  const [shipName, setShipName] = useState<any>();
-  const [departmentName, setDepartmentName] = useState<any>();
-  const [email, setEmail] = useState<any>();
-  const [idUnit, setIdUnit] = useState<any>();
+  const [shipName, setShipName] = useState<any>(null);
+  const [departmentName, setDepartmentName] = useState<any>(null);
+  const [email, setEmail] = useState('');
+  const [idUnit, setIdUnit] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { t } = useTranslation();
   const [name, setName] = useState({
     firstName: '',
     lastName: '',
   });
 
-  const { user } = useContext(AuthContext);
+  const firstNameRef = useRef<TextInput>(null);
+  const lastNameRef = useRef<TextInput>(null);
+  const idUnitRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
 
-  const validateEmail = (email: any) => {
-    return String(email)
+  // Capitalize first letter of every word
+  const capitalizeFirstLetter = (text: string) => {
+    return text.replace(/(^|\s)\S/g, char => char.toUpperCase());
+  };
+
+  const validateEmail = (emailStr: string) => {
+    return String(emailStr)
       .trim()
       .toLowerCase()
       .match(
@@ -49,8 +58,8 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
       );
   };
 
-  const validateName = (name: any) => {
-    return String(name)
+  const validateName = (nameStr: string) => {
+    return String(nameStr)
       .trim()
       .toLowerCase()
       .match(/^[a-z][a-z,. '-]*$/i);
@@ -58,6 +67,7 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
 
   const submitHandler = () => {
     let obj: any = {};
+
     if (
       !name.firstName ||
       !name.lastName ||
@@ -84,31 +94,33 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
         Alert.alert(t('Please select the division!'));
         return;
       }
-
       return;
     }
+
     if (email && !validateEmail(email)) {
       obj.email = 'Please provide a valid email.';
       Alert.alert(t('Please provide a valid email.'));
+      return;
     }
+
     if (name.firstName && !validateName(name.firstName)) {
       obj.firstName =
         "Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.";
       Alert.alert(
-        t("Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.")
+        t("Name should be alphabets and only space - . and ' are allowed and must start with an alphabet."),
       );
-
       return;
     }
+
     if (name.lastName && !validateName(name.lastName)) {
       obj.lastName =
         "Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.";
       Alert.alert(
-  t("Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.")
-);
+        t("Name should be alphabets and only space - . and ' are allowed and must start with an alphabet."),
+      );
       return;
     }
-    if (obj?.email || obj?.firstName || obj?.lastName) return;
+
     Keyboard?.dismiss();
     setIsLoading(true);
 
@@ -120,49 +132,23 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
           last_name: name.lastName,
           ship_id: shipName.id,
           dept: departmentName.id,
+          id_unit: idUnit,
           ...(email && { email: email }),
         },
         { headers: { Authorization: 'Bearer ' + user?.token } },
       )
       .then(response => {
         if (response?.data) {
-          // Alert.alert(
-          //   'Success!',
-          //   response?.data?.data?.first_name +
-          //     ' ' +
-          //     response?.data?.data?.last_name +
-          //     ' recipient has been added.',
-          //   [
-          //     {
-          //       text: 'Ok',
-          //       onPress: () => navigation.goBack(),
-          //     },
-          //   ],
-          // );
           setSuccessVisible(true);
         }
       })
       .catch(error => {
-        let obj = {};
         if (
-          error?.response?.data?.data?.email?.[0] ==
+          error?.response?.data?.data?.email?.[0] ===
           'user with this email already exists.'
         ) {
-          obj.email = 'user with this email already exists.';
           Alert.alert(t('User with this email already exists.'));
           return;
-        }
-        if (
-          error?.response?.data?.data?.first_name?.[0] ==
-          'This field may not be blank.'
-        ) {
-          obj.firstName = 'This field may not be blank.';
-        }
-        if (
-          error?.response?.data?.data?.last_name?.[0] ==
-          'This field may not be blank.'
-        ) {
-          obj.lastName = 'This field may not be blank.';
         }
         Alert.alert(t('Something went wrong!'), t('Please try again later.'));
       })
@@ -177,123 +163,186 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
 
       <ShipListModal
         visible={visible}
-        onClose={() => {
-          setVisible(false);
-        }}
+        onClose={() => setVisible(false)}
         activeTab={activeTab}
-        getValue={(val: string) => {
-          activeTab == 'Ship'
-            ? setShipName(val)
-            : activeTab == 'Division'
-              ? setDepartmentName(val)
-              : '';
+        getValue={(val: any) => {
+          if (activeTab === 'Ship') {
+            setShipName(val);
+          } else if (activeTab === 'Division') {
+            setDepartmentName(val);
+          }
         }}
       />
 
-      {successVisible ? (
+      {successVisible && (
         <SuccessModal
           visible={successVisible}
           content={{
             heading: t('GREAT WORK!'),
-            middle: name.firstName + ' ' + name.lastName,
+            middle: `${name.firstName} ${name.lastName}`,
             lable: t('is added as recipient.'),
           }}
-          onClose={() => setSuccessVisible(!successVisible)}
+          onClose={() => {
+            setSuccessVisible(false);
+            navigation?.goBack?.();
+          }}
         />
-      ) : (
-        <></>
       )}
 
-      <KeyboardScroll contentContainerStyle={{}}>
-        <InputPicker
-          isPicker={false}
-          autoCapitalize={'word'}
-          isQrCode={false}
-         placeholder={t('First Name*')}
-          onPickerClick={() => { }}
-          style={{ marginHorizontal: 0, marginTop: 28,paddingVertical:Platform.OS === 'ios' ? 10 : 0, }}
-          pickerValue={name.firstName}
-          onChangeText={val => {
-            setName(prev => {
-              return {
-                firstName: val,
-                lastName: prev.lastName,
-              };
-            });
-          }}
-        />
+      {/* Inputs Scroll Area */}
+      <KeyboardScroll
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}>
+        {/* First Name Input */}
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => firstNameRef.current?.focus()}
+          style={[styles.inputContainer, { marginTop: 15 }]}>
+          {name.firstName ? (
+            <Text style={styles.floatingLabel}>{t('First Name*')}</Text>
+          ) : null}
+          <TextInput
+            ref={firstNameRef}
+            autoCapitalize="words"
+            placeholder={t('First Name*')}
+            placeholderTextColor="#000"
+            style={styles.textInputField}
+            value={name.firstName}
+            onChangeText={val => {
+              const formatted = capitalizeFirstLetter(val);
+              setName(prev => ({ ...prev, firstName: formatted }));
+            }}
+          />
+        </TouchableOpacity>
 
-        <InputPicker
-          isPicker={false}
-          isQrCode={false}
-          autoCapitalize={'word'}
-          placeholder={t('Last Name*')}
-          onPickerClick={() => { }}
-          style={{marginHorizontal: 0, marginVertical: Platform.OS === 'ios' ? 10 : 0,}}
-          pickerValue={name.lastName}
-          onChangeText={val => {
-            setName(prev => {
-              return {
-                firstName: prev.firstName,
-                lastName: val,
-              };
-            });
-          }}
-        />
-        <InputPicker
-          isPicker={true}
-          isQrCode={false}
-          placeholder={t('Select Ship/department*')}
-          style={{ paddingTop: isIPad ? 20 : 10 }}
-          onPickerClick={() => {
-            setVisible(true), setActiveTab('Ship');
-          }}
-          onChangeText={() => { }}
-          pickerValue={shipName?.name}
-        />
-        {/* <View style={{marginTop:10}} /> */}
-        <InputPicker
-          isPicker={true}
-          isQrCode={false}
-          placeholder={t('Select Department*')}
-          style={{ paddingTop: isIPad ? 20 : 10, }}
-          onPickerClick={() => {
-            setActiveTab('Division'), setVisible(true);
-          }}
-          pickerValue={departmentName?.name}
-        />
-        <InputPicker
-          isPicker={false}
-          autoCapitalize={'word'}
-          isQrCode={false}
-          style={{marginHorizontal: 0, marginVertical: Platform.OS === 'ios' ? 10 : 0,}}
-          placeholder={t('ID #/ Unit #*')}
-          onPickerClick={() => { }}
-          pickerValue={idUnit}
-          onChangeText={val => {
-            setIdUnit(val);
-          }}
-        />
-        <InputPicker
-          isPicker={false}
-          isQrCode={false}
-          placeholder={t('Email Address')}
-          onPickerClick={() => { }}
-          style={{marginHorizontal: 0, marginVertical: Platform.OS === 'ios' ? 10 : 0,}}
-          pickerValue={email}
-          onChangeText={setEmail}
-        />
+        {/* Last Name Input */}
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => lastNameRef.current?.focus()}
+          style={styles.inputContainer}>
+          {name.lastName ? (
+            <Text style={styles.floatingLabel}>{t('Last Name*')}</Text>
+          ) : null}
+          <TextInput
+            ref={lastNameRef}
+            autoCapitalize="words"
+            placeholder={t('Last Name*')}
+            placeholderTextColor="#000"
+            style={styles.textInputField}
+            value={name.lastName}
+            onChangeText={val => {
+              const formatted = capitalizeFirstLetter(val);
+              setName(prev => ({ ...prev, lastName: formatted }));
+            }}
+          />
+        </TouchableOpacity>
+
+        {/* Ship Picker Selector */}
+        <TouchableOpacity
+          style={styles.pickerContainer}
+          onPress={() => {
+            setActiveTab('Ship');
+            setVisible(true);
+          }}>
+          {shipName?.name ? (
+            <View style={{ flex: 1 }}>
+              <Text style={styles.floatingLabel}>
+                {t('Select Ship/building*')}
+              </Text>
+              <Text style={styles.pickerValueText}>{shipName?.name}</Text>
+            </View>
+          ) : (
+            <Text style={styles.pickerPlaceholderText}>
+              {t('Select Ship/Building*')}
+            </Text>
+          )}
+          <Image
+            source={IMAGES.down_arrow}
+            style={[
+              styles.arrowIcon,
+              { marginTop: shipName?.name ? 8 : 0 },
+            ]}
+          />
+        </TouchableOpacity>
+
+        {/* Department Picker Selector */}
+        <TouchableOpacity
+          style={styles.pickerContainer}
+          onPress={() => {
+            setActiveTab('Division');
+            setVisible(true);
+          }}>
+          {departmentName?.name ? (
+            <View style={{ flex: 1 }}>
+              <Text style={styles.floatingLabel}>{t('Select Department*')}</Text>
+              <Text style={styles.pickerValueText}>
+                {departmentName?.name}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.pickerPlaceholderText}>
+              {t('Select Department*')}
+            </Text>
+          )}
+          <Image
+            source={IMAGES.down_arrow}
+            style={[
+              styles.arrowIcon,
+              { marginTop: departmentName?.name ? 8 : 0 },
+            ]}
+          />
+        </TouchableOpacity>
+
+        {/* ID Unit Input */}
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => idUnitRef.current?.focus()}
+          style={styles.inputContainer}>
+          {idUnit ? (
+            <Text style={styles.floatingLabel}>{t('ID #/ Unit #*')}</Text>
+          ) : null}
+          <TextInput
+            ref={idUnitRef}
+            autoCapitalize="words"
+            placeholder={t('ID #/ Unit #*')}
+            placeholderTextColor="#000"
+            style={styles.textInputField}
+            value={idUnit}
+            onChangeText={setIdUnit}
+          />
+        </TouchableOpacity>
+
+        {/* Email Address Input */}
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => emailRef.current?.focus()}
+          style={styles.inputContainer}>
+          {email ? (
+            <Text style={styles.floatingLabel}>{t('Email Address')}</Text>
+          ) : null}
+          <TextInput
+            ref={emailRef}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholder={t('Email Address')}
+            placeholderTextColor="#000"
+            style={styles.textInputField}
+            value={email}
+            onChangeText={setEmail}
+          />
+        </TouchableOpacity>
       </KeyboardScroll>
-      <View style={{ flex: 1, justifyContent: 'flex-end', marginBottom: 20 }}>
+
+      {/* Fixed Bottom Button */}
+      <View style={styles.bottomButtonContainer}>
         <TouchableOpacity
           style={styles.btnView}
           disabled={isLoading}
-          // onPress={() => setSuccessVisible(!successVisible)}>
           onPress={submitHandler}>
           {isLoading ? (
-            <ActivityIndicator color={'white'} />
+            <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.btntxt}>Add Recipient</Text>
+            <Text style={styles.btntxt}>{t('Add Recipient')}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -307,32 +356,61 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingTop: isIPad ? 80 : 50,
   },
-  inPutView: {
+  scrollContent: {
+    paddingBottom: 30,
+  },
+  inputContainer: {
     marginHorizontal: 30,
-    // marginTop :40
-  },
-  input: {
-    marginTop: 22.5,
-    fontSize: 14,
-    fontFamily: FONTS.PoppinsRegular,
-    color: 'black',
     borderBottomWidth: 1,
-    paddingBottom: 7.5,
     borderBottomColor: '#98989850',
+    paddingTop: isIPad ? 22 : 16,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 4,
+    marginVertical: isIPad ? 12 : 6,
   },
-  rowView: {
+  textInputField: {
+    color: 'black',
+    fontSize: isIPad ? 22 : 16,
+    fontFamily: FONTS.PoppinsRegular,
+    paddingVertical: Platform.OS === 'ios' ? 4 : 0,
+    minHeight: 28,
+  },
+  floatingLabel: {
+    fontSize: isIPad ? 16 : 12,
+    fontFamily: FONTS.PoppinsRegular,
+    color: '#223890',
+    marginBottom: 2,
+  },
+  pickerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 22.5,
+    justifyContent: 'space-between',
+    marginHorizontal: 30,
     borderBottomWidth: 1,
-    paddingBottom: 7.5,
     borderBottomColor: '#98989850',
+    paddingTop: isIPad ? 24 : 18,
+    paddingBottom: isIPad ? 14 : 10,
+    marginVertical: isIPad ? 12 : 6,
   },
-  label: {
-    fontSize: 14,
+  pickerPlaceholderText: {
+    color: 'black',
+    fontSize: isIPad ? 22 : 16,
     fontFamily: FONTS.PoppinsRegular,
-    color: '#989898',
     flex: 1,
+  },
+  pickerValueText: {
+    color: 'black',
+    fontSize: isIPad ? 22 : 16,
+    fontFamily: FONTS.PoppinsRegular,
+  },
+  arrowIcon: {
+    height: isIPad ? 18 : 12,
+    width: isIPad ? 18 : 12,
+    resizeMode: 'contain',
+  },
+  bottomButtonContainer: {
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    paddingTop: 10,
+    backgroundColor: 'white',
   },
   btnView: {
     height: isIPad ? 65 : 60,
@@ -348,4 +426,5 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 });
+
 export { AddRecipient };

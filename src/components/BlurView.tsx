@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   Dimensions,
   Platform,
+  Modal,
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { FONTS, ICONS, IMAGES } from '../assets';
@@ -21,7 +22,7 @@ import { useKeepAwake } from '@sayem314/react-native-keep-awake';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n from '../localization/i18n';
-import { Modal } from 'react-native';
+
 interface BlurProps {
   onClose: () => void;
 }
@@ -30,6 +31,8 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
   useKeepAwake();
   const [language, setLanguage] = useState('en');
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [isHospitality, setIsHospitality] = useState(false);
+
   const languages = [
     {
       label: 'USA',
@@ -42,9 +45,20 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
       flag: IMAGES.Spain,
     },
   ];
-  React.useEffect(() => {
+
+  useEffect(() => {
     loadLanguage();
+    fetchBusinessType();
   }, []);
+
+  const fetchBusinessType = async () => {
+    try {
+      const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+      setIsHospitality(storedType === 'hotels-and-hospitality');
+    } catch (e) {
+      console.warn('Error reading BUSINESS_TYPE in BLURView', e);
+    }
+  };
 
   const loadLanguage = async () => {
     const lang = await AsyncStorage.getItem('language');
@@ -54,6 +68,7 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
       await i18n.changeLanguage(lang);
     }
   };
+
   const changeLanguage = async (lang: 'en' | 'es') => {
     setLanguage(lang);
 
@@ -61,8 +76,6 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
 
     await i18n.changeLanguage(lang);
   };
-
-
 
   const { t } = useTranslation();
   const { searchActive, setSearchActive } = useNavigationContext();
@@ -86,9 +99,6 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
     return <CheckoutProgressBar />;
   }
 
-
-
-
   const handlePress = () => {
     Alert.alert(t('Join Crew Mail WiFi'), '', [
       {
@@ -111,7 +121,7 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
         <TouchableOpacity
           style={styles.modalContainer}
           activeOpacity={1}
-          onPress={() => { setShowLanguagePicker(false) }}>
+          onPress={() => { setShowLanguagePicker(false); }}>
 
           <View style={styles.dropdown}>
             {languages.map(item => (
@@ -144,6 +154,7 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
           </View>
         </TouchableOpacity>
       </Modal>
+
       <TouchableOpacity style={styles.SearchIconCircle} onPress={onClose}>
         <SvgXml
           xml={ICONS.header.cross}
@@ -152,6 +163,7 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
         />
       </TouchableOpacity>
 
+      {/* Dynamic: All Assets vs All Packages */}
       <TouchableOpacity
         style={styles.cardView}
         onPress={() => {
@@ -159,33 +171,41 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
           onItemPress('Search');
         }}>
         <Image source={IMAGES.packageIcon} style={styles.iconImg} />
-        <Text style={styles.label}>{t('All Packages')}</Text>
-      </TouchableOpacity>
-      {(user.currentplan && user.currentplan != 'Basic') && <TouchableOpacity
-        disabled={isProgressEnabled}
-        style={[styles.cardView, { opacity: isProgressEnabled ? 0.5 : 1 }]}
-        onPress={async () => {
-          await SyncUnsynched(setIsProgressEnabled);
-        }}>
-        <Image source={IMAGES.sync} style={styles.iconImg} />
-        <Text
-          style={[
-            styles.label,
-            {
-              fontSize: isProgressEnabled ? 24 : isIPad ? 25 : 18,
-            },
-          ]}>
-          {isProgressEnabled
-            ? t('Please wait, data is syncing')
-            : t('Sync Data')}
+        <Text style={styles.label}>
+          {t(isHospitality ? 'All Services' : 'All Packages')}
         </Text>
-      </TouchableOpacity>}
+      </TouchableOpacity>
 
+      {user.currentplan && user.currentplan !== 'Basic' && (
+        <TouchableOpacity
+          disabled={isProgressEnabled}
+          style={[styles.cardView, { opacity: isProgressEnabled ? 0.5 : 1 }]}
+          onPress={async () => {
+            await SyncUnsynched(setIsProgressEnabled);
+          }}>
+          <Image source={IMAGES.sync} style={styles.iconImg} />
+          <Text
+            style={[
+              styles.label,
+              {
+                fontSize: isProgressEnabled ? 24 : isIPad ? 25 : 18,
+              },
+            ]}>
+            {isProgressEnabled
+              ? t('Please wait, data is syncing')
+              : t('Sync Data')}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Dynamic: Add Guest vs Add Recipient */}
       <TouchableOpacity
         style={styles.cardView}
         onPress={() => onItemPress('AddRecipient')}>
         <Image source={IMAGES.add_receipent} style={styles.iconImg} />
-        <Text style={styles.label}>{t('Add Recipient')}</Text>
+        <Text style={styles.label}>
+          {t(isHospitality ? 'Add Guest' : 'Add Recipient')}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -195,14 +215,16 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
         <Text style={styles.label}>{t('Recent Checkouts')}</Text>
       </TouchableOpacity>
 
-      {user?.currentplan !== 'Basic' && <TouchableOpacity
-        style={styles.cardView}
-        onPress={() => {
-          onItemPress('OfflineCheckout');
-        }}>
-        <Image source={IMAGES.secure} style={styles.iconImg} />
-        <Text style={styles.label}>{t('Offline Checkout')}</Text>
-      </TouchableOpacity>}
+      {user?.currentplan !== 'Basic' && (
+        <TouchableOpacity
+          style={styles.cardView}
+          onPress={() => {
+            onItemPress('OfflineCheckout');
+          }}>
+          <Image source={IMAGES.secure} style={styles.iconImg} />
+          <Text style={styles.label}>{t('Offline Checkout')}</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
         style={styles.cardView}
@@ -212,6 +234,7 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
           {t(languages.find(x => x.value === language)?.label)}
         </Text>
       </TouchableOpacity>
+
       <TouchableOpacity
         style={styles.cardView}
         onPress={async () => {
@@ -230,12 +253,9 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
         <Image source={IMAGES.red_power} style={styles.iconImg} />
         <Text style={styles.label}>{t('Logout')}</Text>
       </TouchableOpacity>
-
     </View>
   );
 
-  // On iOS: frosted-glass effect using rgba white overlay
-  // On Android: solid white background (same as before)
   return (
     <View
       style={[
@@ -315,14 +335,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   dropdown: {
     width: isIPad ? '40%' : '70%',
     backgroundColor: '#fff',
     borderRadius: 15,
     overflow: 'hidden',
   },
-
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -331,13 +349,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ECECEC',
   },
-
   flag: {
     width: 30,
     height: 22,
     marginRight: 10,
   },
-
   dropdownText: {
     color: '#000',
     fontSize: 18,

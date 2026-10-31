@@ -1,24 +1,16 @@
-/**
- * AddPackageModal.tsx
- *
- * Changes in this version:
- *  • OCR button and Scanner Modal REMOVED — scanner now lives in Home screen
- *  • capturedImagePath prop: when set, image uploads immediately to slot 1
- *  • backgroundExtracted prop: when Gemini finishes in background, fields auto-populate
- *  • isBackgroundProcessing prop: shows subtle loading indicator on form
- *  • All other behaviour (validation, image slots, ShipListModal, etc.) UNCHANGED
- */
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONTS, IMAGES } from '../assets';
 import { InputPicker } from './InputPicker';
 import { isIPad } from '../utilities/securestorage';
@@ -38,6 +30,7 @@ import tnv from 'tracking-number-validation';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { GeminiExtractionResult } from './SmartDocumentScanner';
 import { useTranslation } from 'react-i18next';
+import { inspectLocalImage, inspectRemoteImage } from '../utilities/inspectImage';
 
 // ─────────────────────────────────────────────────────────────
 // CARRIER NAME NORMALISER
@@ -70,23 +63,26 @@ interface packageImages {
   image1: string;
   image2: string;
   image3: string;
+  image4?: string;
 }
 
 export interface packageOption {
   trackingId: string;
-  type: PackageType;
+  type: PackageType | null;
+  status?: PackageType | null;
   condition: PackageConditionType;
-  carrier: CarrierObj;
+  carrier?: CarrierObj | null;
   message: string;
   imagesObj: packageImages;
   ocrText?: string;
   geminiData?: GeminiExtractionResult;
   id?: string | number;
+  loc?: string;
 }
 
 interface ImageSlot {
-  localUri: string;  // Local file path for immediate UI preview
-  remoteUrl: string; // Server URL after uploading on Save
+  localUri: string;
+  remoteUrl: string;
 }
 
 interface packageModalProps {
@@ -131,15 +127,23 @@ const AddPackageModal: React.FC<packageModalProps> = ({
   const [type, setType] = useState<PackageType | null>(null);
   const [condition, setCondition] = useState<PackageConditionType | null>(null);
   const [carrier, setCarrier] = useState<CarrierObj | null>(null);
+  const [packageLocation, setPackageLocation] = useState(location || '');
   const [message, setMessage] = useState('');
   const [ocrText, setOcrText] = useState('');
   const [geminiData, setGeminiData] = useState<GeminiExtractionResult | null>(null);
 
-  // Staged images state (slots 1, 2, 3)
+  // Prevents the wrong-scan dialog from re-firing when carriers/isHospitality change
+  const alertedExtractionRef = useRef<GeminiExtractionResult | null>(null);
+
+  // Business Type flag state
+  const [isHospitality, setIsHospitality] = useState(false);
+
+  // Staged images state (slots 1, 2, 3, 4)
   const [images, setImages] = useState<Record<number, ImageSlot>>({
     1: { localUri: '', remoteUrl: '' },
     2: { localUri: '', remoteUrl: '' },
     3: { localUri: '', remoteUrl: '' },
+    4: { localUri: '', remoteUrl: '' },
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,22 +152,51 @@ const AddPackageModal: React.FC<packageModalProps> = ({
   const { carriers } = usePackageContext();
   const { t } = useTranslation();
 
+  // Active slots based on business type: 4 for hospitality, 3 otherwise
+  const activeImageKeys = isHospitality ? [1, 2, 3, 4] : [1, 2, 3];
+
+  // ── Sync incoming location prop ──────────────────────────
+  useEffect(() => {
+    if (location) {
+      setPackageLocation(location);
+    }
+  }, [location]);
+
+  // ── Fetch business type from storage ──────────────────────
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE', e);
+      }
+    };
+
+    if (isVisible) {
+      fetchBusinessType();
+    }
+  }, [isVisible]);
+
   // ── Populate form when editing an existing package ────────
   useEffect(() => {
     if (packageValue?.trackingId) {
-      const { carrier, condition, imagesObj, trackingId, type, status, message } = packageValue;
+      const { carrier, condition, imagesObj, trackingId, type, status, message, loc } = packageValue;
       setTrackingId(trackingId);
       setStatus(status);
       setType(type);
       setCondition(condition);
       setCarrier(carrier);
       setMessage(message);
+      if (loc) {
+        setPackageLocation(loc);
+      }
 
-      // Populate remote URLs into state for existing packages
       setImages({
         1: { localUri: imagesObj?.image1 || '', remoteUrl: imagesObj?.image1 || '' },
         2: { localUri: imagesObj?.image2 || '', remoteUrl: imagesObj?.image2 || '' },
         3: { localUri: imagesObj?.image3 || '', remoteUrl: imagesObj?.image3 || '' },
+        4: { localUri: imagesObj?.image4 || '', remoteUrl: imagesObj?.image4 || '' },
       });
     } else {
       clearData();
@@ -172,7 +205,7 @@ const AddPackageModal: React.FC<packageModalProps> = ({
 
   // ── Auto-detect carrier from tracking ID ──
   const detectCarrierFromId = (id: string): CarrierObj | undefined => {
-    if (!id) return undefined;
+    if (!id || isHospitality) return undefined;
     const courier = tnv.getCourier(id);
     let name = 'Other';
 
@@ -192,12 +225,14 @@ const AddPackageModal: React.FC<packageModalProps> = ({
   };
 
   useEffect(() => {
+    if (isHospitality) return;
+
     if (trackingId.length > 0 && !geminiData?.carrier) {
       setCarrier(detectCarrierFromId(trackingId) ?? null);
     } else if (!trackingId && !geminiData?.carrier) {
       setCarrier(null);
     }
-  }, [trackingId]); // eslint-disable-line
+  }, [trackingId, isHospitality]); // eslint-disable-line
 
   // ─────────────────────────────────────────────────────────
   // ✅ Instantly stage captured image to Slot 1 locally
@@ -214,20 +249,48 @@ const AddPackageModal: React.FC<packageModalProps> = ({
   // ─────────────────────────────────────────────────────────
   // ✅ Populate fields when background Gemini extraction arrives
   // ─────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────
+  // ✅ Populate fields when background Gemini extraction arrives
+  // ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!backgroundExtracted) return;
-
-    setGeminiData(backgroundExtracted);
-    if (onGeminiExtracted) onGeminiExtracted(backgroundExtracted);
+    if (!backgroundExtracted || isBackgroundProcessing) return;
 
     const rawTn = backgroundExtracted.tracking_number;
     const tn = rawTn ? rawTn.replace(/\s/g, '') : '';
 
-    if (tn && !trackingId) {
-      setTrackingId(tn);
+    // ── Wrong mode / wrong thing scanned: write nothing, show dialog ──
+    if (!tn) {
+      if (alertedExtractionRef.current !== backgroundExtracted) {
+        alertedExtractionRef.current = backgroundExtracted;
+        setGeminiData(null);
+        setImages(prev => ({ ...prev, 1: { localUri: '', remoteUrl: '' } }));
+        Alert.alert(
+          '',
+          t('Please select the relevant service.'),
+          [
+            {
+              text: t('OK'),
+              onPress: () => {
+                clearData(); // reset the form for a rescan
+                // stay on this screen — modal stays open
+                // reset the guard so an identical next result can alert again
+                alertedExtractionRef.current = null;
+              },
+            },
+          ],
+          { cancelable: false },
+        );
+      }
+      return; // nothing is written to any field
     }
 
-    if (backgroundExtracted.carrier?.trim()) {
+    // ── Valid extraction: existing behaviour ──
+    setGeminiData(backgroundExtracted);
+    if (onGeminiExtracted) onGeminiExtracted(backgroundExtracted);
+
+    if (!trackingId) setTrackingId(tn);
+
+    if (!isHospitality && backgroundExtracted.carrier?.trim()) {
       const normalisedName = normaliseCarrierName(backgroundExtracted.carrier);
       const matchedCarrier = carriers?.find(
         c => c.name.toLowerCase() === normalisedName.toLowerCase(),
@@ -240,16 +303,15 @@ const AddPackageModal: React.FC<packageModalProps> = ({
         setCarrier(otherObj);
       }
     }
-  }, [backgroundExtracted, carriers]); // eslint-disable-line
+  }, [backgroundExtracted, isBackgroundProcessing, carriers, isHospitality]); // eslint-disable-line
 
   // ─────────────────────────────────────────────────────────
-  // LOCAL IMAGE SELECTION (NO IMMEDIATE API UPLOAD)
+  // LOCAL IMAGE SELECTION
   // ─────────────────────────────────────────────────────────
   const selectMedia = (key: number) => {
     open((response: any) => {
       if (!response.path) return;
 
-      // Update local URI immediately for instant preview display
       setImages(prev => ({
         ...prev,
         [key]: { localUri: response.path, remoteUrl: '' },
@@ -259,13 +321,11 @@ const AddPackageModal: React.FC<packageModalProps> = ({
 
   const onDeleteImg = async (key: number) => {
     const slot = images[key];
-    // If it was an already uploaded remote image, clean it up on server
     if (slot?.remoteUrl && user) {
       deleteImg(user, { image_name: slot.remoteUrl }).catch(err =>
         console.warn('Failed to delete remote image:', err)
       );
     }
-    // Clear slot locally
     setImages(prev => ({
       ...prev,
       [key]: { localUri: '', remoteUrl: '' },
@@ -283,6 +343,7 @@ const AddPackageModal: React.FC<packageModalProps> = ({
     setCarrier(null);
     setStatus(null);
     setMessage('');
+    setPackageLocation(location || '');
     setOcrText('');
     setGeminiData(null);
     setPackageValue(null);
@@ -290,6 +351,7 @@ const AddPackageModal: React.FC<packageModalProps> = ({
       1: { localUri: '', remoteUrl: '' },
       2: { localUri: '', remoteUrl: '' },
       3: { localUri: '', remoteUrl: '' },
+      4: { localUri: '', remoteUrl: '' },
     });
   };
 
@@ -297,15 +359,23 @@ const AddPackageModal: React.FC<packageModalProps> = ({
   // SUBMIT WITH PARALLEL UPLOAD ON SAVE
   // ─────────────────────────────────────────────────────────
   const onSubmit = async () => {
-    // 1. Field Validations
     const missingFields: string[] = [];
-    if (!trackingId?.trim()) missingFields.push('Tracking ID');
-    if (!type) missingFields.push('Type');
+    if (!trackingId?.trim()) missingFields.push(isHospitality ? 'ID#' : 'Tracking ID*');
+
+    // Type sirf non-hospitality mode me required hai
+    if (!isHospitality && !type) missingFields.push('Type');
+
     if (!status) missingFields.push('Status');
     if (!condition) missingFields.push('Condition');
-    if (!carrier) missingFields.push('Carrier');
 
-    const hasAnyImage = Boolean(images[1].localUri || images[2].localUri || images[3].localUri);
+    // Hospitality me Location check karein, non-hospitality me Carrier
+    if (isHospitality) {
+      if (!packageLocation?.trim()) missingFields.push('Location*');
+    } else {
+      if (!carrier) missingFields.push('Carrier');
+    }
+
+    const hasAnyImage = activeImageKeys.some(key => Boolean(images[key]?.localUri));
     if (!hasAnyImage) missingFields.push('Image (at least 1)');
 
     if (missingFields.length > 0) {
@@ -319,62 +389,59 @@ const AddPackageModal: React.FC<packageModalProps> = ({
     try {
       setIsSubmitting(true);
 
-      // 2. Upload pending local images in parallel
-      const uploadPromises = [1, 2, 3].map(async key => {
+      const uploadPromises = activeImageKeys.map(async key => {
         const slot = images[key];
+        if (!slot?.localUri) return { key, url: '' };
 
-        // If no image in this slot, return empty string
-        if (!slot.localUri) return { key, url: '' };
+        if (slot.remoteUrl) {
+          console.log(`[Upload] slot ${key} already uploaded →`, slot.remoteUrl);
+          return { key, url: slot.remoteUrl };
+        }
 
-        // If image is already uploaded remotely, reuse existing URL
-        if (slot.remoteUrl) return { key, url: slot.remoteUrl };
-
-        // Upload local file to server
         const formData = new FormData();
         formData.append('image', {
           name: `package_img_${key}.jpg`,
           type: 'image/jpeg',
           uri: slot.localUri,
         } as any);
-
+        if (__DEV__) await inspectLocalImage(slot.localUri, `slot ${key} BEFORE upload`);
         const imgRes = await uploadImg(user, formData);
+        if (__DEV__ && imgRes?.image_url) {
+          inspectRemoteImage(imgRes.image_url, `slot ${key} AFTER upload (server)`);
+        }
+
+        // Poora backend response dekhne ke liye (agar key ka naam alag ho to yahan dikhega)
+        console.log(`[Upload] slot ${key} local →`, slot.localUri);
+        console.log(`[Upload] slot ${key} backend response →`, JSON.stringify(imgRes));
+        console.log(`[Upload] slot ${key} image_url →`, imgRes?.image_url);
+
         return { key, url: imgRes?.image_url || '' };
       });
 
       const uploadResults = await Promise.all(uploadPromises);
 
-      // 3. Construct final image URLs payload
       const finalImagesObj: packageImages = {
         image1: uploadResults.find(r => r.key === 1)?.url || '',
         image2: uploadResults.find(r => r.key === 2)?.url || '',
         image3: uploadResults.find(r => r.key === 3)?.url || '',
+        ...(isHospitality && {
+          image4: uploadResults.find(r => r.key === 4)?.url || '',
+        }),
       };
 
-      // 4. Construct Final Object & Send to Parent
-      const obj: packageOption = packageValue?.id
-        ? {
-            trackingId,
-            type: type!,
-            status,
-            condition: condition!,
-            carrier: carrier!,
-            message,
-            imagesObj: finalImagesObj,
-            id: packageValue.id,
-            ocrText,
-            geminiData: geminiData ?? undefined,
-          }
-        : {
-            trackingId,
-            type: type!,
-            status,
-            condition: condition!,
-            carrier: carrier!,
-            message,
-            imagesObj: finalImagesObj,
-            ocrText,
-            geminiData: geminiData ?? undefined,
-          };
+      const obj: packageOption = {
+        trackingId,
+        type: isHospitality ? null : type,
+        status,
+        condition: condition!,
+        carrier: isHospitality ? null : carrier,
+        message,
+        imagesObj: finalImagesObj,
+        loc: isHospitality ? packageLocation : location,
+        ocrText,
+        geminiData: geminiData ?? undefined,
+        ...(packageValue?.id ? { id: packageValue.id } : {}),
+      };
 
       setIsSubmitting(false);
       onSetVisible();
@@ -383,7 +450,14 @@ const AddPackageModal: React.FC<packageModalProps> = ({
     } catch (err) {
       setIsSubmitting(false);
       console.error('[AddPackageModal] Submit Error:', err);
-      Alert.alert(t('Error'), t('Failed to upload package images. Please try again.'));
+      Alert.alert(
+        t('Error'),
+        t(
+          isHospitality
+            ? 'Failed to upload asset images. Please try again.'
+            : 'Failed to upload package images. Please try again.'
+        )
+      );
     }
   };
 
@@ -410,31 +484,33 @@ const AddPackageModal: React.FC<packageModalProps> = ({
           <Image source={IMAGES.close} style={isIPad ? styles.closeImgI : styles.closeImg} />
         </TouchableOpacity>
 
-        {/* Header Info */}
-        <View style={styles.headerInfoContainer}>
-          <View style={styles.headerInfoRow}>
-            <View style={styles.headerInfoBox}>
-              <Text style={styles.headerLabel}>{t('Ship')}</Text>
-              <Text style={styles.headerValue}>{shipName?.name || t('Not selected')}</Text>
+        {/* Header Info (Only shown for non-hospitality mode) */}
+        {!isHospitality && (
+          <View style={styles.headerInfoContainer}>
+            <View style={styles.headerInfoRow}>
+              <View style={styles.headerInfoBox}>
+                <Text style={styles.headerLabel}>{t('Ship')}</Text>
+                <Text style={styles.headerValue}>{shipName?.name || t('Not selected')}</Text>
+              </View>
+
+              <View style={[styles.headerInfoBox, { marginLeft: 10 }]}>
+                <Text style={styles.headerLabel}>{t('Recipient')}</Text>
+                <Text style={styles.headerValue}>
+                  {receipientName
+                    ? `${receipientName.first_name} ${receipientName.last_name}`
+                    : t('Not selected')}
+                </Text>
+              </View>
             </View>
 
-            <View style={[styles.headerInfoBox, { marginLeft: 10 }]}>
-              <Text style={styles.headerLabel}>{t('Recipient')}</Text>
-              <Text style={styles.headerValue}>
-                {receipientName
-                  ? `${receipientName.first_name} ${receipientName.last_name}`
-                  : t('Not selected')}
-              </Text>
-            </View>
+            {location && (
+              <View style={styles.locationBox}>
+                <Text style={styles.headerLabel}>{t('Location')}</Text>
+                <Text style={styles.headerValue}>{location}</Text>
+              </View>
+            )}
           </View>
-
-          {location && (
-            <View style={styles.locationBox}>
-              <Text style={styles.headerLabel}>{t('Location')}</Text>
-              <Text style={styles.headerValue}>{location}</Text>
-            </View>
-          )}
-        </View>
+        )}
 
         <ShipListModal
           visible={isModalVisible}
@@ -472,27 +548,29 @@ const AddPackageModal: React.FC<packageModalProps> = ({
               </View>
             )}
 
-            {/* Inputs */}
             <InputPicker
               isPicker={false}
               maxLength={30}
               isQrCode={true}
-              placeholder={t('Tracking ID*')}
+              placeholder={t(isHospitality ? 'ID#' : 'Tracking ID*')}
               style={{}}
-              onPickerClick={() => {}}
+              onPickerClick={() => { }}
               pickerValue={trackingId}
               onChangeText={val => setTrackingId(val.replace(/\s/g, ''))}
             />
 
-            <InputPicker
-              isPicker={true}
-              isQrCode={false}
-              placeholder={t('Type')}
-              style={{}}
-              onPickerClick={() => onPickerClick('Type')}
-              pickerValue={type?.name}
-              onChangeText={() => {}}
-            />
+            {/* Type Picker sirf non-hospitality mode me show hoga */}
+            {!isHospitality && (
+              <InputPicker
+                isPicker={true}
+                isQrCode={false}
+                placeholder={t('Type')}
+                style={{}}
+                onPickerClick={() => onPickerClick('Type')}
+                pickerValue={type?.name}
+                onChangeText={() => { }}
+              />
+            )}
 
             <InputPicker
               isPicker={true}
@@ -501,7 +579,7 @@ const AddPackageModal: React.FC<packageModalProps> = ({
               style={{}}
               onPickerClick={() => onPickerClick('Status')}
               pickerValue={status?.name}
-              onChangeText={() => {}}
+              onChangeText={() => { }}
             />
 
             <InputPicker
@@ -511,44 +589,72 @@ const AddPackageModal: React.FC<packageModalProps> = ({
               style={{}}
               onPickerClick={() => onPickerClick('Condition')}
               pickerValue={condition?.name}
-              onChangeText={() => {}}
+              onChangeText={() => { }}
             />
 
-            <InputPicker
-              isPicker={true}
-              isQrCode={false}
-              placeholder={t('Carrier')}
-              style={{}}
-              onPickerClick={() => onPickerClick('Carrier')}
-              pickerValue={carrier?.name}
-              onChangeText={() => {}}
-            />
+            {/* Carrier ki jagah Hospitality mode me Location field display hogi */}
+            {isHospitality ? (
+              <InputPicker
+                isPicker={false}
+                isQrCode={false}
+                placeholder={t('Location*')}
+                placeholerstyle={{ fontFamily: FONTS.RICORDORegular }}
+                inputView={{
+                  paddingTop: isIPad && Platform.OS == 'ios' ? 20 : 10,
+                  paddingBottom: isIPad && Platform.OS == 'ios' ? 10 : 10,
+                }}
+                style={{}}
+                autoCapitalize={'words'}
+                onPickerClick={() => { }}
+                pickerValue={packageLocation}
+                onChangeText={val => setPackageLocation(val)}
+              />
+            ) : (
+              <InputPicker
+                isPicker={true}
+                isQrCode={false}
+                placeholder={t('Carrier')}
+                style={{}}
+                onPickerClick={() => onPickerClick('Carrier')}
+                pickerValue={carrier?.name}
+                onChangeText={() => { }}
+              />
+            )}
 
             <InputPicker
               isPicker={false}
               isQrCode={false}
               placeholder={t('Message')}
               style={{ paddingVertical: 10 }}
-              onPickerClick={() => {}}
+              onPickerClick={() => { }}
               pickerValue={message}
               onChangeText={val => setMessage(val)}
             />
 
-            {/* Image Slots Preview */}
-            <View
-              style={{
+            {/* Dynamic Image Slots Preview (3 or 4) */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
                 marginTop: isIPad ? 30 : 10,
                 flexDirection: 'row',
                 alignItems: 'center',
-                justifyContent:'space-evenly'
+                justifyContent: 'space-evenly',
+                paddingHorizontal: 16,
+                flexGrow: 1,
               }}
             >
-              {[1, 2, 3].map(key => {
+              {activeImageKeys.map(key => {
                 const slot = images[key];
                 const hasLocalImage = Boolean(slot?.localUri);
 
                 return (
-                  <View key={key} style={key > 1 ? { marginLeft: 10 } : {}}>
+                  <View
+                    key={key}
+                    style={{
+                      alignItems: 'center',
+                    }}
+                  >
                     <TouchableOpacity
                       style={{ opacity: isSubmitting ? 0.5 : 1 }}
                       onPress={() => selectMedia(key)}
@@ -585,7 +691,7 @@ const AddPackageModal: React.FC<packageModalProps> = ({
                   </View>
                 );
               })}
-            </View>
+            </ScrollView>
           </TouchableOpacity>
         </KeyboardAwareScrollView>
 
@@ -743,11 +849,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  imgGrey: { height: isIPad ? 200 : 100, width: isIPad ? 200 : 100, borderRadius: 20 },
+  imgGrey: { height: isIPad ? 200 : 75, width: isIPad ? 200 : 75, borderRadius: 16 },
   imgGreyy: { height: isIPad ? 200 : 50, width: isIPad ? 200 : 50, alignSelf: 'center', borderRadius: 20 },
   addView: { height: 32 },
   addTxt: {
-    fontSize: isIPad ? 20 : 14,
+    fontSize: isIPad ? 20 : 13,
     fontFamily: FONTS.RICORDORegular,
     color: '#223890',
     textAlign: 'center',

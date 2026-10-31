@@ -438,7 +438,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
               marginBottom: isPad ? 35 : 20,
               alignSelf: 'center',
             }}>
-            v1.17
+            v1.9
           </Text>
         )}
 

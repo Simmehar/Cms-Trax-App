@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   FlatList,
@@ -10,6 +10,7 @@ import {
   DeviceEventEmitter,
   ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Checkbox } from './Checkbox';
 import { FONTS, IMAGES } from '../assets';
 import { CheckIpad, isIPad } from '../utilities/securestorage';
@@ -101,11 +102,13 @@ interface PackageListProps {
   showLoader: any;
   refetching: boolean;
   showSync: boolean;
-  loadMoreData?:any;
-  totalItems:any;
-  page:any;
+  loadMoreData?: any;
+  totalItems: any;
+  page: any;
 }
+
 const PAGE_SIZE = 5;
+
 const OfflinePackageList: React.FC<PackageListProps> = ({
   packages,
   onItemPress,
@@ -120,24 +123,38 @@ const OfflinePackageList: React.FC<PackageListProps> = ({
 }) => {
   const flatListRef = useRef(null);
   const { isOnline } = useMode();
-  // const packages: any = [];
+  const [isHospitality, setIsHospitality] = useState(false);
+
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in OfflinePackageList', e);
+      }
+    };
+    fetchBusinessType();
+  }, []);
+
   const renderItem = ({ item, index }: { item: Package; index: number }) => {
     __DEV__ && console.log('item?.user', item);
 
     const sortShipName = str => {
       if (str?.length >= 22) {
-        const start = str?.substring(0, 15); // First 10 characters
-        const end = str?.substring(str.length - 15); // Last 10 characters
+        const start = str?.substring(0, 15);
+        const end = str?.substring(str.length - 15);
         return `${start}...${end}`;
       }
-
       return str;
     };
+
     const images: any[] = item?.local_url
-    ? item?.local_url.split(', ').map((val: string) => ({
-      url: val.trim(),
-    }))
-    : [];
+      ? item?.local_url.split(', ').map((val: string) => ({
+          url: val.trim(),
+        }))
+      : [];
+
     return (
       <View
         style={[
@@ -146,12 +163,11 @@ const OfflinePackageList: React.FC<PackageListProps> = ({
             backgroundColor: item?.isSelect ? '#EFF9FF' : '#FAFAFA',
             flex: isPad && 1,
             marginHorizontal: isPad ? 2.5 : 5,
-
           },
         ]}>
         <View style={styles.itemHeader}>
           <View style={styles.rowView}>
-          <Image
+            <Image
               source={
                 parseFloat(item?.payable_amount) > 0
                   ? IMAGES.unpaidIcon$
@@ -164,7 +180,7 @@ const OfflinePackageList: React.FC<PackageListProps> = ({
                 styles.itemName,
                 { fontSize: isIPad ? 28 : 18 },
               ]}>{`${item?.first_name} ${item?.last_name}`}</Text>
-            
+
             {item?.is_active == 0 && isIPad && (
               <View
                 style={{
@@ -209,6 +225,7 @@ const OfflinePackageList: React.FC<PackageListProps> = ({
             </TouchableOpacity>
           )}
         </View>
+
         {item?.is_active == 0 && !isIPad && (
           <View
             style={{
@@ -231,6 +248,7 @@ const OfflinePackageList: React.FC<PackageListProps> = ({
             </Text>
           </View>
         )}
+
         <View style={{ flexDirection: isIPad ? 'row' : 'column' }}>
           <View style={{ width: '50%' }}>
             <View style={styles.detailcontainer}>
@@ -247,62 +265,59 @@ const OfflinePackageList: React.FC<PackageListProps> = ({
             </View>
 
             <View style={styles.detailcontainer}>
+              {/* Dynamic Tracking# vs Asset ID */}
               <Text style={[styles.label, { fontSize: isIPad ? 23 : 18 }]}>
-                Tracking#:
+                {isHospitality ? 'ID:' : 'Tracking#:'}
               </Text>
               <Text style={styles.value}>
                 {sortTrackingNumber(item.tracking_no || '')}
               </Text>
             </View>
 
-            {/* <View style={{flexDirection:isIPad?'row':'column'}}> */}
-            <View style={styles.detailcontainer}>
+         {  !isHospitality && <View style={styles.detailcontainer}>
               <Text style={styles.label}>Ship:</Text>
-              <Text style={[styles.value, { width: isIPad ? '100%' : 'auto', fontSize: isIPad ? 23 : 18 }]} numberOfLines={1}>
+              <Text
+                style={[styles.value, { width: isIPad ? '100%' : 'auto', fontSize: isIPad ? 23 : 18 }]}
+                numberOfLines={1}>
                 {sortShipName(item?.ship?.name || item?.ship_name)}
-
               </Text>
-            </View>
+            </View>}
           </View>
-          {/* for images  */}
-          {isIPad && <View style={[styles.rowView, { marginTop: 0, width: '50%' }]}>
 
-            {images && images.length > 0 ? (
-              images.map((val: any, index: number) => {
-                const imageUrl = val?.local_url ? val?.local_url : val?.url;
+          {/* For images */}
+          {isIPad && (
+            <View style={[styles.rowView, { marginTop: 0, width: '50%' }]}>
+              {images && images.length > 0 ? (
+                images.map((val: any, index: number) => {
+                  const imageUrl = val?.local_url ? val?.local_url : val?.url;
 
-                return (
-                  <View key={index.toString()}>
-                    <View
-
-                      style={{
-                        height: isIPad  ? 95 : 50,
-                        width: isIPad  ? 95 : 50,
-                        marginHorizontal: isIPad ? 5 : 5,
-                      }}
-                    >
-                      <Image
-                        style={styles.imagView}
-                        resizeMode="cover"
-                        source={{
-                          uri: imageUrl,
-                        }}
-                      />
+                  return (
+                    <View key={index.toString()}>
+                      <View
+                        style={{
+                          height: isIPad ? 95 : 50,
+                          width: isIPad ? 95 : 50,
+                          marginHorizontal: isIPad ? 5 : 5,
+                        }}>
+                        <Image
+                          style={styles.imagView}
+                          resizeMode="cover"
+                          source={{
+                            uri: imageUrl,
+                          }}
+                        />
+                      </View>
                     </View>
-                  </View>
-                );
-              })
-            ) : (
-              <View>
-                <Text>No images available</Text>
-              </View>
-            )}
-
-          </View>}
-
-
+                  );
+                })
+              ) : (
+                <View>
+                  <Text>No images available</Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
-
 
         <TouchableOpacity
           style={styles.arrowButton}
@@ -316,51 +331,46 @@ const OfflinePackageList: React.FC<PackageListProps> = ({
   const renderEmptyList = () => (
     <View style={styles.emptyListContainer}>
       <Image
-        source={IMAGES.package.packagesnotfound}
+        source={isHospitality?IMAGES.package.servicenotfound:IMAGES.package.packagesnotfound}
         style={styles.emptyListImage}
       />
     </View>
   );
 
-
   return (
     <>
-    <FlatList
-            showsVerticalScrollIndicator={false}
-            keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
-            key={'_'}
-            style={{marginTop: 15, marginHorizontal: isPad && 10}}
-            data={packages || []}
-         
-          onEndReached={loadMoreData}
-          maxToRenderPerBatch={10} 
-      onEndReachedThreshold={0.5} 
-      removeClippedSubviews={true} 
-      ListFooterComponent={
-        page * 10 < totalItems ? (
-          <ActivityIndicator size="large" color="black" />
-        ) : null
-      }
-            initialNumToRender={5}
-            windowSize={10}
-            numColumns={1}
-            renderItem={renderItem}
-          
-           
-            contentContainerStyle={{
-              paddingTop: 10,
-            }}
-            ListEmptyComponent={
-              showLoader ? (
-                <ActivityIndicator color={'black'} size={'large'} />
-              ) : (
-                renderEmptyList
-              )
-            }
-            scrollEventThrottle={16}
-           
-            refreshing={refetching}
-          />
+      <FlatList
+        showsVerticalScrollIndicator={false}
+        keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
+        key={'_'}
+        style={{ marginTop: 15, marginHorizontal: isPad && 10 }}
+        data={packages || []}
+        onEndReached={loadMoreData}
+        maxToRenderPerBatch={10}
+        onEndReachedThreshold={0.5}
+        removeClippedSubviews={true}
+        ListFooterComponent={
+          page * 10 < totalItems ? (
+            <ActivityIndicator size="large" color="black" />
+          ) : null
+        }
+        initialNumToRender={5}
+        windowSize={10}
+        numColumns={1}
+        renderItem={renderItem}
+        contentContainerStyle={{
+          paddingTop: 10,
+        }}
+        ListEmptyComponent={
+          showLoader ? (
+            <ActivityIndicator color={'black'} size={'large'} />
+          ) : (
+            renderEmptyList
+          )
+        }
+        scrollEventThrottle={16}
+        refreshing={refetching}
+      />
     </>
   );
 };
@@ -374,7 +384,6 @@ const styles = StyleSheet.create({
     paddingVertical: isIPad ? 17 : 13,
     borderRadius: 16,
     paddingBottom: 25,
-
   },
   itemHeader: {
     flexDirection: 'row',
@@ -393,14 +402,12 @@ const styles = StyleSheet.create({
     color: '#002B45',
   },
   label: {
-    // fontSize: isIPad ? 20 : 16,
     fontSize: isIPad ? 23 : 18,
     fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
-    fontWeight: '500'
+    fontWeight: '500',
   },
   value: {
-    // fontSize: isIPad ? 18 : 14,
     fontSize: isIPad ? 23 : 18,
     color: 'black',
     fontFamily: FONTS.RICORDORegular,
@@ -471,4 +478,3 @@ const styles = StyleSheet.create({
 });
 
 export { OfflinePackageList };
-

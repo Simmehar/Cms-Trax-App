@@ -5,10 +5,10 @@ import {
   Image,
   TouchableOpacity,
   Text,
-  LogBox,
   Modal,
   ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Package } from './PackageList';
 import { FONTS, IMAGES } from '../assets';
 import { LoadImage } from './LoadImage';
@@ -31,7 +31,6 @@ interface packaegInfo {
   navigation: any;
 }
 let isPad = CheckIpad();
-  const { t, i18n } = useTranslation();
 
 const Status: any = [10050, 10060, 10140, 10090, 10270, 10280];
 
@@ -42,17 +41,34 @@ const Offlinepackageinfomodal: React.FC<packaegInfo> = ({
   navigation,
 }) => {
   const { isOnline } = useMode();
+  const { t } = useTranslation();
+  const [isHospitality, setIsHospitality] = useState(false);
+
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in Offlinepackageinfomodal', e);
+      }
+    };
+
+    if (visible) {
+      fetchBusinessType();
+    }
+  }, [visible]);
 
   const getFormattedDate = (dateTime: any) => {
     const formattedDate = dayjs(dateTime, 'MMMM D,YYYY hh:mm A').format(
       'MM/DD/YYYY',
     );
-
     return formattedDate;
   };
 
   const { user } = useAuth();
-  __DEV__ && console.log('user', user)
+  __DEV__ && console.log('user', user);
+
   let logOutData: any = {
     logoutBy: '',
     logoutDate: '',
@@ -60,27 +76,25 @@ const Offlinepackageinfomodal: React.FC<packaegInfo> = ({
   };
 
   __DEV__ && console.log('item', item);
-  const formatDateTime = dateTime => {
+
+  const formatDateTime = (dateTime: any) => {
     if (!dateTime) return '-';
-    const options = {
+    const options: any = {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     };
     return new Date(dateTime).toLocaleString('en-US', options);
   };
-
 
   if (item?.package_tracking?.length > 1) {
     const data = item?.package_tracking?.[item?.package_tracking?.length - 1];
 
     if (Status.includes(Number(data?.log_type))) {
-      // __DEV__ && console.log('data', data);
-
       logOutData = {
         logoutBy: user?.firstname,
         logoutDate: data?.created_at,
@@ -88,21 +102,22 @@ const Offlinepackageinfomodal: React.FC<packaegInfo> = ({
       };
     }
   }
-const [ShowImage, setShowImage] = useState([]);
-  const [isVisible, setIsVisible] = useState(false)
+
+  const [ShowImage, setShowImage] = useState([]);
+  const [isVisible, setIsVisible] = useState(false);
+
   const images: any[] = item?.local_url
     ? item?.local_url.split(', ').map((val: string) => ({
-      url: val.trim(),
-    }))
+        url: val.trim(),
+      }))
     : [];
+
   const checkoutImages: any[] = item?.checkout_images?.map(val => {
     return {
       image_url: val?.local_url ? val?.local_url : val?.image_url,
     };
   });
-  __DEV__ && console.log('checkoutImages', checkoutImages)
-
-  // __DEV__ && console.log('itemmmm', item);
+  __DEV__ && console.log('checkoutImages', checkoutImages);
 
   return (
     <Modal visible={visible} transparent={true}>
@@ -110,9 +125,10 @@ const [ShowImage, setShowImage] = useState([]);
         <View style={[styles.modalContent, { height: isIPad ? '90%' : 'none' }]}>
           <View style={styles.rowView}>
             <Text
-              style={
-                [styles.pakName, { fontSize: isIPad ? 27 : 18 }]
-              }>{`${item?.first_name} ${item?.last_name}`}</Text>
+              style={[
+                styles.pakName,
+                { fontSize: isIPad ? 27 : 18 },
+              ]}>{`${item?.first_name} ${item?.last_name}`}</Text>
             <TouchableOpacity style={styles.crossView} onPress={onClose}>
               <Image source={IMAGES.close} style={styles.closeImg} />
             </TouchableOpacity>
@@ -124,70 +140,65 @@ const [ShowImage, setShowImage] = useState([]);
             </Text>
           </View>
           <View style={{ marginVertical: 5 }}>
-            <Text style={styles.leftTxt}>
-            Logged-In Image(s):
-
-            </Text>
+            <Text style={styles.leftTxt}>Logged-In Image(s):</Text>
           </View>
           <View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{flexDirection:'row'}}>
-              {images?.length > 0 ? (
-                images?.map((i: any, index) => {
-                  return (
-                    <View key={index.toString()}>
-                      <TouchableOpacity
-                        onPress={() => {
-                          if (!images || images.length === 0) {
-                            console.warn('No checkout images available');
-                            return;
-                          }
-
-                          // onClose();
-                          setShowImage(images); // Ensure it's an array
-                          setIsVisible(true);
-                        }}
-                        style={{
-                          height: isOnline ? (isIPad ? 180 : 100) : isIPad ? 180 : 100,
-                          width: isOnline ? (isIPad ? 200 : 100) : isIPad ? 200 : 100,
-                          marginHorizontal: isIPad ? 20 : 10,
-                          marginVertical: isIPad ? 20 : 10,
-                          borderRadius: 10,
-                        }}
-                      >
-                        <LoadImage
-                          style={styles.imagView}
-                          resizeMode={'cover'}
-                          source={{
-                            uri: i?.url,
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row' }}>
+                {images?.length > 0 ? (
+                  images?.map((i: any, index) => {
+                    return (
+                      <View key={index.toString()}>
+                        <TouchableOpacity
+                          onPress={() => {
+                            if (!images || images.length === 0) {
+                              console.warn('No checkout images available');
+                              return;
+                            }
+                            setShowImage(images);
+                            setIsVisible(true);
                           }}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  );
-                })
-              ) : (
-                <></>
-              )}
-            </View>
-          </ScrollView>
+                          style={{
+                            height: isOnline ? (isIPad ? 180 : 100) : isIPad ? 180 : 100,
+                            width: isOnline ? (isIPad ? 200 : 100) : isIPad ? 200 : 100,
+                            marginHorizontal: isIPad ? 20 : 10,
+                            marginVertical: isIPad ? 20 : 10,
+                            borderRadius: 10,
+                          }}>
+                          <LoadImage
+                            style={styles.imagView}
+                            resizeMode={'cover'}
+                            source={{
+                              uri: i?.url,
+                            }}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })
+                ) : (
+                  <></>
+                )}
+              </View>
+            </ScrollView>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={[styles.rowView, { marginTop: 15 }]}>
+              {/* Dynamic: Asset ID vs Tracking# */}
               <Text style={styles.leftTxt}>
-              {t('Tracking')}#:{" "}
+                {isHospitality ? `${t('ID')}: ` : `${t('Tracking')}#: `}
                 <Text style={styles.rightTxt}>{item?.tracking_no}</Text>{' '}
               </Text>
             </View>
-            <View style={[styles.rowView, { marginTop: 10 }]}>
+           {!isHospitality && <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-               {t('Ship')}:{' '}
+                {t('Ship')}:{' '}
                 <Text style={styles.rightTxt}>
                   {item?.ship_name || item?.ship?.name}
                 </Text>{' '}
               </Text>
-            </View>
+            </View>}
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
                 {t('Location')}: <Text style={styles.rightTxt}>{item?.shelf}</Text>{' '}
@@ -195,23 +206,15 @@ const [ShowImage, setShowImage] = useState([]);
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-               {t('Tag#')}:  <Text style={styles.rightTxt}>{item?.tag_number}</Text>{' '}
+                {t('Tag#')}: <Text style={styles.rightTxt}>{item?.tag_number}</Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
                 {t('Division')}{' '}
-                <Text style={styles.rightTxt}>
-                  {item?.department_name}
-                </Text>{' '}
+                <Text style={styles.rightTxt}>{item?.department_name}</Text>{' '}
               </Text>
             </View>
-            {/* <View style={[styles.rowView, {marginTop: 10}]}>
-                <Text style={styles.leftTxt}>
-                  Date Received:{' '}
-                  <Text style={styles.rightTxt}>{item?.date_received}</Text>{' '}
-                </Text>
-              </View> */}
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
                 {t('Carrier')} <Text style={styles.rightTxt}>{item?.carrier}</Text>{' '}
@@ -223,19 +226,9 @@ const [ShowImage, setShowImage] = useState([]);
                 <Text style={styles.rightTxt}>{item?.current_status}</Text>{' '}
               </Text>
             </View>
-            {/* <View style={[styles.rowView, { marginTop: 10 }]}>
-              <Text style={styles.leftTxt}>
-                Log-In:{' '}
-                <Text style={styles.rightTxt}>
-                 
-                  {item?.package_tracking?.[0]?.created_at || item?.logInDate}
-                 
-                </Text>{' '}
-              </Text>
-            </View> */}
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                {t('Log-In By')}
+                {t('Log-In By')}{' '}
                 <Text style={styles.rightTxt}>
                   {item?.package_tracking?.[0]?.done_by_user || item?.logInBy}
                 </Text>{' '}
@@ -254,7 +247,7 @@ const [ShowImage, setShowImage] = useState([]);
 
               <View style={[styles.rowView, { marginTop: 10 }]}>
                 <Text style={styles.leftTxt}>
-                   {t('Log-Out By')}:{' '}
+                  {t('Log-Out By')}:{' '}
                   <Text style={styles.rightTxt}>
                     {user?.firstname ? user?.firstname : '-'}
                   </Text>{' '}
@@ -263,14 +256,14 @@ const [ShowImage, setShowImage] = useState([]);
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                 {t('Amount Paid')}:{' '}
+                {t('Amount Paid')}:{' '}
                 <Text style={styles.rightTxt}> ${item?.cashReceived}</Text>{' '}
               </Text>
             </View>
 
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
-                 {t('Type')}:{' '}
+                {t('Type')}:{' '}
                 <Text style={styles.rightTxt}>
                   {item?.package_type?.name || item?.packageType}
                 </Text>{' '}
@@ -286,7 +279,9 @@ const [ShowImage, setShowImage] = useState([]);
             <View style={[styles.rowView, { marginTop: 10 }]}>
               <Text style={styles.leftTxt}>
                 {t('Message')}:{' '}
-                <Text style={styles.rightTxt}>{item?.custom_message ? item?.custom_message : '-'}</Text>{' '}
+                <Text style={styles.rightTxt}>
+                  {item?.custom_message ? item?.custom_message : '-'}
+                </Text>{' '}
               </Text>
             </View>
             <View style={[styles.rowView, { marginTop: 10 }]}>
@@ -298,10 +293,7 @@ const [ShowImage, setShowImage] = useState([]);
               </Text>
             </View>
             <View style={{ marginVertical: 15 }}>
-              <Text style={styles.leftTxt}>
-               {t('Logged-Out Image(s)')}
-
-              </Text>
+              <Text style={styles.leftTxt}>{t('Logged-Out Image(s)')}</Text>
             </View>
             <View style={[styles.rowView, { marginTop: isIPad ? 20 : 10 }]}>
               {checkoutImages?.length > 0 ? (
@@ -316,11 +308,15 @@ const [ShowImage, setShowImage] = useState([]);
                             console.warn('No checkout images available');
                             return;
                           }
-
-                          // onClose();
-                          setShowImage([...checkoutImages]); // Ensure it's an array
+                          setShowImage([...checkoutImages]);
                           setIsVisible(true);
-                        }} style={{ height: isIPad ? 200 : 100, width: isIPad ? 200 : 96, marginHorizontal: isIPad ? 20 : 10, marginVertical: isIPad ? 20 : 10 }}>
+                        }}
+                        style={{
+                          height: isIPad ? 200 : 100,
+                          width: isIPad ? 200 : 96,
+                          marginHorizontal: isIPad ? 20 : 10,
+                          marginVertical: isIPad ? 20 : 10,
+                        }}>
                         <LoadImage
                           style={styles.imagView}
                           resizeMode={'cover'}
@@ -329,8 +325,6 @@ const [ShowImage, setShowImage] = useState([]);
                           }}
                         />
                       </TouchableOpacity>
-
-
                     </View>
                   );
                 })
@@ -339,14 +333,15 @@ const [ShowImage, setShowImage] = useState([]);
               )}
             </View>
           </ScrollView>
-          {/* )} */}
         </View>
       </View>
-      {isVisible && <ImagePreview
-        isVisible={isVisible}
-        image={ShowImage}
-        onClose={() => setIsVisible(false)}
-      />}
+      {isVisible && (
+        <ImagePreview
+          isVisible={isVisible}
+          image={ShowImage}
+          onClose={() => setIsVisible(false)}
+        />
+      )}
     </Modal>
   );
 };
@@ -369,11 +364,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: isIPad ? 10 : 0,
-    // marginHorizontal: 10
   },
   pakName: {
     fontFamily: FONTS.RICORDOSemiBold,
-
     color: 'black',
     flex: 1,
   },
@@ -422,5 +415,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 });
-export { Offlinepackageinfomodal };
 
+export { Offlinepackageinfomodal };

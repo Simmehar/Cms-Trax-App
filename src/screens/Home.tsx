@@ -15,6 +15,7 @@ import {
   Image,
   Modal,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Header } from '../components/Header';
 import { BottomDrawer } from '../components/BottomDrawer';
 import { ShipDetails } from '../components/ShipDetails';
@@ -22,9 +23,15 @@ import { AddPackageModal, packageOption } from '../components/AddPackageModal';
 import { FONTS, ICONS, IMAGES } from '../assets';
 import SmartDocumentScanner, {
   GeminiExtractionResult,
+  EMPTY_EXTRACTION,
   callCloudVision,
   callGeminiExtraction,
 } from '../components/SmartDocumentScanner';
+import {
+  ScannedCode,
+  mergeCodeIntoExtraction,
+} from '../utilities/codeParser';
+import { resolveScanMode } from '../utilities/scanMode';
 import { SvgXml } from 'react-native-svg';
 import { BLURView } from '../components/BlurView';
 import {
@@ -62,10 +69,12 @@ import { getLoggedToday, getTotalReceived } from '../utilities/ApiCalls';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTranslation } from 'react-i18next';
+
 interface Package {
   id: number;
   track_id: string;
   loc: string;
+  [key: string]: any;
 }
 
 interface SendObjType {
@@ -80,15 +89,29 @@ interface SendObjType {
   images: string[];
   selected_status: string;
 }
+
 let isPad = CheckIpad();
 
 function countReducer(state: any, action: any) {
   return action;
 }
 
+// ─────────────────────────────────────────────────────────────
+// HOSPITALITY GRID OPTIONS
+// ─────────────────────────────────────────────────────────────
+const HOSPITALITY_OPTIONS = [
+  { id: 1, label: 'Packages', icon: IMAGES.Packages, color: '#ede3fc', bordercolor: '#5614e6' },
+  { id: 2, label: 'Luggage', icon: IMAGES.Luggage, color: '#deecfd', bordercolor: '#006efd' },
+  { id: 3, label: 'Valet', icon: IMAGES.Valet, color: '#eaecf1', bordercolor: '#16181b' },
+  { id: 6, label: 'Lost & Found', icon: IMAGES.Concierge, color: '#fdf0d9', bordercolor: '#faa302' },
+  { id: 4, label: 'Internal Deliveries', icon: IMAGES.Deliveries, color: '#dff7ea', bordercolor: '#018949' },
+  { id: 5, label: 'Rentals', icon: IMAGES.Rentals, color: '#fee3e3', bordercolor: '#e81f13' },
+];
+
+const HOSPITALITY_OFF_TYPES = [1, 4];
+
 const Home: React.FC = ({ navigation }: any) => {
   const { user } = useAuth();
-  console.log('user', user);
   const { setIsInternet, setShowLoader } = useNavigationContext();
 
   const [isVisible, setIsVisible] = useState(false);
@@ -105,15 +128,21 @@ const Home: React.FC = ({ navigation }: any) => {
 
   const [receipientName, setReceipientName] = useState<RecipentObj | null>(null);
 
-  // ── OCR / Background processing state ────────────────────
+  const [isHospitality, setIsHospitality] = useState(false);
+  const [selectedPackageType, setSelectedPackageType] = useState<number>(1);
+
+  const scanMode = resolveScanMode(isHospitality, selectedPackageType);
+
+  // isHospitalityMode is still used for scan extraction only (mergeCodeIntoExtraction).
+  // Submit / validation now follow the same flag the UI uses: isHospitality.
+  const isHospitalityMode =
+    isHospitality && !HOSPITALITY_OFF_TYPES.includes(selectedPackageType);
+
   const [capturedImagePath, setCapturedImagePath] = useState<string | null>(null);
   const [isBackgroundProcessing, setIsBackgroundProcessing] = useState(false);
   const [backgroundExtracted, setBackgroundExtracted] = useState<GeminiExtractionResult | null>(null);
   const [ocrText, setOcrText] = useState('');
   const [showShipAlert, setShowShipAlert] = useState(false);
-  console.log('packages-=------------', packages);
-  console.log('shipName============', shipName);
-  console.log('receipientName', receipientName);
 
   const { searchActive, setSearchActive } = useNavigationContext();
   const {
@@ -121,6 +150,18 @@ const Home: React.FC = ({ navigation }: any) => {
     modalVisible: dbModal,
     setModalVisible: setdbModal,
   } = useMode();
+
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in Home', e);
+      }
+    };
+    fetchBusinessType();
+  }, []);
 
   useEffect(() => {
     isInternet && getShips();
@@ -131,104 +172,138 @@ const Home: React.FC = ({ navigation }: any) => {
   const [responseData, setResponseData] = useState([]);
   const [isNotify, setIsNotify] = useState(true);
 
-  __DEV__ && console.log('isNotify', isNotify);
-
-  // ─────────────────────────────────────────────────────────
-  // ✅ Called immediately when scanner captures a photo
-  //    — opens AddPackageModal right away
-  //    — starts OCR + Gemini in background
-  // ─────────────────────────────────────────────────────────
-  const handleImageCaptured = async (imagePath: string) => {
-    // 1. Close scanner immediately
+  const handleImageCaptured = async (
+    imagePath: string,
+    consensusPlate?: string | null,
+    scannedCode?: ScannedCode | null,
+  ) => {
     setIsScannerVisible(false);
-
-    // 2. Set image path — AddPackageModal will upload it to slot 1 straight away
     setCapturedImagePath(imagePath);
-
-    // 3. Open AddPackageModal
     setIsVisible(true);
     setIsBottomModal(false);
 
-    // 4. Run OCR + Gemini in the background
     setIsBackgroundProcessing(true);
     try {
-      __DEV__ && console.log('[Home] Starting background OCR…');
-      const { text, confidence } = await callCloudVision(imagePath);
-      __DEV__ && console.log('[Home] OCR complete, confidence:', confidence);
+      const barcodeCarriesFullId =
+        scannedCode?.confident &&
+        !!scannedCode.value &&
+        (scanMode === 'generic' || scanMode === 'plate');
 
-      setOcrText(text);
+      if (barcodeCarriesFullId) {
+        __DEV__ &&
+          console.log(
+            '[Home] Barcode/QR carries full ID → skip OCR+Gemini:',
+            scannedCode!.kind,
+            scannedCode!.value,
+          );
+        const extracted = mergeCodeIntoExtraction(
+          EMPTY_EXTRACTION,
+          scannedCode!,
+          isHospitalityMode,
+        );
+        setOcrText('');
+        setLatestGemini(extracted);
+        setBackgroundExtracted(extracted);
+        return;
+      }
 
-      __DEV__ && console.log('[Home] Starting background Gemini extraction…', shipList);
-      const extracted = await callGeminiExtraction(text, shipList);
+      __DEV__ && console.log('[Home] Starting Google Vision OCR…');
+      let ocrTextValue = '';
+      try {
+        const { text, confidence } = await callCloudVision(imagePath);
+        ocrTextValue = text;
+        __DEV__ && console.log('[Home] OCR complete, confidence:', confidence);
+      } catch (ocrErr) {
+        __DEV__ && console.warn('[Home] OCR failed, continuing:', ocrErr);
+      }
+      setOcrText(ocrTextValue);
+
+      __DEV__ && scannedCode && console.log(
+        '[Home] Scanned code:',
+        scannedCode.kind,
+        scannedCode.value,
+        'confident=',
+        scannedCode.confident,
+      );
+
+      __DEV__ && console.log('[Home] Starting Gemini extraction…');
+      let extracted = await callGeminiExtraction(
+        ocrTextValue,
+        shipList,
+        scanMode,
+        consensusPlate,
+        scannedCode ?? null,
+      );
+
+      if (scannedCode?.value) {
+        extracted = mergeCodeIntoExtraction(extracted, scannedCode, isHospitalityMode);
+      }
+
       __DEV__ && console.log('[Home] Gemini complete:', JSON.stringify(extracted));
-
       setLatestGemini(extracted);
       setBackgroundExtracted(extracted);
-      // ✅ Auto-match Gemini extracted ship_name to context object
-      if (extracted.ship_name && !shipName) {
+
+      if (!isHospitality && extracted.ship_name && !shipName) {
         const matchedShip = shipList?.find(
-          s => s.name.toLowerCase() === extracted.ship_name?.toLowerCase()
+          s => s.name.toLowerCase() === extracted.ship_name?.toLowerCase(),
         );
         if (matchedShip) {
           __DEV__ && console.log('[Home] Auto-matched ship:', matchedShip.name);
           setShipName(matchedShip);
         }
       }
-
-      // ✅ Auto-match Gemini extracted recipient_name to context object
-      if (extracted.recipient_name && !receipientName) {
-        // You may need to fetch recipients if not already loaded
-        // For now, we'll pass the extracted name to AddPackageModal to display
-        __DEV__ && console.log('[Home] Found recipient from Gemini:', extracted.recipient_name);
-      }
     } catch (err) {
       console.error('[Home] Background processing error:', err);
+      if (scannedCode?.value) {
+        const fallback = mergeCodeIntoExtraction(
+          EMPTY_EXTRACTION,
+          scannedCode,
+          isHospitalityMode,
+        );
+        setLatestGemini(fallback);
+        setBackgroundExtracted(fallback);
+      }
     } finally {
       setIsBackgroundProcessing(false);
     }
   };
 
-  // ─────────────────────────────────────────────────────────
-  // Add / close AddPackageModal (manual open via + button)
-  // ─────────────────────────────────────────────────────────
   const onAddPackage = () => {
-    __DEV__ && console.log('Add package');
-
     if (!isVisible) {
-      // Opening manually — clear any previous scan data
       setCapturedImagePath(null);
       setBackgroundExtracted(null);
     }
-
     setIsBottomModal(!isBottomModal);
     setIsVisible(!isVisible);
   };
 
   const onSubmitPackage = (value: packageOption) => {
-    __DEV__ && console.log('Valuee==', value.ocrText);
     if (value.ocrText && value.ocrText !== ocrText) {
       setOcrText(value.ocrText);
     }
 
     if (value?.id) {
       const findIndex = packages.findIndex(p => p.id === value.id);
-      const newArr: any = packages;
-      setPackages([]);
-      newArr[findIndex] = { ...value, track_id: value.trackingId };
+      const newArr: any = [...packages];
+      newArr[findIndex] = {
+        ...value,
+        track_id: value.trackingId,
+        loc: value.loc || newArr[findIndex]?.loc || '',
+      };
       setPackages(newArr);
     } else {
       let arr = [...packages];
       setPackageValue(null);
       if (value.trackingId) {
-        let obj = {
+        let obj: Package = {
           id: arr.length > 0 ? arr[arr.length - 1].id + 1 : 1,
           track_id: value.trackingId,
-          loc: 'Flo / 254',
+          // Hospitality items carry their own loc from the modal.
+          loc: value.loc || (isHospitality ? '' : location || 'Flo / 254'),
           ...value,
         };
         arr.push(obj);
       }
-      __DEV__ && console.log('====arr==', arr);
       setPackages(arr);
     }
   };
@@ -237,34 +312,42 @@ const Home: React.FC = ({ navigation }: any) => {
     if (submitLoading) return;
 
     setSubmitLoading(true);
-
-    let response: any = [];
+    let response: any[] = [];
 
     try {
       for (let item of packages) {
         let sendObj: SendObjType = {
-          user: receipientName.id.toString(),
-          package_type: item?.type?.id?.toString(),
-          ship: val?.shipName?.id.toString(),
-          carrier: item?.carrier?.id?.toString(),
-          shelf: val?.location,
+          user: receipientName?.id ? receipientName.id.toString() : '',
+          package_type: isHospitality
+            ? selectedPackageType.toString()
+            : (item?.type?.id ? item.type.id.toString() : ''),
+          ship: val?.shipName?.id ? val.shipName.id.toString() : '',
+          carrier: item?.carrier?.id ? item.carrier.id.toString() : '',
+          // Hospitality items get their location from the modal's Location field.
+          shelf: isHospitality ? (item?.loc || '') : (val?.location || ''),
           tracking_no: item?.trackingId,
-          condition: item?.condition?.name,
-          custom_message: item?.message,
-          selected_status: item?.status?.id,
+          condition: item?.condition?.name || '',
+          custom_message: item?.message || '',
+          selected_status: item?.status?.id || '',
           images: [
             item?.imagesObj?.image1,
             item?.imagesObj?.image2,
             item?.imagesObj?.image3,
-          ].filter(image => image),
+            item?.imagesObj?.image4,
+          ].filter(Boolean),
         };
-        console.log('sendObj', sendObj)
+
+        console.log('sendObj', sendObj);
         const packageRes = await postPackage(user, sendObj);
-        console.log('packageRes=======', packageRes)
+        console.log('packageRes=======', packageRes);
+
+        if (!packageRes) {
+          throw new Error('Empty response from server for tracking ' + sendObj.tracking_no);
+        }
 
         const mailData = {
           ids: [packageRes?.id],
-          package_status: parseInt(item?.status?.id),
+          package_status: parseInt(item?.status?.id || '0'),
         };
 
         if (isNotify) {
@@ -274,37 +357,45 @@ const Home: React.FC = ({ navigation }: any) => {
         response.push(packageRes);
       }
 
-      // SUCCESS
-      if (packages[0]?.trackingId == response[0]?.tracking_no) {
-        setPackages([]);
-        setSuccessModalVisible(true);
-        setResponseData(response);
-
-        DeviceEventEmitter.emit('add_package_success');
-
-        setLatestGemini(null);
-        setBackgroundExtracted(null);
-        setCapturedImagePath(null);
-        setOcrText('');
-        setShipName(null);
-        setReceipientName(null);
-        setLocation('');
-
-        fetchDashboard();
+      if (response.length === 0) {
+        throw new Error('No packages were created');
       }
 
-      setSubmitLoading(false);
+      setPackages([]);
+      setSuccessModalVisible(true);
+      setResponseData(response);
 
+      DeviceEventEmitter.emit('add_package_success');
+
+      setLatestGemini(null);
+      setBackgroundExtracted(null);
+      setCapturedImagePath(null);
+      setOcrText('');
+      setShipName(null);
+      setReceipientName(null);
+      setLocation('');
+
+      fetchDashboard();
     } catch (error: any) {
-      console.log('ERROR >>>', JSON.stringify(error, null, 2));
+      let errorStr = '';
+      try {
+        errorStr = JSON.stringify(error, null, 2);
+      } catch {
+        errorStr = String(error?.message ?? error);
+      }
+      console.log('ERROR >>>', errorStr);
 
-      // ✅ ALERT FORCE SHOW
       setTimeout(() => {
         Alert.alert(
-          t('Something went wrong'),  
-          t('Package creation failed.'),
+          t('Something went wrong'),
+          t(
+            isHospitality
+              ? 'Service creation failed.'
+              : 'Package creation failed.',
+          ),
         );
       }, 100);
+    } finally {
       setSubmitLoading(false);
     }
   };
@@ -332,17 +423,15 @@ const Home: React.FC = ({ navigation }: any) => {
         loggedToday: loggedRes?.packages_logged || 0,
         totalReceived: totalRes?.total_packages || 0,
       });
-
     } catch (err) {
-      console.log("Dashboard Error:", err);
+      console.log('Dashboard Error:', err);
     } finally {
       setRefreshing(false);
     }
   };
+
   const { t } = useTranslation();
-  // ─────────────────────────────────────────────────────────
-  // ✅ Auto-search recipient when Gemini extraction completes
-  // ─────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!backgroundExtracted?.recipient_name || !user) return;
 
@@ -355,19 +444,14 @@ const Home: React.FC = ({ navigation }: any) => {
           .replace(/\s+/g, ' ')
           .trim();
 
-        __DEV__ && console.log('[Home] Searching for recipient:', cleanedName);
-
         const results: RecipentObj[] = await recipientSearchApi(
           user,
           encodeURIComponent(cleanedName),
         );
 
         if (results?.length > 0) {
-          // Use first result or best match
-          setReceipientName(results[0]);
-          __DEV__ && console.log('[Home] Recipient found:', results[0].first_name, results[0].last_name);
-        } else {
-          __DEV__ && console.log('[Home] No recipient found for:', cleanedName);
+          // Hospitality: don't overwrite a guest that is already selected
+          setReceipientName(prev => (isHospitality && prev ? prev : results[0]));
         }
       } catch (err) {
         console.error('[Home] Recipient search error:', err);
@@ -376,6 +460,7 @@ const Home: React.FC = ({ navigation }: any) => {
 
     searchRecipient();
   }, [backgroundExtracted, user]); // eslint-disable-line
+
   useEffect(() => {
     if (!isInternet) {
       setSearchActive(true);
@@ -390,6 +475,9 @@ const Home: React.FC = ({ navigation }: any) => {
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       fetchDashboard();
+      AsyncStorage.getItem('BUSINESS_TYPE').then(storedType => {
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      });
     });
     return () => { unsubscribe(); };
   }, []);
@@ -406,19 +494,28 @@ const Home: React.FC = ({ navigation }: any) => {
     isRecipientBelongsToShip: false,
   });
 
-  const checkValidation = () => {
-    if (!shipName?.name) {
-      setError({ ...error, isShipName: true });
-      return true;
-    } else if (!receipientName) {
-      setError({ ...error, isRecipient: true });
-      return true;
-    } else if (!location) {
-      setError({ ...error, isLocation: true });
-      return true;
-    } else {
+  // Validate only what the UI actually shows. Uses `isHospitality`
+  // (the same flag BottomDrawer and AddPackageModal use) so the
+  // required fields match the visible fields exactly.
+  const isFormValid = (): boolean => {
+    const errors = {
+      isShipName: !isHospitality && !shipName?.name,
+      isRecipient: !receipientName,
+      isLocation: !isHospitality && !location,
+      isRecipientBelongsToShip: false,
+    };
+    setError(errors);
+
+    const missing: string[] = [];
+    if (errors.isShipName) missing.push(t('Ship'));
+    if (errors.isRecipient) missing.push(t('Recipient'));
+    if (errors.isLocation) missing.push(t('Location'));
+
+    if (missing.length > 0) {
+      showToast(`${t('Please select')}: ${missing.join(', ')}`, '', 3000);
       return false;
     }
+    return true;
   };
 
   return (
@@ -472,14 +569,12 @@ const Home: React.FC = ({ navigation }: any) => {
                   style={[modalStyles.button, modalStyles.yesBtn]}
                   onPress={() => {
                     setShowShipAlert(false);
-
                     const submitData = {
                       shipName,
                       receipientName,
                       divisionName,
                       location,
                     };
-
                     onCreatePackage(submitData);
                   }}
                 >
@@ -489,7 +584,8 @@ const Home: React.FC = ({ navigation }: any) => {
             </View>
           </View>
         </Modal>
-        {/* ── AddPackageModal — no scanner inside ─────────── */}
+
+        {/* ── AddPackageModal — forceNonHospitality prop removed ── */}
         <AddPackageModal
           isVisible={isVisible}
           onSetVisible={onAddPackage}
@@ -503,10 +599,10 @@ const Home: React.FC = ({ navigation }: any) => {
           shipName={shipName}
           receipientName={receipientName}
           location={location}
-
+          scanMode={scanMode}
         />
 
-        {/* ── Full-Screen Scanner Modal (managed by Home) ── */}
+        {/* ── Full-Screen Scanner Modal ── */}
         <Modal
           visible={isScannerVisible}
           animationType="slide"
@@ -516,6 +612,7 @@ const Home: React.FC = ({ navigation }: any) => {
           <SmartDocumentScanner
             onImageCaptured={handleImageCaptured}
             onClose={() => setIsScannerVisible(false)}
+            scanMode={scanMode}
           />
         </Modal>
 
@@ -534,14 +631,16 @@ const Home: React.FC = ({ navigation }: any) => {
         >
           <TouchableOpacity activeOpacity={1} style={{ flex: 1 }}>
             <Dashboard
-             userName={user?.firstname || t('CMS')}
+              userName={user?.firstname || t('CMS')}
               dashboard={dashboardinfo}
               isInternet={isInternet}
               navigation={navigation}
+              isHospitality={isHospitality}
+              selectedPackageType={selectedPackageType}
+              setSelectedPackageType={setSelectedPackageType}
             />
 
             <View>
-              {/* ── OCR BUTTON (moved from AddPackageModal) ── */}
               {isInternet && (
                 <TouchableOpacity
                   onPress={() => setIsScannerVisible(true)}
@@ -552,10 +651,11 @@ const Home: React.FC = ({ navigation }: any) => {
                     source={IMAGES.Ocr}
                     style={{ height: isIPad ? 50 : 30, width: isIPad ? 50 : 35, resizeMode: 'contain' }}
                   />
-                  <Text style={styles.ocrTxt}>{t('Capture Label - OCR')}</Text>
+                  <Text style={styles.ocrTxt}>{t(isHospitality ? 'Smart Scan' : 'Capture Label - OCR')}</Text>
                 </TouchableOpacity>
               )}
 
+              {/* BottomDrawer — forceNonHospitality prop removed */}
               <BottomDrawer
                 isBottomModal={isBottomModal}
                 packages={packages}
@@ -578,15 +678,12 @@ const Home: React.FC = ({ navigation }: any) => {
                 setPackageValue={setPackageValue}
                 geminiExtracted={latestGemini}
               />
-
             </View>
-
           </TouchableOpacity>
         </KeyboardAwareScrollView>
 
         {isInternet && (
           <View style={[styles.drawerContainer, { paddingBottom: isIPad ? 50 : 30, overflow: 'hidden' }]}>
-            {/* Aapke colors wala exact gradient background */}
             <LinearGradient
               colors={['#273c7a', '#1F3C73', '#2B5DAA']}
               start={{ x: 0, y: 0 }}
@@ -608,7 +705,7 @@ const Home: React.FC = ({ navigation }: any) => {
                 style={StyleSheet.absoluteFill}
               />
               <Text style={isPad ? styles.buttonTextI : styles.buttonText}>
-                {t('+Add Package')}
+                {t(isHospitality ? '+Add' : '+Add Package')}
               </Text>
             </TouchableOpacity>
 
@@ -616,31 +713,47 @@ const Home: React.FC = ({ navigation }: any) => {
               style={[isPad ? styles.buttonI : styles.button, { backgroundColor: '#FDBE6F' }]}
               disabled={submitLoading}
               onPress={() => {
+                console.log('[Submit] pressed', {
+                  submitLoading,
+                  packages: packages.length,
+                  ship: shipName?.name,
+                  recipient: receipientName?.id,
+                  location,
+                  isHospitality,
+                  isHospitalityMode,
+                  selectedPackageType,
+                });
+                if (submitLoading) return;
+
                 const val = { shipName, receipientName, divisionName, location };
-                const isValid = checkValidation();
-                if (!isValid) {
-                  if (submitLoading) return;
-                  if (packages.length === 0) {
-                    showToast(
-                      t('Please add at least one Package information'),
-                      '',
-                      3000,
-                    );
-                    return;
-                  } else if (val?.receipientName?.ship != val?.shipName?.name) {
-                    // Alert.alert(
-                    //   'The recipient belongs to another ship.',
-                    //   'Do you still want to proceed?',
-                    //   [
-                    //     { text: 'Cancel' },
-                    //     { text: 'Yes', onPress: () => onCreatePackage(val) },
-                    //   ],
-                    // );
-                    setShowShipAlert(true);
-                  } else {
-                    onCreatePackage(val);
-                  }
+
+                if (!isFormValid()) return;
+
+                if (packages.length === 0) {
+                  showToast(
+                    t(
+                      isHospitality
+                        ? 'Please add at least one Service information'
+                        : 'Please add at least one Package information'
+                    ),
+                    '',
+                    3000,
+                  );
+                  return;
                 }
+
+                const shipMismatch =
+                  !isHospitality &&
+                  !!val.receipientName?.ship &&
+                  !!val.shipName?.name &&
+                  val.receipientName.ship !== val.shipName.name;
+
+                if (shipMismatch) {
+                  setShowShipAlert(true);
+                  return;
+                }
+
+                onCreatePackage(val);
               }}
             >
               <Text style={isPad ? styles.buttonTextI : styles.buttonText}>
@@ -657,25 +770,35 @@ const Home: React.FC = ({ navigation }: any) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// DASHBOARD
+// Dashboard (unchanged)
 // ─────────────────────────────────────────────────────────────
 interface DashboardProps {
   userName: string;
   isInternet: boolean;
   dashboard: { scannedToday: number; todayCollection: number };
+  navigation: any;
+  isHospitality?: boolean;
+  selectedPackageType?: number;
+  setSelectedPackageType?: (type: number) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ userName, dashboard, isInternet, }) => {
-  const navigation = useNavigation<any>();
-  const { user } = useAuth();
+const Dashboard: React.FC<DashboardProps> = ({
+  userName,
+  dashboard,
+  isInternet,
+  navigation,
+  isHospitality = false,
+  selectedPackageType = 1,
+  setSelectedPackageType,
+}) => {
   const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
-
       <View style={styles.header}>
         <View style={styles.greetingContainer}>
           <Text style={[styles.greeting, { fontSize: isPad ? 27 : 17 }]}>
-            {t('Welcome back',)}
+            {t('Welcome back')}
           </Text>
           {userName.length > 0 && (
             <Text style={[styles.userName, { fontSize: isPad ? 50 : 32 }]}>
@@ -690,51 +813,80 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, dashboard, isInternet, 
           }
         </View>
       </View>
-      <View style={styles.statsContainer}>
-        {/* <View style={isPad ? styles.statCardIpad : styles.statCard} > */}
 
-        <TouchableOpacity
-          style={[isPad ? styles.statCardIpad : styles.statCard, { overflow: 'hidden' }]}
-          onPress={() => { navigation.navigate('LoggedTodayScreen') }}
-        >
-          {/* Same gradient effect as the card image you shared */}
-          <LinearGradient
-            colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
+      {isHospitality ? (
+        <View style={styles.hospitalityGrid}>
+          {HOSPITALITY_OPTIONS.map((item) => {
+            const isSelected = selectedPackageType === item.id;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.8}
+                onPress={() => setSelectedPackageType?.(item.id)}
+                style={[
+                  styles.hospitalityCard,
+                  isSelected && { borderColor: item?.bordercolor },
+                  { backgroundColor: item.color },
+                ]}
+              >
+                <Image
+                  source={item.icon}
+                  style={styles.hospitalityIcon}
+                  resizeMode="contain"
+                />
 
-          <Text style={[isPad ? styles.statNumberIpad : styles.statNumber, { fontFamily: FONTS.RICORDOBold }]}>
-            {formatNumber(dashboard?.scannedToday || 0)}
-          </Text>
-          <Text style={[isPad ? styles.statLabelIpad : styles.statLabel, { fontFamily: FONTS.RICORDOBold }]}>
-            {t('Logged Today')}
-          </Text>
-        </TouchableOpacity>
-        {/* </View> */}
-        {/* <View style={isPad ? styles.statCardIpad : styles.statCard}> */}
-        <TouchableOpacity
-          style={[isPad ? styles.statCardIpad : styles.statCard, { overflow: 'hidden' }]}
-          onPress={() => { navigation.navigate('TotalReceive') }}
-        >
-          {/* Consistent Gradient Background */}
-          <LinearGradient
-            colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
+                <Text
+                  numberOfLines={2}
+                  style={[
+                    styles.hospitalityLabel,
+                    isSelected && styles.hospitalityLabelSelected,
+                  ]}
+                >
+                  {t(item.label)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={styles.statsContainer}>
+          <TouchableOpacity
+            style={[isPad ? styles.statCardIpad : styles.statCard, { overflow: 'hidden' }]}
+            onPress={() => { navigation.navigate('LoggedTodayScreen'); }}
+          >
+            <LinearGradient
+              colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <Text style={[isPad ? styles.statNumberIpad : styles.statNumber, { fontFamily: FONTS.RICORDOBold }]}>
+              {formatNumber(dashboard?.scannedToday || 0)}
+            </Text>
+            <Text style={[isPad ? styles.statLabelIpad : styles.statLabel, { fontFamily: FONTS.RICORDOBold }]}>
+              {t('Logged Today')}
+            </Text>
+          </TouchableOpacity>
 
-          <Text style={[isPad ? styles.statNumberIpad : styles.statNumber, { fontFamily: FONTS.RICORDOBold }]}>
-            {formatNumber(dashboard?.todayCollection || 0)}
-          </Text>
-          <Text style={[isPad ? styles.statLabelIpad : styles.statLabel, { fontFamily: FONTS.RICORDOBold }]}>
-            {t('Total Summary')}
-          </Text>
-        </TouchableOpacity>
-        {/* </View> */}
-      </View>
+          <TouchableOpacity
+            style={[isPad ? styles.statCardIpad : styles.statCard, { overflow: 'hidden' }]}
+            onPress={() => { navigation.navigate('TotalReceive'); }}
+          >
+            <LinearGradient
+              colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <Text style={[isPad ? styles.statNumberIpad : styles.statNumber, { fontFamily: FONTS.RICORDOBold }]}>
+              {formatNumber(dashboard?.todayCollection || 0)}
+            </Text>
+            <Text style={[isPad ? styles.statLabelIpad : styles.statLabel, { fontFamily: FONTS.RICORDOBold }]}>
+              {t('Total Summary')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
@@ -744,7 +896,6 @@ const formatNumber = (number: number) =>
 
 const styles = StyleSheet.create({
   container: { padding: 20 },
-  // ── OCR Button ───────────────────────────────────────────
   ocrBtn: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 6,
     borderWidth: 1.5, borderColor: '#223890', paddingVertical: 10, paddingHorizontal: 20,
@@ -755,7 +906,6 @@ const styles = StyleSheet.create({
   ocrTxt: {
     fontSize: isIPad ? 20 : 15, fontFamily: FONTS.RICORDOBold, color: '#223890',
   },
-  // ── Dashboard ────────────────────────────────────────────
   header: {
     flexDirection: 'row', alignItems: 'center',
     marginBottom: isIPad ? 40 : 20, marginTop: isIPad ? 10 : 0,
@@ -777,7 +927,38 @@ const styles = StyleSheet.create({
   statNumberIpad: { fontSize: 45, fontFamily: FONTS.RICORDOSemiBold, color: '#fff', fontWeight: '600' },
   statLabel: { fontSize: 15, color: '#fff', marginTop: 5, textAlign: 'center' },
   statLabelIpad: { fontSize: 25, color: '#fff', marginTop: 5, textAlign: 'center' },
-  // ── Bottom bar ───────────────────────────────────────────
+
+  hospitalityGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
+  },
+  hospitalityCard: {
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  hospitalityIcon: {
+    width: isPad ? 50 : 42,
+    height: isPad ? 50 : 42,
+    marginBottom: 6,
+  },
+  hospitalityLabel: {
+    fontSize: isPad ? 16 : 13,
+    fontFamily: FONTS.RICORDOSemiBold,
+    color: '#223890',
+    textAlign: 'center',
+  },
+  hospitalityLabelSelected: {
+    fontFamily: FONTS.RICORDOBold,
+  },
+
   drawerContainer: {
     width: '100%', flexDirection: 'row', justifyContent: 'space-around', paddingVertical: isIPad ? 20 : 10,
     borderTopLeftRadius: 20, borderTopRightRadius: 20,
@@ -798,7 +979,6 @@ const modalStyles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-
   container: {
     width: '100%',
     maxWidth: 380,
@@ -806,29 +986,25 @@ const modalStyles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
   },
-
   title: {
     fontSize: 18,
     color: '#223890',
     textAlign: 'center',
-    fontFamily: FONTS.RICORDOBold, // Custom Font
+    fontFamily: FONTS.RICORDOBold,
   },
-
   message: {
     fontSize: 15,
     color: '#555',
     textAlign: 'center',
     marginTop: 12,
     lineHeight: 22,
-    fontFamily: FONTS.RICORDORegular, // Custom Font
+    fontFamily: FONTS.RICORDORegular,
   },
-
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 24,
   },
-
   button: {
     flex: 1,
     height: 48,
@@ -836,28 +1012,10 @@ const modalStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  cancelBtn: {
-    backgroundColor: '#E5E7EB',
-    marginRight: 8,
-  },
-
-  yesBtn: {
-    backgroundColor: '#223890',
-    marginLeft: 8,
-  },
-
-  cancelText: {
-    color: '#333',
-    fontSize: 15,
-    fontFamily: FONTS.RICORDOSemiBold,
-  },
-
-  yesText: {
-    color: '#FFF',
-    fontSize: 15,
-    fontFamily: FONTS.RICORDOSemiBold,
-  },
+  cancelBtn: { backgroundColor: '#E5E7EB', marginRight: 8 },
+  yesBtn: { backgroundColor: '#223890', marginLeft: 8 },
+  cancelText: { color: '#333', fontSize: 15, fontFamily: FONTS.RICORDOSemiBold },
+  yesText: { color: '#FFF', fontSize: 15, fontFamily: FONTS.RICORDOSemiBold },
 });
 
 export { Home };

@@ -10,6 +10,7 @@ import {
   FlatList,
   ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LottieView from 'lottie-react-native';
 import { FONTS, IMAGES } from '../assets';
 import { sortTrackingNumber } from '../functions/SortTrackingNumber';
@@ -27,7 +28,23 @@ const LottieModal = ({
   updateData,
 }: any) => {
   const [showInitialPart, setShowInitialPart] = useState(true);
+  const [isHospitality, setIsHospitality] = useState(false);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in LottieModal', e);
+      }
+    };
+
+    if (isVisible) {
+      fetchBusinessType();
+    }
+  }, [isVisible]);
 
   useEffect(() => {
     if (isVisible) {
@@ -73,7 +90,12 @@ const LottieModal = ({
                     textAlign: 'center',
                   },
                 ]}>
-                {message || t('You have successfully submitted packages.')}
+                {message ||
+                  t(
+                    isHospitality
+                      ? 'Service(s) Submitted Successfully  '
+                      : 'You have successfully submitted packages.'
+                  )}
               </Text>
             </View>
           ) : (
@@ -94,18 +116,20 @@ const LottieModal = ({
                 </Text>
               ) : null}
 
-              {!message && responseData?.[0]?.department ? (
+              {!message && responseData?.[0]?.department && !isHospitality ? (
                 <Text style={styles.deptMessage}>
                   {`${t('Department')} : ${responseData?.[0]?.department}`}
                 </Text>
               ) : null}
 
-              {/* Tracking Table Card (Pehle code jaisa layout) */}
+              {/* Tracking Table Card */}
               {sortedResponse && sortedResponse.length > 0 ? (
                 <View style={styles.cardContainer}>
                   <View style={styles.tableHeaderRow}>
                     <View style={styles.headerCell}>
-                      <Text style={styles.headerText}>{t('Tracking#')}</Text>
+                      <Text style={styles.headerText}>
+                        {t(isHospitality ? 'ID' : 'Tracking#')}
+                      </Text>
                     </View>
                     <View style={styles.headerCell}>
                       <Text style={styles.headerText}>{t('Tag#')}</Text>
@@ -126,11 +150,11 @@ const LottieModal = ({
                 </View>
               ) : null}
 
-              {/* Form / Location Cards (Pehle code jaisa individual card style) */}
+              {/* Form / Location Cards */}
               <View style={styles.infoSection}>
                 <ShowUpdateData
                   isVisible={updateData?.receipientName}
-                  title={`${t('Recipient')}:`}
+                  title={`${t(isHospitality ? 'Guest' : 'Recipient')}:`}
                   value={`${updateData?.receipientName?.first_name || ''} ${
                     updateData?.receipientName?.last_name || ''
                   }`.trim()}

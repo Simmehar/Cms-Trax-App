@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SvgXml } from 'react-native-svg';
 import { FONTS, ICONS, IMAGES } from '../assets';
 import { useNavigationContext } from '../contexts/navigationcontext';
@@ -21,6 +22,7 @@ interface headProps {
   inputValue: string;
   onSearchText: (val: string) => void;
   onClear: () => void;
+  isOnline?: boolean;
 }
 
 const Header: React.FC<headProps> = ({
@@ -34,6 +36,20 @@ const Header: React.FC<headProps> = ({
   const [barCodeModalVisible, setBarCodeModalVisible] = useState(false);
   const navigation = useNavigation<any>();
   const [showvalue, setshowvalue] = useState();
+  const [isHospitality, setIsHospitality] = useState(false);
+
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in Header', e);
+      }
+    };
+    fetchBusinessType();
+  }, []);
+
   const handleSearchPress = () => {
     setSearchActive(true);
     navigation.navigate('Search');
@@ -44,7 +60,6 @@ const Header: React.FC<headProps> = ({
     if (isOnline) {
       setSearchActive(false);
       onClear();
-      // navigation.goBack();
       navigation.replace('Home');
     }
   };
@@ -83,29 +98,30 @@ const Header: React.FC<headProps> = ({
         {searchActive ? (
           <>
             <View style={styles.searchIconsContainer}>
-              {isOnline && <TouchableOpacity
-                style={
-                  isPad ? styles.BackIconCircleI : styles.BackIconCircle
-                }
-                onPress={handleCancelSearch}>
-                <Image source={IMAGES.left_arrow} style={styles.backImg} />
-              </TouchableOpacity> }
+              {isOnline && (
+                <TouchableOpacity
+                  style={
+                    isPad ? styles.BackIconCircleI : styles.BackIconCircle
+                  }
+                  onPress={handleCancelSearch}>
+                  <Image source={IMAGES.left_arrow} style={styles.backImg} />
+                </TouchableOpacity>
+              )}
               <View style={styles.inputContier}>
                 <View style={[styles.iconsContainer, { flex: 1 }]}>
                   <SvgXml
                     xml={ICONS.header.search}
                     width={isPad ? 35 : '21.5'}
                     height={isPad ? 35 : '21.5'}
-                  // style={styles.icon}
                   />
+                  {/* Dynamic: Asset ID or Name vs Tracking or Name */}
                   <TextInput
-                    style={[styles.input, { fontSize: isPad ? 24 : 14, }]}
-                    placeholder={t('Tracking or Name')}
+                    style={[styles.input, { fontSize: isPad ? 24 : 13 }]}
+                    placeholder={t(isHospitality ? 'Guest, ID, Room or Phone number' : 'Tracking or Name')}
                     placeholderTextColor="#999"
                     value={showvalue}
                     onChangeText={val => searchRecipientHandler(val)}
                     autoCorrect={false}
-                  //autoFocus={true}
                   />
                 </View>
                 <TouchableOpacity
@@ -122,11 +138,8 @@ const Header: React.FC<headProps> = ({
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  // onPress={() => navigation.navigate('ScanCamera')}>
                   onPress={() => {
-
                     setBarCodeModalVisible(true);
-
                   }}>
                   <SvgXml
                     xml={ICONS.header.scan}
@@ -136,37 +149,32 @@ const Header: React.FC<headProps> = ({
                   />
                 </TouchableOpacity>
               </View>
-
-
             </View>
           </>
         ) : (
-          <View style={{ flexDirection: 'row',justifyContent:'space-between',flex:1}}>
-          <>
-            <Image style={isPad ? styles.logoiPad : styles.logo} source={IMAGES.header.traxlogo} />
-            {/* <Text style={[styles.title, { fontSize: isPad ? 26 : 16 }]}>
-              Crew Mail Services
-            </Text> */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', flex: 1 }}>
+            <>
+              <Image style={isPad ? styles.logoiPad : styles.logo} source={IMAGES.header.traxlogo} />
             </>
-            <View style={{flexDirection:'row'}}>
-            <TouchableOpacity
-              style={isPad ? styles.iconCircleI : styles.iconCircle}
-              onPress={handleSearchPress}>
-              <SvgXml
-                xml={ICONS.header.search}
-                width={isPad ? 32 : '21.5'}
-                height={isPad ? 32 : '21.5'}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={isPad ? styles.iconCircleI : styles.iconCircle}
-              onPress={moreOption}>
-              <SvgXml
-                xml={ICONS.header.menu}
-                width={isPad ? 30 : '21.5'}
-                height={isPad ? 30 : '21.5'}
-              />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row' }}>
+              <TouchableOpacity
+                style={isPad ? styles.iconCircleI : styles.iconCircle}
+                onPress={handleSearchPress}>
+                <SvgXml
+                  xml={ICONS.header.search}
+                  width={isPad ? 32 : '21.5'}
+                  height={isPad ? 32 : '21.5'}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={isPad ? styles.iconCircleI : styles.iconCircle}
+                onPress={moreOption}>
+                <SvgXml
+                  xml={ICONS.header.menu}
+                  width={isPad ? 30 : '21.5'}
+                  height={isPad ? 30 : '21.5'}
+                />
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -178,6 +186,7 @@ const Header: React.FC<headProps> = ({
 interface headerProps {
   title: string;
 }
+
 const BackHeader: React.FC<headerProps> = ({ title }) => {
   const navigation = useNavigation<any>();
   return (
@@ -197,28 +206,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    //  borderBottomWidth: 1,
-    // borderBottomColor: '#ccc',
     backgroundColor: 'white',
     paddingTop: 15,
     paddingBottom: 10,
     paddingHorizontal: isPad ? 20 : 10,
   },
   logo: {
-  width: 150,
-  height: undefined,
-  aspectRatio: 3, // adjust based on your logo (e.g. 3:1, 4:1)
-  marginLeft: 10,
-  resizeMode: 'contain',
-},
-
-logoiPad: {
-  width: 350,
-  height: undefined,
-  aspectRatio: 3,
-  marginLeft: 10,
-  resizeMode: 'contain',
-},
+    width: 150,
+    height: undefined,
+    aspectRatio: 3,
+    marginLeft: 10,
+    resizeMode: 'contain',
+  },
+  logoiPad: {
+    width: 350,
+    height: undefined,
+    aspectRatio: 3,
+    marginLeft: 10,
+    resizeMode: 'contain',
+  },
   title: {
     fontSize: 16,
     fontFamily: FONTS.PoppinsRegular,
@@ -254,7 +260,7 @@ logoiPad: {
     justifyContent: 'center',
     backgroundColor: '#223890',
     alignItems: 'center',
-    marginEnd: 10
+    marginEnd: 10,
   },
   SearchIconCircleI: {
     width: 45,
@@ -263,7 +269,7 @@ logoiPad: {
     justifyContent: 'center',
     backgroundColor: '#223890',
     alignItems: 'center',
-    marginEnd: 30
+    marginEnd: 30,
   },
   BackIconCircle: {
     width: 48,
@@ -289,7 +295,6 @@ logoiPad: {
     backgroundColor: ' #223890',
     alignItems: 'center',
   },
-
   icon: {
     height: 21.5,
     width: 21.5,
@@ -321,7 +326,6 @@ logoiPad: {
     paddingHorizontal: isPad ? 10 : 10,
     marginHorizontal: 5,
     flex: 1,
-
   },
   headRow: {
     flexDirection: 'row',
@@ -349,7 +353,6 @@ logoiPad: {
     flex: 1,
     textAlign: 'center',
     marginRight: 50,
-    // marginLeft : -50
   },
   network: {
     height: isIPad ? 38 : 25,

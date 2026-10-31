@@ -111,6 +111,7 @@ export const IMAGES = {
   package: {
     packagesnotfound: require('../images/packagesnotfound.png'),
     packagesnotfoundspain:require('../images/SpanishNoPackage.png'),
+    servicenotfound: require('../images/NoServiceFound.jpeg'),
 
   },
   delete: require('../images/delete_icon.png'),
@@ -125,6 +126,7 @@ export const IMAGES = {
   green$: require('../images/green$.png'),
   unpaidIcon$: require('../images/Unpaid_icon.png'),
   right_yellow_arrow: require('../images/right_yellow_arrow.png'),
+  rightArrow: require('../images/right-arrow.png'),
   sort: require('../images/sort.png'),
   left_arrow: require('../images/left-arrow.png'),
   card: require('../images/card.png'),
@@ -161,6 +163,13 @@ export const IMAGES = {
   Spain:require('../images/spain.png'),
   Setting:require('../images/settings.jpeg'),
   Subscription:require('../images/restricted.jpeg'),
+  Deliveries:require('../images/Deliveries.png'),
+  Concierge:require('../images/deskbell.png'),
+  Luggage:require('../images/Luggage.png'),
+  Packages:require('../images/Packages.png'),
+  Rentals:require('../images/Rentals.png'),
+  Valet:require('../images/Valet.png'),
+
 
 };
 

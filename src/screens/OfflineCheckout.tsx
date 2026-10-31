@@ -12,6 +12,7 @@ import { isIPad } from '../utilities/securestorage';
 import { FONTS, ICONS } from '../assets';
 import { SvgXml } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const OfflineCheckout = ({ navigation }: any) => {
   const { user } = useContext(AuthContext);
@@ -21,7 +22,13 @@ const OfflineCheckout = ({ navigation }: any) => {
   const [Copycheckouts, setCopyCheckouts] = useState([]);
   const [searchInDB, setSearchInDB] = useState("");
   const [page, setPage] = useState(1);
+  const [isHospitality, setIsHospitality] = useState(false);
 
+  useEffect(() => {
+    AsyncStorage.getItem('BUSINESS_TYPE').then(type => {
+      setIsHospitality(type === 'hotels-and-hospitality');
+    });
+  }, []);
   const { showLoader } = useNavigationContext();
 
   const fetchCheckouts = async () => {
@@ -90,18 +97,18 @@ const OfflineCheckout = ({ navigation }: any) => {
   const FilterPackages = (text) => {
     __DEV__ && console.log('text=============', text);
     __DEV__ && console.log('Copycheckouts', Copycheckouts);
-  
+
     setSearchInDB(text);
-  
+
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
-  
+
     const timeout = setTimeout(() => {
       try {
         // Flatten the checkouts array if it contains nested arrays
         const allCheckouts = Copycheckouts.flat();
-  
+
         const filteredPackages = allCheckouts.filter((packageData) => {
           const trackingNo = packageData.tracking_no.toString().toLowerCase();
           const user = packageData?.user;
@@ -109,10 +116,10 @@ const OfflineCheckout = ({ navigation }: any) => {
             user && user.first_name ? user.first_name.toString().toLowerCase() : "";
           const lastName =
             user && user.last_name ? user.last_name.toString().toLowerCase() : "";
-  
+
           const fullName = `${firstName} ${lastName}`.trim();
           const searchValue = text.toLowerCase();
-          
+
           // Filter based on tracking number, first name, last name, or full name
           return (
             trackingNo.includes(searchValue) ||
@@ -121,7 +128,7 @@ const OfflineCheckout = ({ navigation }: any) => {
             fullName.includes(searchValue)
           );
         });
-  
+
         __DEV__ && console.log('filteredPackages', filteredPackages);
         setCheckouts(text !== "" ? filteredPackages : Copycheckouts);
         setPage(1);
@@ -129,12 +136,12 @@ const OfflineCheckout = ({ navigation }: any) => {
         console.error('Error in FilterPackages:', error);
       }
     }, 300); // 300ms delay, adjust as needed
-  
+
     setSearchTimeout(timeout);
   };
-  
 
-  
+
+
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       fetchCheckouts();
@@ -167,26 +174,26 @@ const OfflineCheckout = ({ navigation }: any) => {
 
   const [packageItem, setPackageItem] = useState<Package | null>(null);
   const [isPackageInfo, setIsPackageInfo] = useState(false);
- const { t } = useTranslation();
+  const { t } = useTranslation();
   const onArrowClick = (item: Package) => {
     // __DEV__ && console.log('item==', item);
     setPackageItem(item);
     setIsPackageInfo(!isPackageInfo);
   };
   const itemsPerPage = 10;
-  const paginatedData =filteredData?.slice(0, page * itemsPerPage);
+  const paginatedData = filteredData?.slice(0, page * itemsPerPage);
 
 
   const loadMoreDataa = () => {
-  if (page * itemsPerPage < filteredData?.length) {
-    setPage(prevPage => prevPage + 1);
-  }
-};
+    if (page * itemsPerPage < filteredData?.length) {
+      setPage(prevPage => prevPage + 1);
+    }
+  };
   __DEV__ && console.log('paginatedData', paginatedData);
 
   return (
     <View style={styles.mainView}>
-      <BackHeader title={t("Offline Checkouts")}/>
+      <BackHeader title={t("Offline Checkouts")} />
       {/* <Text>OfflineCheckout</Text> */}
       <View style={styles.inputContier}>
         <View style={[styles.iconsContainer, { flex: 1 }]}>
@@ -198,7 +205,7 @@ const OfflineCheckout = ({ navigation }: any) => {
           />
           <TextInput
             style={[styles.input, { fontSize: isIPad ? 24 : 14, }]}
-            placeholder={t("Tracking or Name")}
+            placeholder={t(isHospitality ? "ID or Name" : "Tracking or Name")}
             placeholderTextColor="#999"
             value={searchInDB}
             onChangeText={val => FilterPackages(val)}

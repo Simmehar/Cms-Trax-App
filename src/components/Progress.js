@@ -1,13 +1,28 @@
 import React, {useState, useEffect} from 'react';
 import {View, Text, StyleSheet, Dimensions} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useKeepAwake } from '@sayem314/react-native-keep-awake';
 import { isIPad } from '../utilities/securestorage';
+
 const ProgressBar = ({progress = 1, totalprogress = 100}) => {
   if (progress === 0 && totalprogress === 1) {
     return null;
   }
 
   const [progressPercentage, setProgressPercentage] = useState(0);
+  const [isHospitality, setIsHospitality] = useState(false);
+
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in ProgressBar', e);
+      }
+    };
+    fetchBusinessType();
+  }, []);
 
   useEffect(() => {
     const calculatedProgress = isNaN((progress / totalprogress) * 100)
@@ -15,7 +30,9 @@ const ProgressBar = ({progress = 1, totalprogress = 100}) => {
       : (progress / totalprogress) * 100;
     setProgressPercentage(calculatedProgress);
   }, [progress, totalprogress]);
+
   useKeepAwake();
+
   return (
     <View style={styles.container}>
       <View style={styles.progressBar}>
@@ -27,18 +44,15 @@ const ProgressBar = ({progress = 1, totalprogress = 100}) => {
         />
       </View>
       <Text style={styles.progressText}>{progressPercentage.toFixed(2)}%</Text>
+      {/* Dynamic Label: Assets vs Packages */}
       <Text style={styles.progressPackageText}>
-        Downloading {progress} out of {totalprogress} Packages
+        Downloading {progress} out of {totalprogress} {isHospitality ? 'Assets' : 'Packages'}
       </Text>
     </View>
   );
 };
+
 const ProgressBarSyncCheckouts = ({checkoutProgress, totalCheckouts}) => {
-  // __DEV__ && console.log(
-  //   'checkoutProgress, totalCheckouts',
-  //   checkoutProgress,
-  //   totalCheckouts,
-  // );
   if (checkoutProgress === 0 && totalCheckouts === 0) {
     return null;
   }
@@ -74,7 +88,6 @@ const {height, width} = Dimensions.get('screen');
 
 const styles = StyleSheet.create({
   container: {
-    // flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
@@ -100,7 +113,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   progressPackageText: {
-    fontSize: isIPad?27:23,
+    fontSize: isIPad ? 27 : 23,
     color: '#333',
   },
   largerNumbers: {

@@ -2,13 +2,12 @@
  * BottomDrawer.tsx
  *
  * Changes in this version:
- *  1. Ship is now derived from the matched recipient's `.ship` field
- *     instead of being detected from OCR tokens / Gemini output.
- *  2. OCR/Gemini ship-detection useEffect REMOVED entirely.
- *  3. New useEffect watches `receipientName` — as soon as a recipient
- *     is resolved it looks up the matching Ships object from shipList
- *     and calls setShipName automatically.
- *  4. All other behaviour (recipient search, location, render) UNCHANGED.
+ *  1. Honours `forceNonHospitality` from Home — critical for hospitality
+ *     tenants using Packages / Internal Deliveries.
+ *  2. All `setError({ ...error, … })` calls use the functional updater
+ *     so stale closures can't wipe freshly-set flags.
+ *  3. Recipient is only reset when the OCR text actually changes.
+ *  4. Ship mismatch check guards against missing fields.
  */
 
 import React, { ReactNode, useEffect, useRef, useState } from 'react';
@@ -16,6 +15,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, Image,
   Dimensions, DeviceEventEmitter,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FONTS, IMAGES } from '../assets';
 import { InputPicker } from './InputPicker';
@@ -238,6 +238,8 @@ interface BottomDrawerProps {
   onAddPackage: () => void;
   setPackageValue: (val: any) => void;
   geminiExtracted?: GeminiExtractionResult | null;
+  /** When true, ignores stored hospitality and uses standard UI. */
+  forceNonHospitality?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -264,111 +266,56 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
   onAddPackage,
   setPackageValue,
   geminiExtracted,
+  forceNonHospitality = false,
 }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('');
   const [visible, setVisible] = useState(false);
+
+  // Stored business type + effective derived flag
+  const [storedHospitality, setStoredHospitality] = useState(false);
+  const isHospitality = storedHospitality && !forceNonHospitality;
+
   const searchAbortRef = useRef<AbortController | null>(null);
+  // Track last OCR text we ran a search for so we don't wipe the
+  // manually-selected recipient on unrelated re-renders.
+  const lastSearchedOcrRef = useRef<string>('');
   const { shipList, user } = usePackageContext();
   const { t } = useTranslation();
-  console.log('[BottomDrawer] ocrText received:', ocrText);
-  console.log('[BottomDrawer] geminiExtracted:', geminiExtracted);
+
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setStoredHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in BottomDrawer', e);
+      }
+    };
+    fetchBusinessType();
+  }, []);
 
   // ── Clear fields on successful package submit ─────────────
   useEffect(() => {
-    DeviceEventEmitter.addListener('add_package_success', () => {
+    const subscription = DeviceEventEmitter.addListener('add_package_success', () => {
       setShipName(null);
       setReceipientName(null);
       setDivisionName(null);
       setLocation('');
+      lastSearchedOcrRef.current = '';
     });
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
-  // ─────────────────────────────────────────────────────────
-  // ✅ SHIP FROM RECIPIENT DATA
-  //    Whenever receipientName changes (i.e. a recipient is
-  //    resolved from OCR/Gemini search), we read their `.ship`
-  //    field and look up the matching Ships object from shipList.
-  //    This replaces the old OCR/Gemini token-based ship detection.
-  // ─────────────────────────────────────────────────────────
-  // useEffect(() => {
-  //   if (!receipientName) {
-  //     // Recipient was cleared — clear ship too
-  //     setShipName(null);
-  //     return;
-  //   }
-
-  //   const recipientShipName: string = receipientName.ship ?? '';
-
-  //   if (!recipientShipName.trim()) {
-  //     console.log('[BottomDrawer] Recipient has no ship field — skipping ship auto-fill');
-  //     return;
-  //   }
-
-  //   if (!shipList?.length) {
-  //     console.log('[BottomDrawer] shipList not loaded yet');
-  //     return;
-  //   }
-
-  //   // 1. Try exact match first
-  //   const exactMatch = shipList.find(
-  //     s => s.name.toLowerCase() === recipientShipName.toLowerCase(),
-  //   );
-
-  //   if (exactMatch) {
-  //     console.log('[BottomDrawer] ✅ Ship from recipient (exact):', exactMatch.name);
-  //     // setShipName(exactMatch);
-  //     return;
-  //   }
-
-  //   // 2. Fuzzy fallback (handles minor OCR noise in stored recipient data)
-  //   let bestScore = 0;
-  //   let bestShip: Ships | null = null;
-
-  //   for (const ship of shipList) {
-  //     const score = editSimilarity(norm(ship.name), norm(recipientShipName));
-  //     if (score > bestScore && score >= 0.80) {
-  //       bestScore = score;
-  //       bestShip = ship;
-  //     }
-  //   }
-
-  //   if (bestShip) {
-  //     console.log(
-  //       `[BottomDrawer] ✅ Ship from recipient (fuzzy, score ${bestScore.toFixed(2)}):`,
-  //       bestShip.name,
-  //     );
-  //     // setShipName(bestShip);
-  //   } else {
-  //     // 3. Last resort: build a minimal Ships-like object from the string stored on the recipient
-  //     console.log(
-  //       '[BottomDrawer] ⚠️  No shipList match — using recipient.ship string directly:',
-  //       recipientShipName,
-  //     );
-  //     // setShipName({
-  //     //   name: recipientShipName,
-  //     //   id: receipientName.ship_id ?? null,
-  //     // } as Ships);
-  //   }
-  // }, [receipientName, shipList]); // eslint-disable-line
-
-  //  ship found from gemini data 
+  // ── Ship found from gemini data ───────────────────────────
   useEffect(() => {
     const geminiShip = geminiExtracted?.ship_name?.trim();
 
-    if (!geminiShip) {
-      console.log('No ship found from Gemini');
-      return;
-    }
+    if (!geminiShip) return;
+    if (!shipList?.length) return;
 
-    if (!shipList?.length) {
-      console.log('shipList not loaded');
-      return;
-    }
-
-    console.log('Gemini Ship:', geminiShip);
-
-    // Exact match
     const exactMatch = shipList.find(
       ship =>
         ship.name.trim().toLowerCase() ===
@@ -376,21 +323,15 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
     );
 
     if (exactMatch) {
-      console.log('✅ Exact ship match:', exactMatch.name);
       setShipName(exactMatch);
       return;
     }
 
-    // Fuzzy match
     let bestScore = 0;
     let bestShip: Ships | null = null;
 
     for (const ship of shipList) {
-      const score = editSimilarity(
-        norm(ship.name),
-        norm(geminiShip),
-      );
-
+      const score = editSimilarity(norm(ship.name), norm(geminiShip));
       if (score > bestScore) {
         bestScore = score;
         bestShip = ship;
@@ -398,176 +339,145 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
     }
 
     if (bestShip && bestScore >= 0.75) {
-      console.log(
-        `✅ Fuzzy ship match: ${bestShip.name} (${bestScore})`,
-      );
       setShipName(bestShip);
-    } else {
-      console.log('❌ No ship match found');
     }
   }, [geminiExtracted?.ship_name, shipList]);
 
   // ── Recipient search from OCR ─────────────────────────────
-  useEffect(() => {
-    if (!ocrText || !user) return;
-    setReceipientName(null);
+  // Reset the recipient ONLY when the OCR text actually changes;
+  // otherwise an unrelated re-render (e.g. geminiExtracted toggling)
+  // would wipe a manually-picked recipient and block Submit.
+ // ── Recipient search from OCR ─────────────────────────────
+useEffect(() => {
+  if (!ocrText || !user) return;
 
-    const debounceTimer = setTimeout(() => {
-      if (searchAbortRef.current) searchAbortRef.current.abort();
-      searchAbortRef.current = new AbortController();
+  const isNewOcr = ocrText !== lastSearchedOcrRef.current;
+  if (isNewOcr) {
+    lastSearchedOcrRef.current = ocrText;
+    // NOTE: setReceipientName(null) ko yahan se hata diya gaya hai
+    // taki user ya previous state ka selected recipient clear na ho.
+  }
 
-      const runSearch = async () => {
-        try {
-          // ──────────────────────────────────────────────────
-          // PATH A: Gemini-powered direct search
-          // ──────────────────────────────────────────────────
-          const geminiName = geminiExtracted?.recipient_name?.trim() ?? '';
-          if (geminiName.length >= 2) {
-            const cleanedGeminiName = geminiName
-              .trim()
-              .replace(/[^\w\s]/g, '')
-              .replace(/\s+/g, ' ')
-              .trim();
-            console.log(`🤖 Gemini recipient candidate: "${cleanedGeminiName}"`);
+  const debounceTimer = setTimeout(() => {
+    if (searchAbortRef.current) searchAbortRef.current.abort();
+    searchAbortRef.current = new AbortController();
 
-            let geminiResults: RecipentObj[] = [];
-            try {
-              const res: RecipentObj[] = await recipientSearchApi(
-                user,
-                encodeURIComponent(cleanedGeminiName),
-              );
-              if (res?.length) geminiResults = res;
-            } catch (err) {
-              console.log('   → Full Gemini name API error:', err);
-            }
+    const runSearch = async () => {
+      try {
+        // PATH A: Gemini-powered direct search
+        const geminiName = geminiExtracted?.recipient_name?.trim() ?? '';
+        if (geminiName.length >= 2) {
+          const cleanedGeminiName = geminiName
+            .trim()
+            .replace(/[^\w\s]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
 
-            if (!geminiResults.length) {
-              console.log('   → Full name gave 0 results — trying individual words');
-              const nameWords = cleanedGeminiName.split(/\s+/).filter(w => w.length >= 3);
-              const wordSearches = await Promise.all(
-                nameWords.map(async (word) => {
-                  try {
-                    console.log(`   → Trying word: "${word}"`);
-                    const res: RecipentObj[] = await recipientSearchApi(user, encodeURIComponent(word));
-                    return res ?? [];
-                  } catch { return []; }
-                }),
-              );
-              const seen = new Set<number>();
-              for (const batch of wordSearches) {
-                for (const rec of batch) {
-                  if (!seen.has(rec.id)) { seen.add(rec.id); geminiResults.push(rec); }
-                }
-              }
-              console.log(`   → Combined unique results: ${geminiResults.length}`);
-            }
-
-            if (geminiResults.length) {
-              let bestMatch: { recipient: RecipentObj; score: number } | null = null;
-              for (const rec of geminiResults) {
-                const score = scoreRecipientAgainstOcr(rec, ocrText, cleanedGeminiName, 0.25);
-                console.log(`   → "${rec.first_name} ${rec.last_name}" score: ${score.toFixed(2)}`);
-                if (!bestMatch || score > bestMatch.score) bestMatch = { recipient: rec, score };
-              }
-              if (bestMatch && bestMatch.score >= 0.80) {
-                console.log(
-                  `✅ Gemini recipient: ${bestMatch.recipient.first_name} ${bestMatch.recipient.last_name} ` +
-                  `(score ${bestMatch.score.toFixed(2)})`,
-                );
-                // ✅ Setting receipientName here triggers the ship useEffect above
-                setReceipientName(bestMatch.recipient);
-                return;
-              }
-              console.log(`⚠️  Gemini best score ${bestMatch?.score.toFixed(2)} below 0.80 — falling through`);
-            } else {
-              console.log('   → 0 results even after word split — falling through to OCR path');
-            }
-          }
-
-          // ──────────────────────────────────────────────────
-          // PATH B: OCR-candidate multi-search
-          // ──────────────────────────────────────────────────
-          const candidates = extractNameCandidates(ocrText);
-          console.log('🔍 OCR name candidates:', candidates.length);
-
-          if (!candidates.length) { console.log('❌ No name candidates'); return; }
-
-          const sortedCandidates = [...candidates].sort((a, b) => b.split(/\s+/).length - a.split(/\s+/).length);
-          const topCandidates = sortedCandidates.slice(0, 12);
-          let bestOverall: { recipient: RecipentObj; score: number } | null = null;
-
-          const searchPromises = topCandidates.map(async (candidate) => {
-            if (candidate.replace(/\s/g, '').length < 3) return null;
-            try {
-              console.log(`🔎 OCR searching: "${candidate}"`);
-              const results: RecipentObj[] = await recipientSearchApi(user, encodeURIComponent(candidate));
-              if (!results?.length) { console.log(`   → 0 results`); return null; }
-              console.log(`   → ${results.length} result(s)`);
-              let bestForCandidate: { recipient: RecipentObj; score: number } | null = null;
-              for (const rec of results) {
-                const score = scoreRecipientAgainstOcr(rec, ocrText, candidate, 0);
-                console.log(`   → "${rec.first_name} ${rec.last_name}" score: ${score.toFixed(2)}`);
-                if (!bestForCandidate || score > bestForCandidate.score) bestForCandidate = { recipient: rec, score };
-              }
-              return bestForCandidate;
-            } catch (err) {
-              console.log(`   → API error for "${candidate}":`, err);
-              return null;
-            }
-          });
-
-          const candidateResults = await Promise.all(searchPromises);
-          for (const result of candidateResults) {
-            if (result && (!bestOverall || result.score > bestOverall.score)) bestOverall = result;
-          }
-
-          if (searchAbortRef.current?.signal.aborted) { console.log('⚠️  Search cancelled'); return; }
-
-          if (bestOverall && bestOverall.score >= 0.90) {
-            console.log(
-              `✅ OCR Recipient: ${bestOverall.recipient.first_name} ${bestOverall.recipient.last_name} ` +
-              `(score ${bestOverall.score.toFixed(2)})`,
+          let geminiResults: RecipentObj[] = [];
+          try {
+            const res: RecipentObj[] = await recipientSearchApi(
+              user,
+              encodeURIComponent(cleanedGeminiName),
             );
-            // ✅ Setting receipientName here triggers the ship useEffect above
-            setReceipientName(bestOverall.recipient);
-          } else {
-            console.log('❌ No recipient found (best score below 0.90)');
+            if (res?.length) geminiResults = res;
+          } catch (err) {
+            console.log('   → Full Gemini name API error:', err);
           }
 
-        } catch (err) {
-          console.error('Search error:', err);
+          if (!geminiResults.length) {
+            const nameWords = cleanedGeminiName.split(/\s+/).filter(w => w.length >= 3);
+            const wordSearches = await Promise.all(
+              nameWords.map(async (word) => {
+                try {
+                  const res: RecipentObj[] = await recipientSearchApi(user, encodeURIComponent(word));
+                  return res ?? [];
+                } catch { return []; }
+              }),
+            );
+            const seen = new Set<number>();
+            for (const batch of wordSearches) {
+              for (const rec of batch) {
+                if (!seen.has(rec.id)) { seen.add(rec.id); geminiResults.push(rec); }
+              }
+            }
+          }
+
+          if (geminiResults.length) {
+            let bestMatch: { recipient: RecipentObj; score: number } | null = null;
+            for (const rec of geminiResults) {
+              const score = scoreRecipientAgainstOcr(rec, ocrText, cleanedGeminiName, 0.25);
+              if (!bestMatch || score > bestMatch.score) bestMatch = { recipient: rec, score };
+            }
+            if (bestMatch && bestMatch.score >= 0.80) {
+              setReceipientName(bestMatch.recipient);
+              return;
+            }
+          }
         }
-      };
 
-      runSearch();
-    }, 500);
+        // PATH B: OCR-candidate multi-search
+        const candidates = extractNameCandidates(ocrText);
+        if (!candidates.length) return;
 
-    return () => clearTimeout(debounceTimer);
-  }, [ocrText, geminiExtracted, user]); // eslint-disable-line
+        const sortedCandidates = [...candidates].sort((a, b) => b.split(/\s+/).length - a.split(/\s+/).length);
+        const topCandidates = sortedCandidates.slice(0, 12);
+        let bestOverall: { recipient: RecipentObj; score: number } | null = null;
+
+        const searchPromises = topCandidates.map(async (candidate) => {
+          if (candidate.replace(/\s/g, '').length < 3) return null;
+          try {
+            const results: RecipentObj[] = await recipientSearchApi(user, encodeURIComponent(candidate));
+            if (!results?.length) return null;
+            let bestForCandidate: { recipient: RecipentObj; score: number } | null = null;
+            for (const rec of results) {
+              const score = scoreRecipientAgainstOcr(rec, ocrText, candidate, 0);
+              if (!bestForCandidate || score > bestForCandidate.score) bestForCandidate = { recipient: rec, score };
+            }
+            return bestForCandidate;
+          } catch (err) {
+            return null;
+          }
+        });
+
+        const candidateResults = await Promise.all(searchPromises);
+        for (const result of candidateResults) {
+          if (result && (!bestOverall || result.score > bestOverall.score)) bestOverall = result;
+        }
+
+        if (searchAbortRef.current?.signal.aborted) return;
+
+        if (bestOverall && bestOverall.score >= 0.90) {
+          setReceipientName(bestOverall.recipient);
+        }
+
+      } catch (err) {
+        console.error('Search error:', err);
+      }
+    };
+
+    runSearch();
+  }, 500);
+
+  return () => clearTimeout(debounceTimer);
+}, [ocrText, geminiExtracted, user]);
 
   // ── Division + ship-mismatch warning ─────────────────────
+  // Uses functional setError so stale closures can't clobber flags.
   useEffect(() => {
     if (receipientName && shipName) {
       setDivisionName({
         id: receipientName.department_id || 12,
         name: receipientName?.department_name || 'TBD',
       });
-      if (receipientName.ship !== shipName.name) {
-        setError({ ...error, isRecipientBelongsToShip: true });
-      } else {
-        setError({ ...error, isRecipientBelongsToShip: false });
-      }
+      const mismatch =
+        !!receipientName.ship &&
+        !!shipName.name &&
+        receipientName.ship !== shipName.name;
+      setError((prev: any) => ({ ...prev, isRecipientBelongsToShip: mismatch }));
     } else {
-      setError({ ...error, isRecipientBelongsToShip: false });
+      setError((prev: any) => ({ ...prev, isRecipientBelongsToShip: false }));
     }
   }, [receipientName, shipName]); // eslint-disable-line
-
-  const checkValidation = () => {
-    if (!shipName?.name) { setError({ ...error, isShipName: true }); return true; }
-    if (!receipientName) { setError({ ...error, isRecipient: true }); return true; }
-    if (!location) { setError({ ...error, isLocation: true }); return true; }
-    return false;
-  };
 
   // ── RENDER ────────────────────────────────────────────────
   return (
@@ -577,31 +487,43 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
         onClose={() => { oncloseBottomModal(); setVisible(false); }}
         activeTab={activeTab}
         getValue={val => {
-          if (activeTab === 'Ship') { setShipName(val); setError({ ...error, isShipName: false }); }
-          else if (activeTab === 'Rceipient') { setReceipientName(val); setError({ ...error, isRecipient: false }); }
-          else if (activeTab === 'Division') { setDivisionName(val); }
+          if (activeTab === 'Ship') {
+            setShipName(val);
+            setError((prev: any) => ({ ...prev, isShipName: false }));
+          } else if (activeTab === 'Rceipient') {
+            setReceipientName(val);
+            setError((prev: any) => ({ ...prev, isRecipient: false }));
+          } else if (activeTab === 'Division') {
+            setDivisionName(val);
+          }
         }}
       />
       <View style={styles.modalContainer}>
         <View style={styles.container}>
           <View style={styles.subContain}>
 
-            <InputPicker
-              isPicker={true} isQrCode={false} placeholder={t('Ship/Building*')}
-              style={{ marginHorizontal: 30, marginTop: 28 }}
-              onPickerClick={() => { oncloseBottomModal(); setVisible(true); setActiveTab('Ship'); }}
-              onChangeText={() => { }} pickerValue={shipName?.name}
-            />
-            {error?.isShipName && (
-              <Text style={styles.errorMsg}>Please select Ship Name</Text>
+            {!isHospitality && (
+              <>
+                <InputPicker
+                  isPicker={true} isQrCode={false} placeholder={t('Ship/Building*')}
+                  style={{ marginHorizontal: 30, marginTop: 28 }}
+                  onPickerClick={() => { oncloseBottomModal(); setVisible(true); setActiveTab('Ship'); }}
+                  onChangeText={() => { }} pickerValue={shipName?.name}
+                />
+                {error?.isShipName && (
+                  <Text style={styles.errorMsg}>{t('Please select Ship Name')}</Text>
+                )}
+              </>
             )}
 
+            {/* Dynamic: Recipient* vs Guest* */}
             <InputPicker
-              isPicker={true} isQrCode={false} placeholder={t('Recipient*')}
+              isPicker={true} isQrCode={false}
+              placeholder={t(isHospitality ? 'Guest*' : 'Recipient*')}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => {
                 oncloseBottomModal(); setVisible(true); setActiveTab('Rceipient');
-                setError({ ...error, isRecipient: false });
+                setError((prev: any) => ({ ...prev, isRecipient: false }));
               }}
               pickerValue={
                 receipientName?.first_name
@@ -611,40 +533,51 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
               onChangeText={() => { }}
             />
             {error?.isRecipient && (
-              <Text style={styles.errorMsg}>Please select Recipient Name</Text>
+              <Text style={styles.errorMsg}>
+                {isHospitality ? t('Please select Guest Name') : t('Please select Recipient Name')}
+              </Text>
             )}
             {error?.isRecipientBelongsToShip && (
               <Text style={styles.errorMsg}>
-                The recipient belongs to {receipientName?.ship}
+                {isHospitality
+                  ? `${t('The guest')} ${t('belongs to')} ${receipientName?.ship}`
+                  : `${t('The recipient')} ${t('belongs to')} ${receipientName?.ship}`}
               </Text>
             )}
 
-            <InputPicker
-              isPicker={true} disablePicker={true} isQrCode={false} placeholder={t('Department')}
-              placeholerstyle={{ fontFamily: FONTS.RICORDORegular }}
-              style={{ marginHorizontal: 30, marginTop: 28 }}
-              onPickerClick={() => { setVisible(true); setActiveTab('Division'); }}
-              editable={'false'} pickerValue={divisionName?.name}
-              onChangeText={() => { }} hideDropdownButton={true}
-            />
+            {!isHospitality && (
+              <InputPicker
+                isPicker={true} disablePicker={true} isQrCode={false} placeholder={t('Department')}
+                placeholerstyle={{ fontFamily: FONTS.RICORDORegular }}
+                style={{ marginHorizontal: 30, marginTop: 28 }}
+                onPickerClick={() => { setVisible(true); setActiveTab('Division'); }}
+                editable={'false'} pickerValue={divisionName?.name}
+                onChangeText={() => { }} hideDropdownButton={true}
+              />
+            )}
 
-            <InputPicker
-              isPicker={false} isQrCode={false} placeholder={t('Location*')}
-              placeholerstyle={{ fontFamily: FONTS.RICORDORegular }}
-              inputView={{
-                paddingTop: isPad ? 20 : 10,
-                paddingBottom: isPad ? 10 : 10,
-              }}
-              style={{ marginLeft: 0, padding: 0, margin: 0 }}
-              autoCapitalize={'words'} onPickerClick={() => { }}
-              pickerValue={location}
-              onChangeText={val => {
-                setLocation(val);
-                setError({ ...error, isLocation: false });
-              }}
-            />
-            {error?.isLocation && (
-              <Text style={styles.errorMsg}>Please enter Location</Text>
+            {/* Location hidden for hotels-and-hospitality */}
+            {!isHospitality && (
+              <>
+                <InputPicker
+                  isPicker={false} isQrCode={false} placeholder={t('Location*')}
+                  placeholerstyle={{ fontFamily: FONTS.RICORDORegular }}
+                  inputView={{
+                    paddingTop: isPad ? 20 : 10,
+                    paddingBottom: isPad ? 10 : 10,
+                  }}
+                  style={{ marginLeft: 0, padding: 0, margin: 0 }}
+                  autoCapitalize={'words'} onPickerClick={() => { }}
+                  pickerValue={location}
+                  onChangeText={val => {
+                    setLocation(val);
+                    setError((prev: any) => ({ ...prev, isLocation: false }));
+                  }}
+                />
+                {error?.isLocation && (
+                  <Text style={styles.errorMsg}>{t('Please enter Location')}</Text>
+                )}
+              </>
             )}
 
             <View style={[styles.roView, { marginTop: isIPad ? 10 : 10 }]}>
@@ -668,10 +601,13 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
                 onPress={() => { setPackageValue(i); onAddPackage(); }}
                 style={styles.packView}
               >
-                <Text style={isPad ? styles.packTxtI : styles.packTxt}>Package {i.id}</Text>
+                {/* Dynamic: Asset vs Package */}
+                <Text style={isPad ? styles.packTxtI : styles.packTxt}>
+                  {isHospitality ? t('Service') : t('Package')} {i.id}
+                </Text>
                 <View style={styles.rowView}>
                   <Text style={[styles.trTxt, { fontSize: isPad ? 21 : 14 }]}>
-                    Tracking ID:{' '}
+                    {isHospitality ? t('ID:') : t('Tracking ID:')}{' '}
                     <Text style={[styles.trId, { fontSize: isPad ? 21 : 14 }]}>
                       {sortTrackingNumber(i?.track_id || '')}
                     </Text>

@@ -103,12 +103,14 @@ export const getPackageTypes = async (user: StoredData) => {
   console.log('typeeeeeeeeeeee', res.data.results)
   return res.data.results;
 };
+console.log('Backend_URL------',Backend_URL)
+
 
 export const getPackageStatus = async (user: StoredData) => {
   const res = await axios.get(Backend_URL + '/package_status', {
     headers: {Authorization: 'Bearer ' + user?.token},
   });
-__DEV__ && console.log('res.data', res.data)
+__DEV__ && console.log('res.data......package', res.data)
   return res.data;
 };
 export const getDepartments = async (user: StoredData) => {

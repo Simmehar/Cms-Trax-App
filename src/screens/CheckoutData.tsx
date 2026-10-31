@@ -5,22 +5,18 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  TextInput,
   Alert,
   DeviceEventEmitter,
   ActivityIndicator,
   FlatList,
 } from 'react-native';
 import { BackHeader } from '../components/Header';
-import { Input } from '../components/Input';
 import { FONTS, IMAGES } from '../assets';
 import { SignatureModal } from '../components/SignatureModal';
 import { SuccessModal } from '../components/SuccessModal';
-import { DuePaymentModal } from '../components/DuePaymentModal';
 import { InputPicker } from '../components/InputPicker';
 import { KeyboardScroll } from '../components/KeyboardScroll';
 import { isIPad } from '../utilities/securestorage';
-import { ShipListModal } from '../components/ShipListModal';
 import { PackageType } from '../components/PackageList';
 import {
   bulkPackageLogout,
@@ -28,7 +24,7 @@ import {
   customerListApiUpdate,
   sendEmail,
   uploadImg,
-  deleteImg
+  deleteImg,
 } from '../utilities/ApiCalls';
 import { useAuth } from '../contexts';
 import { Package, PackageImage, User } from '../db/db.crud';
@@ -38,99 +34,100 @@ import { useMode } from '../db/db.context';
 import { open } from '../components/CameraController';
 import deletedPackage from '../db/dbcrud/dbDeletepackage.curd';
 import { MaskedInput } from '../components/Maskedmail';
-import { getCustomerList } from '../util/apiCalls';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ShipListModal } from '../components/ShipListModal';
 
-const CheckoutData: React.FC = ({ navigation, route }: any) => {
+const CheckoutData: React.FC = ({ route }: any) => {
   const { user } = useAuth();
   const { isOnline, initializeDatabase } = useMode();
-const {t} = useTranslation();
+  const { t } = useTranslation();
   const [isNotify, setIsNotify] = useState(true);
   const [visible, setVisible] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
   const [isSign, setIsSign] = useState(false);
   const [showInput, setShowInput] = useState(false);
-  const [signImg, setSignImg] = useState(null);
+  const [signImg, setSignImg] = useState<any>(null);
+  const [isHospitality, setIsHospitality] = useState(false);
 
   const onSave = (signatureData: any) => {
-    // __DEV__ && console.log('signatureData :>> ', signatureData);
     setVisible(!visible);
     setIsSign(true);
     setSignImg(signatureData);
   };
 
-  const { amountState, packages, customerData, discount, isCredit, selectAmount } = route.params;
-  // __DEV__ && console.log('isCredit', isCredit)
-  // __DEV__ && console.log('amountamountStateState', amountState)
-  // __DEV__ && console.log('selectAmount', selectAmount)
+  useEffect(() => {
+    fetchBusinessType();
+  }, []);
 
-  // __DEV__ && console.log('discount', discount);
-  const [imagesObj, setImagesObj] = useState({
+  const fetchBusinessType = async () => {
+    try {
+      const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+      setIsHospitality(storedType === 'hotels-and-hospitality');
+    } catch (e) {
+      console.warn('Error reading BUSINESS_TYPE in BLURView', e);
+    }
+  };
+
+  const { amountState, packages, customerData, discount, isCredit, selectAmount } = route.params;
+
+  // Added image4 and image4dummy
+  const [imagesObj, setImagesObj] = useState<{ [key: string]: string }>({
     image1: '',
     image2: '',
     image3: '',
+    image4: '',
     image1dummy: '',
     image2dummy: '',
     image3dummy: '',
+    image4dummy: '',
   });
-  const [statusModalVisible, setStatusModalVisible] = useState(false);
-  const [status, setStatus] = useState<PackageType | any>({
-    id: 10050,
-    name: 'Picked up by recipient',
-  });
-  const maskEmail = (email) => {
-    if (!email || !email.includes('@')) return email;
 
-    const [user, domain] = email.split('@');
-    const visibleUser = user.slice(0, 3);
-    const maskedPart = '*'.repeat(Math.max(3, user.length - 3));
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [status, setStatus] = useState<PackageType | null>(null);
+
+  const maskEmail = (emailStr: string) => {
+    if (!emailStr || !emailStr.includes('@')) return emailStr;
+    const [usr, domain] = emailStr.split('@');
+    const visibleUser = usr.slice(0, 3);
+    const maskedPart = '*'.repeat(Math.max(3, usr.length - 3));
     return `${visibleUser}${maskedPart}@${domain}`;
   };
-  const [email, setEmail] = useState(
-    customerData?.[0]?.email,
-  );
 
-
-  __DEV__ && console.log('email,maskedemail', email)
+  const [email, setEmail] = useState(customerData?.[0]?.email);
   const [notes, setNotes] = useState('');
-
-  // __DEV__ && console.log('email,notes', email, notes);
-
   const [apiLoading, setApiLoading] = useState(false);
 
-  /**
-   *
-   * @returns This function is for when we make checkout request online
-   */
   const CheckoutHandlerOnline = async () => {
     setApiLoading(true);
 
     try {
-      const packagesId = packages.map(val => val.id);
+      const packagesId = packages.map((val: any) => val.id);
 
       const imgData = new FormData();
-      signImg &&
+      if (signImg) {
         imgData.append('signature', {
           name: 'image',
           type: 'image/jpeg',
           uri: signImg,
         });
+      }
       imgData.append('ids', packagesId);
       imgData.append('current_status', status?.id);
       imgData.append('notes', notes);
       imgData.append('notification', isNotify);
-      const validImages = [
-        imagesObj?.image1,
-        imagesObj?.image2,
-        imagesObj?.image3,
-      ].filter(image => image);
+
+      // 4th photo also included if available
+      const imageKeys = isHospitality ? ['image1', 'image2', 'image3', 'image4'] : ['image1', 'image2', 'image3'];
+      const validImages = imageKeys.map(k => imagesObj[k]).filter(Boolean);
+
       if (validImages.length > 0) {
         imgData.append('images', validImages);
       }
 
       const logoutResponse = await bulkPackageLogout(user, imgData);
-      if (logoutResponse == '400') {
+      if (logoutResponse === '400') {
         return Alert.alert(
           "Couldn't Connect",
           'There may be a problem with the server.\n Please try again later.',
@@ -144,24 +141,23 @@ const {t} = useTranslation();
       const credit = Number(amountState?.credit ?? 0);
       const totalDebt = unpaidPackages + otherPurchases;
 
-      // Credit covers all: send totalDebt so backend adds then immediately deducts from wallet
-      // Credit doesn't cover: use previous cash logic
       const creditCoversAll = credit >= totalDebt && paidAmount === 0 && totalDebt > 0;
 
       const totalAmount = Math.max(
         isCredit
           ? Number(selectAmount ?? 0)
           : creditCoversAll
-            ? 0   // ✅ send $0 — backend just deducts $24 from existing $456 → $432
+            ? 0
             : paidAmount > 0
               ? (paidAmount - totalPayableAmount > 0 ? totalPayableAmount : paidAmount)
               : totalDebt,
-        0
+        0,
       );
+
       const payment = {
         amount: totalAmount,
         user_id: packages[0].user.id,
-        payment_method: amountState.payment_method, // keep as-is, no credit type exists
+        payment_method: amountState.payment_method,
         direct_discount: discount,
       };
 
@@ -169,8 +165,7 @@ const {t} = useTranslation();
       const hasCashPayment = paidAmount > 0;
 
       if (hasCashPayment || hasPendingPackages) {
-        const paymentDetailsRes = await cashReceivedDetails(user, payment);
-        __DEV__ && console.log('paymentDetailsRes', paymentDetailsRes);
+        await cashReceivedDetails(user, payment);
       }
 
       if (email) {
@@ -181,40 +176,35 @@ const {t} = useTranslation();
 
       const { id } = status;
       let filterIds = packagesId;
-      if (id == 10050 || id == 10060) {
+      if (id === 10050 || id === 10060) {
         filterIds = [logoutResponse.data[0].package_id];
       }
 
       const mailData = { ids: filterIds, package_status: id };
       if (isNotify) {
-        const emailRes = await sendEmail(user, mailData);
-        __DEV__ && console.log('emailRes', emailRes);
+        await sendEmail(user, mailData);
       }
 
       setApiLoading(false);
       setSuccessVisible(true);
       DeviceEventEmitter.emit('refetchPackages');
-
     } catch (err) {
-      __DEV__ && console.log('err', err);
       setApiLoading(false);
       Alert.alert('Please try again');
     }
   };
+
   const CheckoutHandlerOffline = async () => {
     setApiLoading(true);
 
     try {
-      const packagesId = packages.map(val => val.id);
+      const packagesId = packages.map((val: any) => val.id);
 
       for (const packageId of packagesId) {
         const existingPackage = await Package.getPackageById(packageId);
-        const existingPackageImage =
-          await PackageImage.getPackageImagesByPackageId(packageId);
-        __DEV__ && console.log('existingPackageImage', existingPackageImage)
-        __DEV__ && console.log('existingPackage', existingPackage)
+        const existingPackageImage = await PackageImage.getPackageImagesByPackageId(packageId);
         if (existingPackage) {
-          const safeValue = value => (value === undefined || value === null ? '' : value);
+          const safeValue = (value: any) => (value === undefined || value === null ? '' : value);
           const packageData = {
             id: existingPackage.id,
             tracking_no: safeValue(existingPackage.tracking_no),
@@ -231,64 +221,46 @@ const {t} = useTranslation();
             custom_message: safeValue(existingPackage.custom_message),
             logInBy: safeValue(existingPackage.logInBy),
             Logout: new Date().toISOString(),
-            local_url: existingPackageImage?.map(img => img.local_url).join(', ') || ''
+            local_url: existingPackageImage?.map(img => img.local_url).join(', ') || '',
           };
-          __DEV__ && console.log('packageData', packageData)
 
           try {
             await deletedPackage.saveDeletedPackage(packageData);
-            __DEV__ && console.log('Deleted package saved successfully:', packageData);
           } catch (error) {
             console.error('Error saving deleted package:', error);
           }
         }
       }
 
-      // const totalAmount = Math.max(
-      //   isCredit
-      //     ? Number(selectAmount ?? 0) // Use `selectAmount` when isCredit is true
-      //     : Number(amountState?.paidAmount ?? 0),
-      //   0
-      // );
-
       const totalAmount = Math.max(
         isCredit
-          ? Number(selectAmount ?? 0) // Use `selectAmount` when isCredit is true
-          : (
-            Number(amountState?.paidAmount ?? 0) - Number(amountState?.totalPayableAmount) > 0
-              ? Number(amountState?.totalPayableAmount) // If paidAmount is greater than totalPayableAmount, use totalPayableAmount
-              : Number(amountState?.paidAmount ?? 0) // Otherwise, use paidAmount
-          ),
-        0
+          ? Number(selectAmount ?? 0)
+          : Number(amountState?.paidAmount ?? 0) - Number(amountState?.totalPayableAmount) > 0
+            ? Number(amountState?.totalPayableAmount)
+            : Number(amountState?.paidAmount ?? 0),
+        0,
       );
 
-
-
       const recordData = {
-        sign: signImg || null, // Ensure signImg is not undefined
-        packagesId: JSON.stringify(packagesId) || "[]",
-        selectedStatus: status?.id?.toString() || "0",
-        notes: notes || "",
-        notification: isNotify ? 1 : 0, // Convert boolean to integer
-        totalAmount: isNaN(totalAmount) ? 0 : totalAmount, // Default to 0 if NaN
+        sign: signImg || null,
+        packagesId: JSON.stringify(packagesId) || '[]',
+        selectedStatus: status?.id?.toString() || '0',
+        notes: notes || '',
+        notification: isNotify ? 1 : 0,
+        totalAmount: isNaN(totalAmount) ? 0 : totalAmount,
         cashReceived: isNaN(Number(amountState.paidAmount)) ? 0 : Number(amountState.paidAmount),
         user_id: packages[0]?.user?.id || 0,
         Synced: false,
-        payment_method: amountState.payment_method || "",
+        payment_method: amountState.payment_method || '',
         direct_discount: isNaN(Number(discount)) ? 0 : Number(discount),
         imageOne: imagesObj?.image1 || '',
         imageTwo: imagesObj?.image2 || '',
         imageThree: imagesObj?.image3 || '',
+        imageFour: imagesObj?.image4 || '',
         email: email || '',
       };
-      // __DEV__ && console.log('recordData :>> ', recordData);
 
-
-      // Perform database operations
-      User.updateUserPayableAmountById(
-        packages[0].user.id,
-        Number(amountState.paidAmount),
-      );
+      User.updateUserPayableAmountById(packages[0].user.id, Number(amountState.paidAmount));
       await checkoutUserData.saveRecord(recordData);
       await CustomerList.updateCustomerPayable(
         packages[0].user.id,
@@ -296,124 +268,24 @@ const {t} = useTranslation();
         isCredit,
       );
       await Package.deletePackages(packagesId);
-
       await initializeDatabase();
 
-
       setApiLoading(false);
-
       setSuccessVisible(true);
       DeviceEventEmitter.emit('refetchPackages');
     } catch (error) {
       console.error('Error saving data:', error);
       setApiLoading(false);
-
       setSuccessVisible(true);
     }
   };
 
-
-  // const CheckoutHandlerOffline = async () => {
-  //   setApiLoading(true);
-
-  //   try {
-  //     const packagesId = packages.map(val => val.id);
-
-  //     const packageDataArray = await Promise.all(
-  //       packagesId.map(async (packageId) => {
-  //         const [existingPackage, existingPackageImage] = await Promise.all([
-  //           Package.getPackageById(packageId),
-  //           PackageImage.getPackageImagesByPackageId(packageId),
-  //         ]);
-
-  //         if (!existingPackage) return null;
-
-  //         const safeValue = (value) => (value === undefined || value === null ? '' : value);
-
-  //         return {
-  //           id: existingPackage.id,
-  //           tracking_no: safeValue(existingPackage.tracking_no),
-  //           carrier: safeValue(existingPackage.carrier),
-  //           tag_number: safeValue(existingPackage.tag_number),
-  //           shelf: safeValue(existingPackage.shelf),
-  //           condition: safeValue(existingPackage.condition),
-  //           current_status: safeValue(existingPackage.current_status),
-  //           is_paid: existingPackage.is_paid ? 1 : 0,
-  //           port: safeValue(existingPackage.port),
-  //           ship_id: existingPackage.ship_id,
-  //           user_id: existingPackage.user_id,
-  //           packageType: safeValue(existingPackage.packageType),
-  //           custom_message: safeValue(existingPackage.custom_message),
-  //           logInBy: safeValue(existingPackage.logInBy),
-  //           Logout: new Date().toISOString(),
-  //           local_url: existingPackageImage?.map(img => img.local_url).join(', ') || '',
-  //         };
-  //       })
-  //     );
-
-  //     await Promise.all(
-  //       packageDataArray.filter(Boolean).map(pkg =>
-  //         deletedPackage.saveDeletedPackage(pkg)
-  //       )
-  //     );
-
-  //     const totalAmount = Math.max(
-  //       isCredit
-  //         ? Number(selectAmount ?? 0)
-  //         : (
-  //           Number(amountState?.paidAmount ?? 0) - Number(amountState?.totalPayableAmount) > 0
-  //             ? Number(amountState?.totalPayableAmount)
-  //             : Number(amountState?.paidAmount ?? 0)
-  //         ),
-  //       0
-  //     );
-
-  //     const recordData = {
-  //       sign: signImg || null,
-  //       packagesId: JSON.stringify(packagesId) || "[]",
-  //       selectedStatus: status?.id?.toString() || "0",
-  //       notes: notes || "",
-  //       notification: isNotify ? 1 : 0,
-  //       totalAmount: isNaN(totalAmount) ? 0 : totalAmount,
-  //       cashReceived: isNaN(Number(amountState.paidAmount)) ? 0 : Number(amountState.paidAmount),
-  //       user_id: packages[0]?.user?.id || 0,
-  //       Synced: false,
-  //       payment_method: amountState.payment_method || "",
-  //       direct_discount: isNaN(Number(discount)) ? 0 : Number(discount),
-  //       imageOne: imagesObj?.image1 || '',
-  //       imageTwo: imagesObj?.image2 || '',
-  //       imageThree: imagesObj?.image3 || '',
-  //       email: email || '',
-  //     };
-
-  //     // Update DB and delete packages
-  //     User.updateUserPayableAmountById(
-  //       packages[0].user.id,
-  //       Number(amountState.paidAmount),
-  //     );
-  //     await checkoutUserData.saveRecord(recordData);
-  //     await CustomerList.updateCustomerPayable(
-  //       packages[0].user.id,
-  //       Number(amountState.paidAmount),
-  //     );
-  //     await Package.deletePackages(packagesId);
-
-  //     await initializeDatabase();
-
-  //     setApiLoading(false);
-  //     setSuccessVisible(true);
-  //     DeviceEventEmitter.emit('refetchPackages');
-
-  //   } catch (error) {
-  //     console.error('Error saving data:', error);
-  //     setApiLoading(false);
-  //     setSuccessVisible(true);
-  //   }
-  // };
-
-
-
   const onSubmit = async () => {
+     if (!status?.id) {
+    setError(prev => ({ ...prev, isStatus: true }));
+    Alert.alert(t('Please select Status'));
+    return;
+  }
     if (isOnline) {
       await CheckoutHandlerOnline();
     } else {
@@ -421,12 +293,7 @@ const {t} = useTranslation();
     }
   };
 
-  // useEffect(() => {
-  //   // onSubmit();
-  // }, []);
-
-  const [data, setData] = useState(packages || []);
-
+  const [data] = useState(packages || []);
   const [error, setError] = useState({
     isTrackingId: false,
     isStatus: false,
@@ -436,20 +303,10 @@ const {t} = useTranslation();
   });
 
   const [imageLoading, setImageLoading] = useState(0);
-  // __DEV__ && console.log('imagesObj :>> ', imagesObj);
+
   const selectMedia = async (key: number) => {
     open(async (response: any) => {
-      // __DEV__ && console.log('Responsee==>', response);
-
-      // key == 1
-      //   ? setImagesObj({...imagesObj, image1: response.path})
-      //   : key == 2
-      //   ? setImagesObj({...imagesObj, image2: response.path})
-      //   : key == 3
-      //   ? setImagesObj({...imagesObj, image3: response.path})
-      //   : '';
-
-      if (response.path) {
+      if (response?.path) {
         let imgData = new FormData();
         imgData.append('image', {
           name: 'image',
@@ -460,99 +317,47 @@ const {t} = useTranslation();
         setImageLoading(key);
         const imgRes = await uploadImg(user, imgData);
         setImageLoading(0);
-        // __DEV__ && console.log('image ress==', imgRes);
         setError({ ...error, isImages: false });
-        key == 1
-          ? // ? setImagesObj({...imagesObj, image1: imgRes?.image_url})
-          setImagesObj(prev => {
-            return {
-              ...prev,
-              image1dummy: response.path,
-              image1: imgRes?.image_url,
-            };
-          })
-          : key == 2
-            ? setImagesObj(prev => {
-              return {
-                ...prev,
-                image2dummy: response.path,
-                image2: imgRes?.image_url,
-              };
-            })
-            : key == 3
-              ? setImagesObj(prev => {
-                return {
-                  ...prev,
-                  image3dummy: response.path,
-                  image3: imgRes?.image_url,
-                };
-              })
-              : '';
-        // setIsUserImg(response.path);
+
+        setImagesObj(prev => ({
+          ...prev,
+          [`image${key}dummy`]: response.path,
+          [`image${key}`]: imgRes?.image_url || '',
+        }));
       }
     });
   };
 
   const offlineselectMedia = async (key: number) => {
     open(async (response: any) => {
-      // __DEV__ && console.log('Responseeofflineeeeeeeeeeeee==>', response);
-
-      // key == 1
-      //   ? setImagesObj({...imagesObj, image1: response.path})
-      //   : key == 2
-      //   ? setImagesObj({...imagesObj, image2: response.path})
-      //   : key == 3
-      //   ? setImagesObj({...imagesObj, image3: response.path})
-      //   : '';
-
-      if (response.path) {
-        // let imgData = new FormData();
-        // imgData.append('image', {
-        //   name: 'image',
-        //   type: 'image/jpeg',
-        //   uri: response.path,
-        // });
-
+      if (response?.path) {
         setImageLoading(key);
-        // const imgRes = await uploadImg(user, imgData);
         setImageLoading(0);
-        // __DEV__ && console.log('image ress==', imgRes);
         setError({ ...error, isImages: false });
-        key == 1
-          ? // ? setImagesObj({...imagesObj, image1: imgRes?.image_url})
-          setImagesObj(prev => {
-            return {
-              ...prev,
-              image1dummy: response.path,
-              image1: response.path,
-            };
-          })
-          : key == 2
-            ? setImagesObj(prev => {
-              return {
-                ...prev,
-                image2dummy: response.path,
-                image2: response.path,
-              };
-            })
-            : key == 3
-              ? setImagesObj(prev => {
-                return {
-                  ...prev,
-                  image3dummy: response.path,
-                  image3: response.path,
-                };
-              })
-              : '';
-        // setIsUserImg(response.path);
+
+        setImagesObj(prev => ({
+          ...prev,
+          [`image${key}dummy`]: response.path,
+          [`image${key}`]: response.path,
+        }));
       }
     });
   };
-  const onDeleteImg = async (img: string) => {
-    let data = { image_name: img };
-    const deleteRes = await deleteImg(user, data);
-    // __DEV__ && console.log('deleteResdeleteRes', deleteRes);
+
+  const onDeleteImg = async (key: number) => {
+    const imgName = imagesObj[`image${key}`];
+    if (imgName && isOnline) {
+      deleteImg(user, { image_name: imgName });
+    }
+    setImagesObj(prev => ({
+      ...prev,
+      [`image${key}`]: '',
+      [`image${key}dummy`]: '',
+    }));
   };
+
+  // Determine photo slots dynamically (4 for hospitality, 3 otherwise)
+  const photoSlots = isHospitality ? [1, 2, 3, 4] : [1, 2, 3];
 
   return (
     <View style={styles.mainView}>
@@ -575,290 +380,181 @@ const {t} = useTranslation();
           onClose={() => setSuccessVisible(!successVisible)}
           isOnline={isOnline}
         />
-      ) : (
-        <></>
-      )}
+      ) : null}
 
       <View style={{ flexDirection: 'row', height: '45%', width: '100%', marginTop: isIPad ? 20 : 0 }}>
-        {isIPad && <View style={[styles.blueView, { flex: 1, height: '100%', width: '45%' }]}>
-          <Text style={styles.shipNem}> {data[0].user.first_name + ' ' + data[0].user.last_name}</Text>
-          <FlatList
-            data={data}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item, index }) => {
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.packageView}
-                  onPress={() => { }}>
+        {isIPad && (
+          <View style={[styles.blueView, { flex: 1, height: '100%', width: '45%' }]}>
+            <Text style={styles.shipNem}>
+              {`${data[0]?.user?.first_name || ''} ${data[0]?.user?.last_name || ''}`}
+            </Text>
+            <FlatList
+              data={data}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item, index }) => (
+                <TouchableOpacity key={index} style={styles.packageView} onPress={() => {}}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.tagTxt}>Tag# {item.tag_number}</Text>
                     <Text style={styles.bluTxt}>
-                      Tracking ID:{' '}
-                      <Text style={styles.numTxt}>{item.tracking_no}</Text>{' '}
+                      {isHospitality ? 'ID' : 'Tracking ID:'}{' '}
+                      <Text style={styles.numTxt}>{item.tracking_no}</Text>
                     </Text>
                   </View>
-                  {/* <Image style={styles.delete} source={IMAGES.delete} /> */}
                 </TouchableOpacity>
-              );
-            }}
-          />
-        </View>}
+              )}
+            />
+          </View>
+        )}
         <View style={{ width: isIPad ? '50%' : '100%' }}>
           <KeyboardScroll contentContainerStyle={{}}>
-            {/* <InputPicker
-          isPicker={false}
-          isQrCode={false}
-          placeholder={'Status*'}
-          style={{}}
-          onPickerClick={() => {}}
-          pickerValue={''}
-        /> */}
-
             <InputPicker
               isPicker={true}
               isQrCode={false}
-             placeholder={t('Status')}
+              placeholder={t('Status')}
               style={{}}
-              onPickerClick={() => {
-                setStatusModalVisible(true);
-              }}
+              onPickerClick={() => setStatusModalVisible(true)}
               pickerValue={status?.name}
-            // onChangeText={() => {}}
             />
 
             <View>
               {!showInput ? (
-                <TouchableOpacity
-                  onPress={() => setShowInput(true)}
-                  style={styles.displayView}
-                >
-                  {email == null || email == '' ?
+                <TouchableOpacity onPress={() => setShowInput(true)} style={styles.displayView}>
+                  {email == null || email === '' ? (
                     <View style={styles.nomailmasked}>
-                      <Text style={styles.nomailtext}>Email</Text></View> : <View><Text style={styles.label}>Email</Text>
-                      <Text style={styles.masked}>{maskEmail(email)}</Text></View>}
+                      <Text style={styles.nomailtext}>Email</Text>
+                    </View>
+                  ) : (
+                    <View>
+                      <Text style={styles.label}>Email</Text>
+                      <Text style={styles.masked}>{maskEmail(email)}</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               ) : (
                 <MaskedInput
                   pickerValue={email}
                   placeholder={t('Email')}
-                  onChangeText={(text) => { setEmail(text) }}
+                  onChangeText={(text: string) => setEmail(text)}
                   editable={true}
                   placeholderTextColor="white"
-                  style={email && email !== null && email !== '' ? styles.invalidInputStyle : styles.inputStyle}
+                  style={email && email !== '' ? styles.invalidInputStyle : styles.inputStyle}
                   onBlur={() => setShowInput(false)}
                 />
               )}
             </View>
 
-            {(!email || email == null) &&
-              <Text
-                style={{ color: 'red', marginHorizontal: 30, fontSize: 16, fontWeight: 'bold' }}>
+            {(!email || email == null) && (
+              <Text style={{ color: 'red', marginHorizontal: 30, fontSize: 16, fontWeight: 'bold' }}>
                 {t('Please add email address')}
               </Text>
-            }
+            )}
 
             <InputPicker
               isPicker={false}
               isQrCode={false}
               placeholder={t('Notes')}
               style={{}}
-              // onPickerClick={setNotes}
               onChangeText={setNotes}
               editable={true}
             />
-            <View style={[styles.roView, { marginTop: isIPad ? 10 : 10 }]}>
+
+            <View style={[styles.roView, { marginTop: 10 }]}>
               <TouchableOpacity onPress={() => setIsNotify(!isNotify)}>
                 {!isNotify ? (
-                  <View style={styles.unSelBox}></View>
+                  <View style={styles.unSelBox} />
                 ) : (
                   <View style={styles.selBox}>
                     <Image style={styles.tick} source={IMAGES.check} />
                   </View>
                 )}
               </TouchableOpacity>
-              <Text style={styles.sendTxt}> {t('Send notification')}  </Text>
+              <Text style={styles.sendTxt}> {t('Send notification')} </Text>
             </View>
 
-            {error?.isImages ? (
-              <Text
-                style={[styles.errorMsg, { marginBottom: -25, marginTop: 10 }]}>
+            {error?.isImages && (
+              <Text style={[styles.errorMsg, { marginBottom: -25, marginTop: 10 }]}>
                 Add at least one photo.
               </Text>
-            ) : (
-              <></>
             )}
 
+            {/* DYNAMIC PHOTO SLOTS (3 or 4) */}
             <View
-              // showsHorizontalScrollIndicator={false}
-              // horizontal
               style={{
                 marginTop: isIPad ? 30 : 20,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-evenly',
-                width: '98%'
+                width: '100%',
+                paddingHorizontal: 10,
               }}>
-              <View style={styles.imagecontainer}>
-                <TouchableOpacity onPress={() => isOnline ? selectMedia(1) : offlineselectMedia(1)}>
-                  {imageLoading == 1 ? (
-                    <ActivityIndicator
-                      style={styles.imgGrey}
-                      size={'small'}
-                      color={'#223890'}
-                    />
-                  ) : (
-                    <Image
-                      // tintColor={'#989898'}
-                      resizeMode={'stretch'}
-                      style={imagesObj.image1dummy ? styles.imgGrey : styles.imagereal}
-                      source={
-                        imagesObj.image1dummy
-                          ? { uri: imagesObj.image1dummy }
-                          : IMAGES.camera
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-                {imagesObj.image1dummy ? (
-                  <TouchableOpacity
-                    onPress={() => {
-                      onDeleteImg(imagesObj?.image1);
-                      setImagesObj({
-                        ...imagesObj,
-                        image1: '',
-                        image1dummy: '',
-                      });
-                    }}
-                    style={{ alignSelf: 'center', marginTop: 10 }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <Image
-                      style={{ height: isIPad ? 20 : 10, width: isIPad ? 20 : 10 }}
-                      source={IMAGES.delete}
-                    />
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.addView}
-                    onPress={() => {
-                      isOnline ? selectMedia(1) : offlineselectMedia(1);
-                    }}>
-                    <Text style={styles.addTxt}>{t('Add Photo')}</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={styles.imagecontainer}>
-                <TouchableOpacity onPress={() => isOnline ? selectMedia(2) : offlineselectMedia(2)}>
-                  {imageLoading == 2 ? (
-                    <ActivityIndicator
-                      style={styles.imgGrey}
-                      size={'small'}
-                      color={'#223890'}
-                    />
-                  ) : (
-                    <Image
-                      // tintColor={'#989898'}
-                      resizeMode={'stretch'}
-                      style={imagesObj.image2dummy ? styles.imgGrey : styles.imagereal}
-                      source={
-                        imagesObj.image2dummy
-                          ? { uri: imagesObj.image2dummy }
-                          : IMAGES.camera
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-                {imagesObj.image2dummy ? (
-                  <TouchableOpacity
-                    onPress={() => {
-                      onDeleteImg(imagesObj?.image2);
-                      setImagesObj({
-                        ...imagesObj,
-                        image2: '',
-                        image2dummy: '',
-                      });
-                    }}
-                    style={{ alignSelf: 'center', marginTop: 10 }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <Image
-                      style={{ height: isIPad ? 20 : 10, width: isIPad ? 20 : 10 }}
-                      source={IMAGES.delete}
-                    />
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.addView}
-                    onPress={() => {
-                      isOnline ? selectMedia(2) : offlineselectMedia(2)
-                    }}>
-                    <Text style={styles.addTxt}>{t('Add Photo')}</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={styles.imagecontainer}>
-                <TouchableOpacity onPress={() => isOnline ? selectMedia(3) : offlineselectMedia(3)}>
-                  {imageLoading == 3 ? (
-                    <ActivityIndicator
-                      style={styles.imgGrey}
-                      size={'small'}
-                      color={'#223890'}
-                    />
-                  ) : (
-                    <Image
-                      // tintColor={'#989898'}
-                      resizeMode={'stretch'}
-                      style={imagesObj.image3dummy ? styles.imgGrey : styles.imagereal}
-                      source={
-                        imagesObj.image3dummy
-                          ? { uri: imagesObj.image3dummy }
-                          : IMAGES.camera
-                      }
-                    />
-                  )}
-                </TouchableOpacity>
-                {imagesObj.image3dummy ? (
-                  <TouchableOpacity
-                    onPress={() => {
-                      onDeleteImg(imagesObj?.image3);
-                      setImagesObj({
-                        ...imagesObj,
-                        image3: '',
-                        image3dummy: '',
-                      });
-                    }}
-                    style={{ alignSelf: 'center', marginTop: 10 }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <Image
-                      style={{ height: isIPad ? 20 : 10, width: isIPad ? 20 : 10 }}
-                      source={IMAGES.delete}
-                    />
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.addView}
-                    onPress={() => {
-                      isOnline ? selectMedia(3) : offlineselectMedia(3)
-                    }}>
-                    <Text style={styles.addTxt}>{t('Add Photo')}</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+              {photoSlots.map(key => {
+                const dummyImg = imagesObj[`image${key}dummy`];
+                return (
+                  <View
+                    key={key}
+                    style={[
+                      styles.imagecontainer,
+                      isHospitality && !isIPad ? styles.imageContainerCompact : undefined,
+                    ]}>
+                    <TouchableOpacity
+                      onPress={() => (isOnline ? selectMedia(key) : offlineselectMedia(key))}>
+                      {imageLoading === key ? (
+                        <ActivityIndicator
+                          style={styles.imgGrey}
+                          size={'small'}
+                          color={'#223890'}
+                        />
+                      ) : (
+                        <Image
+                          resizeMode={'stretch'}
+                          style={dummyImg ? styles.imgGrey : styles.imagereal}
+                          source={dummyImg ? { uri: dummyImg } : IMAGES.camera}
+                        />
+                      )}
+                    </TouchableOpacity>
+                    {dummyImg ? (
+                      <TouchableOpacity
+                        onPress={() => onDeleteImg(key)}
+                        style={{ alignSelf: 'center', marginTop: 8 }}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Image
+                          style={{ height: isIPad ? 20 : 12, width: isIPad ? 20 : 12 }}
+                          source={IMAGES.delete}
+                        />
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.addView}
+                        onPress={() => (isOnline ? selectMedia(key) : offlineselectMedia(key))}>
+                        <Text
+                          style={[
+                            styles.addTxt,
+                            isHospitality && !isIPad ? { fontSize: 11 } : undefined,
+                          ]}>
+                          {t('Add Photo')}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })}
             </View>
-
           </KeyboardScroll>
         </View>
       </View>
+
       <Text style={styles.topTitle}>{t('Payment Completed')}</Text>
       <Text style={styles.congrats}>
         {`${t('$')}${Math.max(
-          isCredit ? Number(selectAmount ?? 0) : Number(amountState?.paidAmount ?? 0) - Number(amountState.totalPayableAmount) > 0
-            ? Number(amountState.totalPayableAmount)
-            : Number(amountState?.paidAmount ?? 0),
+          isCredit
+            ? Number(selectAmount ?? 0)
+            : Number(amountState?.paidAmount ?? 0) - Number(amountState?.totalPayableAmount) > 0
+              ? Number(amountState?.totalPayableAmount)
+              : Number(amountState?.paidAmount ?? 0),
           0,
-          0
         ).toFixed(2)}`}
-
       </Text>
+
       {isSign ? (
         <View style={styles.signatureView}>
           <Image source={{ uri: signImg }} style={styles.signatureImage} />
@@ -877,39 +573,37 @@ const {t} = useTranslation();
             alignSelf: 'center',
             marginTop: isIPad ? 50 : 30,
             borderRadius: 20,
-            overflow: 'hidden', // Ensures the gradient follows the border radius
+            overflow: 'hidden',
             alignItems: 'center',
             justifyContent: 'center',
-          }}
-        >
+          }}>
           <LinearGradient
             colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-          <Text style={styles.singTxt}>
-             {t('Add Signature')}
-          </Text>
+          <Text style={styles.singTxt}>{t('Add Signature')}</Text>
         </TouchableOpacity>
       )}
+
       <View style={styles.bottmView}>
-        {/* Gradient background with rounded corners */}
         <LinearGradient
           colors={['#1C2C5B', '#1F3C73', '#2B5DAA']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[StyleSheet.absoluteFill, {
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24
-          }]}
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+            },
+          ]}
         />
 
         <TouchableOpacity
           style={styles.btnView}
-          onPress={() => {
-            onSubmit();
-          }}
+          onPress={() => onSubmit()}
           disabled={apiLoading}>
           <Text style={styles.txch}>
             {apiLoading ? t('Processing') : t('Checkout')}
@@ -919,45 +613,24 @@ const {t} = useTranslation();
 
       <ShipListModal
         visible={statusModalVisible}
-        onClose={() => {
-          setStatusModalVisible(false);
-        }}
+        onClose={() => setStatusModalVisible(false)}
         activeTab={'CheckoutStatus'}
-        getValue={(val) => {
-          __DEV__ && console.log('vaaall==', val);
-          setStatus(val);
-        }}
-      // setType={setType}
-      // setInitialVals={{
-      //   status,
-      //   setStatus,
-      // }}
+        getValue={(val: any) => setStatus(val)}
       />
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   mainView: {
     flex: 1,
     backgroundColor: 'white',
-    paddingTop: isIPad ? 50 : 30
+    paddingTop: isIPad ? 50 : 30,
   },
   roView: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 20,
-    marginHorizontal: 30,
-  },
-  input: {
-    fontSize: 16,
-    fontFamily: FONTS.RICORDORegular,
-    color: 'black',
-    flex: 1,
-  },
-  lineView: {
-    height: 1,
-    backgroundColor: '#F4F4F4',
-    marginVertical: 7,
     marginHorizontal: 30,
   },
   unSelBox: {
@@ -975,10 +648,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#D8D8D8',
-    marginTop: isIPad ? 20 : 20,
+    marginTop: 20,
     borderStyle: 'dashed',
     alignSelf: 'center',
-
   },
   selBox: {
     height: isIPad ? 20 : 22,
@@ -1004,12 +676,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.RICORDORegular,
     color: 'white',
     textAlign: 'center',
-  },
-  inputNote: {
-    fontSize: 14,
-    fontFamily: FONTS.RICORDORegular,
-    color: 'black',
-    height: 72,
   },
   bottmView: {
     position: 'absolute',
@@ -1038,15 +704,10 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.RICORDOSemiBold,
     color: 'white',
   },
-
-  signaturePreview: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
   signatureImage: {
     width: isIPad ? 400 : 170,
     height: isIPad ? 200 : 100,
-    resizeMode: 'stretch'
+    resizeMode: 'stretch',
   },
   blueView: {
     marginHorizontal: 5,
@@ -1056,7 +717,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginTop: 15,
     flex: 1,
-    // height: height * 0.3,
   },
   shipNem: {
     fontFamily: FONTS.RICORDOSemiBold,
@@ -1081,46 +741,44 @@ const styles = StyleSheet.create({
     fontSize: isIPad ? 21 : 14,
     fontFamily: FONTS.RICORDOSemiBold,
     color: '#223890',
-    marginTop: isIPad ? 10 : '0%'
+    marginTop: isIPad ? 10 : 0,
   },
   numTxt: {
     fontSize: isIPad ? 21 : 14,
     fontFamily: FONTS.RICORDORegular,
     color: 'black',
   },
-  imgSel: {
-    height: 80,
-    width: 80,
-    borderRadius: 11,
-  },
   imgGrey: {
-    height: isIPad ? 100 : 50,
-    width: isIPad ? 100 : 50,
+    height: isIPad ? 100 : 45,
+    width: isIPad ? 100 : 45,
   },
   imagereal: {
-    height: isIPad ? 60 : 35,
-    width: isIPad ? 60 : 40,
-  },
-  imgDel: {
-    height: 21,
-    width: 20,
-    resizeMode: 'contain',
-    marginTop: 10,
+    height: isIPad ? 60 : 30,
+    width: isIPad ? 60 : 32,
   },
   addView: {
     height: 32,
   },
   addTxt: {
-    fontSize: isIPad ? 16 : 14,
+    fontSize: isIPad ? 16 : 13,
     fontFamily: FONTS.RICORDORegular,
     color: '#223890',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 6,
   },
   imagecontainer: {
-    alignItems: 'center', justifyContent: 'center', width: isIPad ? 120 : 100, height: isIPad ? 130 : 90, borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: isIPad ? 120 : 96,
+    height: isIPad ? 130 : 85,
+    borderWidth: 1.5,
     borderColor: 'lightgrey',
     borderStyle: 'dotted',
+    borderRadius: 8,
+  },
+  imageContainerCompact: {
+    width: 75,
+    height: 80,
   },
   topTitle: {
     fontSize: isIPad ? 30 : 18,
@@ -1134,7 +792,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.RICORDORegular,
     color: '#002B45',
     textAlign: 'center',
-    marginTop: isIPad ? 10 : 10,
+    marginTop: 10,
   },
   inputStyle: {
     borderWidth: 0.8,
@@ -1143,7 +801,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#FDBE6F',
     padding: 12,
     borderRadius: 6,
-    backgroundColor: '#FDBE6F'
+    backgroundColor: '#FDBE6F',
   },
   invalidInputStyle: {
     borderWidth: 0,
@@ -1152,12 +810,10 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
     padding: 0,
     borderRadius: 0,
-
   },
   displayView: {
     paddingVertical: 10,
     marginHorizontal: 30,
-
   },
   label: {
     fontSize: 14,
@@ -1169,7 +825,6 @@ const styles = StyleSheet.create({
     color: '#000',
     fontFamily: 'Poppins-Regular',
     marginTop: 4,
-
   },
   nomailmasked: {
     borderWidth: 0.8,
@@ -1178,13 +833,17 @@ const styles = StyleSheet.create({
     borderBottomColor: '#FDBE6F',
     padding: 12,
     borderRadius: 6,
-    backgroundColor: '#FDBE6F'
+    backgroundColor: '#FDBE6F',
   },
   nomailtext: {
     fontSize: isIPad ? 24 : 16,
     color: 'white',
-    // paddingBottom:  4
-  }
+  },
+  errorMsg: {
+    color: 'red',
+    marginHorizontal: 30,
+    fontSize: 14,
+  },
 });
-export { CheckoutData };
 
+export { CheckoutData };

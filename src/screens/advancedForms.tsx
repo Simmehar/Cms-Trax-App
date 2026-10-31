@@ -129,22 +129,37 @@ const packageTypesReturn = [
   { "id": 6, "name": "Pickup/ Dropoff Local", "price": "15.00" }
 ];
 
-const actions = [
-  { key: "addCustomer", name: "Add Customer", image: IMAGES.AddCustomer },
-  { key: "deposit", name: "Deposit", image: IMAGES.Deposit },
-  { key: "return", name: "Return", image: IMAGES.Return },
-  { key: "shipPackage", name: "Ship Package", image: IMAGES.ShipPackage },
-  { key: "shipToShip", name: "Ship To Ship", image: IMAGES.ShipToShip },
-  { key: "storage", name: "Storage", image: IMAGES.Storage },
-  { key: "refund", name: "Refund", image: IMAGES.Refund },
-];
-
 const AdvancedForms = ({ navigation }: { navigation: any }) => {
   const [selected, setSelected] = useState("addCustomer");
   const { t } = useTranslation();
   const { dbPackages } = useMode();
   const [users, setUsers] = useState([]);
-  console.log('dbPackages=====++++++++++++=====', dbPackages)
+  const [isHospitality, setIsHospitality] = useState(false);
+
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in AdvancedForms', e);
+      }
+    };
+    fetchBusinessType();
+  }, []);
+
+  const actions = [
+    { key: "addCustomer", name: isHospitality ? "Add Guest" : "Add Customer", image: IMAGES.AddCustomer },
+    { key: "deposit", name: "Deposit", image: IMAGES.Deposit },
+    { key: "return", name: "Return", image: IMAGES.Return },
+    { key: "shipPackage", name: isHospitality ? "Ship Asset" : "Ship Package", image: IMAGES.ShipPackage },
+    { key: "shipToShip", name: "Ship To Ship", image: IMAGES.ShipToShip },
+    { key: "storage", name: "Storage", image: IMAGES.Storage },
+    { key: "refund", name: "Refund", image: IMAGES.Refund },
+  ];
+
+  console.log('dbPackages=====++++++++++++=====', dbPackages);
+
   useEffect(() => {
     const loadCustomers = async () => {
       const customers = await CustomersStorage.getAllCustomers();
@@ -163,7 +178,6 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
       ];
 
       console.log("users=========", users);
-
       setUsers(users);
     };
 
@@ -173,6 +187,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
   console.log('users=========', users);
   const [filteredNames, setFilteredNames] = useState<any[]>([]);
   const [showAllDropdown, setShowAllDropdown] = useState(false);
+
   const hasUnsavedChanges = () => {
     switch (selected) {
       case "return":
@@ -561,7 +576,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
       setCustomAlert({
         visible: true,
         type: "error",
-        message: t("Customer info (Name, Email, and Ship Name) is required."),
+        message: t(isHospitality ? "Guest info (Name, Email, and Ship Name) is required." : "Customer info (Name, Email, and Ship Name) is required."),
       });
       return;
     }
@@ -751,8 +766,13 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
               keyboardType="numeric"
               editable={false}
             />
+            {/* Dynamic Tracking No. vs Asset ID */}
             <CommonInput
-              label={returnForm.trackingNo ? t("Tracking No.") : `${t("Tracking No.")}*`}
+              label={
+                isHospitality
+                  ? (returnForm.trackingNo ? t("Service ID") : `${t("Service ID")}*`)
+                  : (returnForm.trackingNo ? t("Tracking No.") : `${t("Tracking No.")}*`)
+              }
               value={returnForm.trackingNo}
               onChangeText={(t) => setReturnForm({ ...returnForm, trackingNo: t })}
             />
@@ -803,10 +823,16 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
           <View style={styles.formBox}>
             <View style={styles.titleContainer}>
               <Image source={currentAction!.image} style={styles.formIcon} />
-              <Text style={styles.formTitle}>{t("Ship Package")}</Text>
+              {/* Dynamic: Ship Asset vs Ship Package */}
+              <Text style={styles.formTitle}>
+                {t(isHospitality ? "Ship Asset" : "Ship Package")}
+              </Text>
             </View>
 
-            <Text style={styles.sectionTitle}>{t("Package Type")}</Text>
+            {/* Dynamic: Asset Type vs Package Type */}
+            <Text style={styles.sectionTitle}>
+              {t(isHospitality ? "Type" : "Package Type")}
+            </Text>
             <View style={styles.radioGroup}>
               <TouchableOpacity
                 style={styles.radioOption}
@@ -849,7 +875,11 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   onChangeText={(t) => setShipPackageForm({ ...shipPackageForm, country: t })}
                 />
                 <CommonInput
-                  label={shipPackageForm.trackingNo ? t("Tracking No.") : `${t("Tracking No.")}*`}
+                  label={
+                    isHospitality
+                      ? (shipPackageForm.trackingNo ? t("ID") : `${t("ID")}*`)
+                      : (shipPackageForm.trackingNo ? t("Tracking No.") : `${t("Tracking No.")}*`)
+                  }
                   value={shipPackageForm.trackingNo}
                   onChangeText={(t) => setShipPackageForm({ ...shipPackageForm, trackingNo: t })}
                 />
@@ -897,7 +927,11 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   onChangeText={(t) => setShipPackageForm({ ...shipPackageForm, zip: t })}
                 />
                 <CommonInput
-                  label={shipPackageForm.trackingNo ? t("Tracking No.") : `${t("Tracking No.")}*`}
+                  label={
+                    isHospitality
+                      ? (shipPackageForm.trackingNo ? t("ID") : `${t("ID")}*`)
+                      : (shipPackageForm.trackingNo ? t("Tracking No.") : `${t("Tracking No.")}*`)
+                  }
                   value={shipPackageForm.trackingNo}
                   onChangeText={(t) => setShipPackageForm({ ...shipPackageForm, trackingNo: t })}
                 />
@@ -932,19 +966,32 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
             </View>
 
             <CommonInput
-              label={shipToShipForm.trackingNo ? t("Tracking No.") : `${t("Tracking No.")}*`}
+              label={
+                isHospitality
+                  ? (shipToShipForm.trackingNo ? t("ID") : `${t("Asset ID")}*`)
+                  : (shipToShipForm.trackingNo ? t("Tracking No.") : `${t("Tracking No.")}*`)
+              }
               value={shipToShipForm.trackingNo}
               onChangeText={(t) => setShipToShipForm({ ...shipToShipForm, trackingNo: t })}
             />
+            {/* Dynamic Recipient vs Guest */}
             <CommonInput
-              label={shipToShipForm.crewMemberEmail ? t("Recipient Email") : `${t("Recipient Email")}*`}
+              label={
+                isHospitality
+                  ? (shipToShipForm.crewMemberEmail ? t("Guest Email") : `${t("Guest Email")}*`)
+                  : (shipToShipForm.crewMemberEmail ? t("Recipient Email") : `${t("Recipient Email")}*`)
+              }
               value={shipToShipForm.crewMemberEmail}
               onChangeText={(t) => setShipToShipForm({ ...shipToShipForm, crewMemberEmail: t })}
               keyboardType="email-address"
               autoCapitalize="none"
             />
             <CommonInput
-              label={shipToShipForm.crewMemberName ? t("Recipient Name") : `${t("Recipient Name")}*`}
+              label={
+                isHospitality
+                  ? (shipToShipForm.crewMemberName ? t("Guest Name") : `${t("Guest Name")}*`)
+                  : (shipToShipForm.crewMemberName ? t("Recipient Name") : `${t("Recipient Name")}*`)
+              }
               value={shipToShipForm.crewMemberName}
               onChangeText={(t) => setShipToShipForm({ ...shipToShipForm, crewMemberName: t })}
             />
@@ -1079,7 +1126,11 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
               keyboardType="numeric"
             />
             <CommonInput
-              label={storageForm.trackingNo ? t("Tracking No.") : `${t("Tracking No.")}*`}
+              label={
+                isHospitality
+                  ? (storageForm.trackingNo ? t("ID") : `${t("Asset ID")}*`)
+                  : (storageForm.trackingNo ? t("Tracking No.") : `${t("Tracking No.")}*`)
+              }
               value={storageForm.trackingNo}
               onChangeText={(t) => setStorageForm({ ...storageForm, trackingNo: t })}
             />
@@ -1225,7 +1276,10 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
           <View style={styles.formBox}>
             <View style={styles.titleContainer}>
               <Image source={currentAction!.image} style={styles.formIcon} />
-              <Text style={styles.formTitle}>{t("Add Customer")}</Text>
+              {/* Dynamic: Add Guest vs Add Customer */}
+              <Text style={styles.formTitle}>
+                {t(isHospitality ? "Add Guest" : "Add Customer")}
+              </Text>
             </View>
 
             <View style={{ flexDirection: "row", alignItems: "center", marginBottom: isIPad ? 24 : 18 }}>
@@ -1272,13 +1326,13 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
               <Text style={styles.headerTitle}>{t('Advanced Forms')}</Text>
             </View>
 
-            {/* Customer Info */}
+            {/* Customer Info (Dynamic: Guest Info vs Customer Info) */}
             <View style={styles.customerInfoBox}>
-              <Text style={styles.sectionTitle}>{t('Customer Info')}</Text>
+              <Text style={styles.sectionTitle}>
+                {t(isHospitality ? 'Guest Info' : 'Customer Info')}
+              </Text>
 
               <View style={{ zIndex: 105, position: 'relative' }}>
-
-
                 <CommonInput
                   label={selected === "shipToShip"
                     ? (customerInfo.name ? t("Sender Name") : `${t("Sender Name")}*`)
@@ -1299,7 +1353,6 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   }}
                   autoCapitalize="words"
                 />
-
 
                 <TouchableOpacity
                   style={{
@@ -1329,7 +1382,6 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                     }}
                   />
                 </TouchableOpacity>
-
 
                 <Modal
                   visible={showAllDropdown || filteredNames.length > 0}
@@ -1371,7 +1423,6 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                                 name: user.name,
                                 email: user.email,
                               });
-
                               setFilteredNames([]);
                               setShowAllDropdown(false);
                             }}
@@ -1393,6 +1444,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   </TouchableOpacity>
                 </Modal>
               </View>
+
               <CommonInput
                 label={selected === "shipToShip"
                   ? (customerInfo.email ? t("Sender Email Address") : `${t("Sender Email Address")}*`)
@@ -1403,6 +1455,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
+
               <TouchableOpacity style={{ marginBottom: isIPad ? 24 : 18, position: "relative", paddingTop: 0 }} onPress={() => setShowCustomerShipDropdown(true)}>
                 <Text style={{
                   position: "absolute",
@@ -1608,7 +1661,7 @@ const styles = StyleSheet.create({
     fontSize: isIPad ? 24 : 18,
     fontWeight: "700",
     color: "#00303E",
-    marginRight: isIPad ? 60 : 40, // balance spacing
+    marginRight: isIPad ? 60 : 40,
   },
   customerInfoBox: {
     borderRadius: isIPad ? 18 : 12,
@@ -1778,31 +1831,28 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "600",
   },
-customerDropdownOverlay: {
-  flex: 1,
-  backgroundColor: 'transparent',
-  justifyContent: 'flex-start',
-  
-},
-
-customerDropdownContainer: {
-  position: 'absolute',
-  top: isIPad ? 150 : 125,
-  left: isIPad ? 24 : 16,
-  right: isIPad ? 24 : 16,
-  backgroundColor: '#fff',
-  borderWidth: 1,
-  borderColor: '#ccc',
-  borderRadius: 6,
-  maxHeight: isIPad ? 450 : 300,
-  elevation: 10,
-  shadowColor: '#000',
-  shadowOffset: {
-    width: 0,
-    height: 3,
+  customerDropdownOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    justifyContent: 'flex-start',
   },
-  shadowOpacity: 0.2,
-  shadowRadius: 4,
-},
+  customerDropdownContainer: {
+    position: 'absolute',
+    top: isIPad ? 150 : 125,
+    left: isIPad ? 24 : 16,
+    right: isIPad ? 24 : 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    maxHeight: isIPad ? 450 : 300,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
 });
-

@@ -80,6 +80,18 @@ const CheckoutContent: React.FC = ({ route }: any) => {
   });
 
   const [customerData, setCustomerData] = useState<any>([]);
+  const [isHospitality, setIsHospitality] = useState(false);
+   useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in BottomDrawer', e);
+      }
+    };
+    fetchBusinessType();
+  }, []);
 
   const getCustomerData = async () => {
     const customerData = isOnline
@@ -602,7 +614,7 @@ const CheckoutContent: React.FC = ({ route }: any) => {
                   textAlign: 'center',
                   fontFamily: FONTS.RICORDORegular,
                 }}>
-                {t('packages_not_selected')}
+                {t(isHospitality?"There are one or more Services not selected!":'packages_not_selected')}
               </Text>
             </View>
           </View>

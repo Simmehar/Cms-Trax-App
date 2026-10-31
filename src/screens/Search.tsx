@@ -39,7 +39,7 @@ import { useTranslation } from 'react-i18next';
 
 const Search = () => {
   const navigation = useNavigation<any>();
- const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isModalVisible, setModalVisible] = useState(false);
   const [visible, setVisible] = useState(false);
   const { user } = useAuth();
@@ -74,12 +74,13 @@ const Search = () => {
   const [selectedStatus, setSelectedStatus] = useState<any>(null);
   const [selectedPackageType, setSelectedPackageType] = useState<any>(null);
   // __DEV__ && console.log('packageListData', packageListData);
-  const [isIncreasing, setIsIncreasing] = useState(true); // Assuming you need this state for sorting order
+  const [isIncreasing, setIsIncreasing] = useState(true); 
   const [loading, setLoading] = useState(false);
   const [refetching, setRefetching] = useState(false);
   const [flatListData, setFlatListData] = useState<any>([]);
   const [showWarningmessage, setShowWarningMessage] = useState(false);
   const [showOfflineAlert, setShowOfflineAlert] = useState(false);
+  const [isHospitality, setIsHospitality] = useState(false);
   const openModal = (value: string) => {
     setFilterType(value);
     setModalVisible(true);
@@ -115,7 +116,7 @@ const Search = () => {
     setSortingOrder,
     setSelectedShipIdDB,
   } = useMode();
-  console.log('dbPackages==========',dbPackages)
+  console.log('dbPackages==========', dbPackages)
   const handleSelectAll = (value: string) => {
 
     setSelectAllChecked(!selectAllChecked);
@@ -181,32 +182,32 @@ const Search = () => {
   }, [packageList, dbPackages, sortingOrder]);
 
 
- const onItemPress = (item: Package, index: number) => {
-  // Direct reference mutate hone se dbPackages ka object bhi update ho jata hai
-  let arr = [...flatListData];
-  let selectArr = [...selectedArr];
-  let count = selectCount;
+  const onItemPress = (item: Package, index: number) => {
+    // Direct reference mutate hone se dbPackages ka object bhi update ho jata hai
+    let arr = [...flatListData];
+    let selectArr = [...selectedArr];
+    let count = selectCount;
 
-  arr[index].isSelect = !arr[index].isSelect;
+    arr[index].isSelect = !arr[index].isSelect;
 
-  if (arr[index].isSelect) {
-    if (!selectArr.some(i => i.id === item.id)) {
-      selectArr.push(arr[index]);
-      count += 1;
+    if (arr[index].isSelect) {
+      if (!selectArr.some(i => i.id === item.id)) {
+        selectArr.push(arr[index]);
+        count += 1;
+      }
+    } else {
+      let dex = selectArr.findIndex(i => i.id === item.id);
+      if (dex > -1) {
+        selectArr.splice(dex, 1);
+        count = Math.max(0, count - 1);
+      }
     }
-  } else {
-    let dex = selectArr.findIndex(i => i.id === item.id);
-    if (dex > -1) {
-      selectArr.splice(dex, 1);
-      count = Math.max(0, count - 1);
-    }
-  }
 
-  setPackageListData(arr);
-  setFlatListData(arr);
-  setSelectedArr(selectArr);
-  setSelectCount(count);
-};
+    setPackageListData(arr);
+    setFlatListData(arr);
+    setSelectedArr(selectArr);
+    setSelectCount(count);
+  };
 
 
   // __DEV__ && console.log('selectArr', selectedArr);
@@ -415,7 +416,20 @@ const Search = () => {
     user,
     isIncreasing,
   ]);
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in UpdatePackageModal', e);
+      }
+    };
 
+
+    fetchBusinessType();
+
+  }, []);
   const refetchData = () => {
     setRefetching(true);
     fetchData(inputValue);
@@ -809,7 +823,7 @@ const Search = () => {
               style={StyleSheet.absoluteFill}
             />
             <Text style={[styles.buttonText, { fontSize: isIPad ? 27 : 16 }]}>
-              {t('Update Package')}
+              {t(isHospitality ? 'Update' : 'Update Package')}
             </Text>
           </TouchableOpacity>
         )}

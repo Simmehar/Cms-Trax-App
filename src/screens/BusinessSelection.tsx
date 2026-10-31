@@ -77,12 +77,14 @@ const BusinessSelect: React.FC<Props> = ({ navigation }) => {
       // VALID phone number
       // ==========================
 
-      const tenantDomain = response?.data?.tenant_domain;
-
+       const tenantDomain = response?.data?.tenant_domain;
+      const businessType = response?.data?.business_type;
       await setBackendUrl(tenantDomain);
 
       await AsyncStorage.setItem('BUSINESS_SELECTED', 'true');
-
+      if (businessType) {
+        await AsyncStorage.setItem('BUSINESS_TYPE', businessType);
+      }
       setLoading(false);
 
       navigation.replace('Login');
@@ -166,7 +168,7 @@ const BusinessSelect: React.FC<Props> = ({ navigation }) => {
           </View>
 
           <Text style={styles.versionText}>
-            v1.17
+            v1.9
             {/* v1.0.15 */}
           </Text>
         </ScrollView>
@@ -176,7 +178,7 @@ const BusinessSelect: React.FC<Props> = ({ navigation }) => {
 };
 
 export { BusinessSelect };
-
+ 
 const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,

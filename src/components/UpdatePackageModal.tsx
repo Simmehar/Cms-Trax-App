@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   DeviceEventEmitter,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FONTS, ICONS, IMAGES } from '../assets';
 import { InputPicker } from './InputPicker';
 import { KeyboardScroll } from './KeyboardScroll';
@@ -28,12 +29,15 @@ import { useTranslation } from 'react-i18next';
 
 interface SignatureProps {
   visible: boolean;
+  setVisible?: any;
   onClose: () => void;
-  onSave: () => void;
+  onSave?: () => void;
   selectedPackages: any;
-  setSelectedPackages: any;
+  setSelectedPackages?: any;
+  onClear: () => void;
   refetchData: any;
 }
+
 const UpdatePackageModal: React.FC<SignatureProps> = ({
   visible,
   setVisible,
@@ -53,10 +57,8 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
   const [type, setType] = useState<any>();
   const [location, setLocation] = useState<any>();
   const [message, setMessage] = useState('');
-  const [email, setEmail] = useState(
-    // customerData?.[0]?.email,
-  );
-
+  const [email, setEmail] = useState();
+  const [isHospitality, setIsHospitality] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -67,105 +69,29 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [updateResponse, setUpdateResponse] = useState([]);
 
-  // __DEV__ && console.log('selectedPackages', selectedPackages);
+  useEffect(() => {
+    const fetchBusinessType = async () => {
+      try {
+        const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+        setIsHospitality(storedType === 'hotels-and-hospitality');
+      } catch (e) {
+        console.warn('Error reading BUSINESS_TYPE in UpdatePackageModal', e);
+      }
+    };
 
-  // const updateEventHandler = async () => {
-  //   const uniqueIds = [...new Set(selectedPackages.map(p => p?.id))]; //remove duplicates
-  //   if (!location && !shipName && !receipientName && !status && !type) {
-  //     return Alert.alert('Please update at least one value');
-  //   }
-
-  //   // setInvalidFields(false);
-
-  //   setIsLoading(true);
-  //   const packagesData = {
-  //     ids: uniqueIds,
-  //     ship: shipName?.id,
-  //     shelf: location,
-  //     user_id: receipientName?.id,
-  //     current_status: status?.id,
-  //     package_type: type?.id,
-  //   };
-
-  //   const isSubmitted = await updatePackage(user, packagesData);
-  //   if (isSubmitted == '400') {
-  //     setIsLoading(false);
-  //     // return setIsNetworkErr(true);
-  //   }
-  //   // setIsNetworkErr(false);
-  //   setUpdateResponse([...selectedPackages]);
-  //   onClear();
-  //   clearSelectedPackages();
-  //   setSuccessModalVisible(true);
-  //   setIsLoading(false);
-
-  //   let filteredStatus;
-
-  //   if (status?.id == 10000) {
-  //     filteredStatus = 'package_created';
-  //   } else if (status?.id == 10240) {
-  //     filteredStatus = 'pending_instruction';
-  //   } else if (status?.id == 10250) {
-  //     filteredStatus = 'pending_shipment_information';
-  //   } else if (status?.id == 10220) {
-  //     filteredStatus = 'payment_due';
-  //   } else if (status?.id == 10260) {
-  //     filteredStatus = 'payment_due_shipment';
-  //   } else if (status?.id == 10230) {
-  //     filteredStatus = 'returns';
-  //   } else if (status?.id == 10050) {
-  //     filteredStatus = 'picked_up_recipient';
-  //   } else if (status?.id == 10060) {
-  //     filteredStatus = 'package_delivered';
-  //   } else if (status?.id == 10090) {
-  //     filteredStatus = 'returning_forwarding';
-  //   } else if (status?.id == 10270) {
-  //     filteredStatus = 'picked_up_carrier';
-  //   } else if (status?.id == 10280) {
-  //     filteredStatus = 'provided_to_charity';
-  //   } else {
-  //     filteredStatus = null; // Handle the case when status?.id doesn't match any value
-  //   }
-
-  //   const mailData = {
-  //     ids: uniqueIds,
-  //     package_status: filteredStatus,
-  //   };
-
-  //   __DEV__ && console.log('mailData', mailData);
-
-  //   if (
-  //     isNotify
-  //     // &&
-  //     // (status?.id == 10000 ||
-  //     //   status?.id == 10240 ||
-  //     //   status?.id == 10250 ||
-  //     //   status?.id == 10220 ||
-  //     //   status?.id == 10260 ||
-  //     //   status?.id == 10230 ||
-  //     //   status?.id == 10050 ||
-  //     //   status?.id == 10060 ||
-  //     //   status?.id == 10090 ||
-  //     //   status?.id == 10280 ||
-  //     //   status?.id == 10270)
-  //   ) {
-  //     const emailRes = await sendEmail(user, mailData);
-
-  //     __DEV__ && console.log('update packages emailRes', emailRes);
-  //   }
-
-  //   refetchData();
-  // };
+    if (visible) {
+      fetchBusinessType();
+    }
+  }, [visible]);
 
   const updateEventHandler = async () => {
-    __DEV__ && console.log('efdsfdsfdsfdsfdsfdsfdsfdsfdsfds',)
-    const uniqueIds = [...new Set(selectedPackages.map(p => p?.id))]; // Remove duplicates
+    __DEV__ && console.log('efdsfdsfdsfdsfdsfdsfdsfdsfdsfds');
+    const uniqueIds = [...new Set(selectedPackages.map(p => p?.id))];
 
     if (!location && !shipName && !receipientName && !status && !type && !message) {
       return Alert.alert(t('Please update at least one value'));
     }
 
-    // Show confirmation alert
     Alert.alert(
       t('Are you sure you want to update?'),
       '',
@@ -184,14 +110,13 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
               ship: shipName?.id,
               shelf: location,
               user_id: receipientName?.id,
-              // current_status: status?.id,
               current_status: status?.id != null ? String(status?.id) : undefined,
               package_type: type?.id,
-              custom_message: message
+              custom_message: message,
             };
-            __DEV__ && console.log('packagesData', packagesData)
+            __DEV__ && console.log('packagesData', packagesData);
             const isSubmitted = await updatePackage(user, packagesData);
-            __DEV__ && console.log('isSubmitted', isSubmitted)
+            __DEV__ && console.log('isSubmitted', isSubmitted);
             if (isSubmitted == '400') {
               setIsLoading(false);
               return;
@@ -202,8 +127,6 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             clearSelectedPackages();
             setSuccessModalVisible(true);
             setIsLoading(false);
-
-
 
             const mailData = {
               ids: uniqueIds,
@@ -224,7 +147,6 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
     );
   };
 
-
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.modalContainer}>
@@ -232,7 +154,11 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
           isVisible={successModalVisible}
           setVisible={setSuccessModalVisible}
           responseData={updateResponse}
-          message={t('Package/s Updated Successfully')}
+          message={t(
+            isHospitality
+              ? 'Service/s Updated Successfully'
+              : 'Package/s Updated Successfully'
+          )}
           onCloseSuccessModal={() => {
             setVisible(false);
           }}
@@ -242,7 +168,7 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             shipName,
             receipientName,
             message,
-            location
+            location,
           }}
         />
         <View style={styles.modalContent}>
@@ -256,12 +182,12 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
               activeDropdownTab == 'Rceipient'
                 ? setReceipientName(val)
                 : activeDropdownTab == 'Ship'
-                  ? setShipName(val)
-                  : activeDropdownTab == 'Status'
-                    ? setStatus(val)
-                    : activeDropdownTab == 'Type'
-                      ? setType(val)
-                      : setReceipientName(val);
+                ? setShipName(val)
+                : activeDropdownTab == 'Status'
+                ? setStatus(val)
+                : activeDropdownTab == 'Type'
+                ? setType(val)
+                : setReceipientName(val);
             }}
           />
           <TouchableOpacity
@@ -270,31 +196,22 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <Image source={IMAGES.close} style={styles.closeImg} />
           </TouchableOpacity>
           <KeyboardScroll contentContainerStyle={{}}>
-            {/* <InputPicker
-            isPicker={true}
-            isQrCode={false}
-            placeholder={'Select Recipient*'}
-            style={{}}
-            onPickerClick={() => {
-              setDropdownActiveTab('Rceipient'), setIsDropdownVisible(true);
-            }}
-            pickerValue={receipientName}
-          /> */}
-
+            {/* Dynamic: Select Guest vs Select Recipient */}
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={t('Select Recipient')}
+              placeholder={t(isHospitality ? 'Select Guest' : 'Select Recipient')}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => {
-                setDropdownActiveTab('Rceipient'), setIsDropdownVisible(true);
+                setDropdownActiveTab('Rceipient');
+                setIsDropdownVisible(true);
               }}
               pickerValue={
                 receipientName?.first_name
                   ? receipientName?.first_name + ' ' + receipientName?.last_name
                   : null
               }
-              onChangeText={() => { }}
+              onChangeText={() => {}}
             />
             <InputPicker
               isPicker={true}
@@ -302,7 +219,8 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
               placeholder={t('Select Status')}
               style={{}}
               onPickerClick={() => {
-                setDropdownActiveTab('Status'), setIsDropdownVisible(true);
+                setDropdownActiveTab('Status');
+                setIsDropdownVisible(true);
               }}
               pickerValue={status?.name}
             />
@@ -310,12 +228,13 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
             <InputPicker
               isPicker={true}
               isQrCode={false}
-              placeholder={t('Ship/Building')}
+              placeholder={t(isHospitality ? 'Hotel':'Ship/Building')}
               style={{ marginHorizontal: 30, marginTop: 28 }}
               onPickerClick={() => {
-                setIsDropdownVisible(), setDropdownActiveTab('Ship');
+                setIsDropdownVisible(true);
+                setDropdownActiveTab('Ship');
               }}
-              onChangeText={() => { }}
+              onChangeText={() => {}}
               pickerValue={shipName?.name}
             />
             <InputPicker
@@ -324,25 +243,18 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
               placeholder={t('Select Type')}
               style={{}}
               onPickerClick={() => {
-                setDropdownActiveTab('Type'), setIsDropdownVisible(true);
+                setDropdownActiveTab('Type');
+                setIsDropdownVisible(true);
               }}
               pickerValue={type?.name}
             />
-            {/* <InputPicker
-            isPicker={false}
-            isQrCode={false}
-            placeholder={'Location'}
-            style={{}}
-            onPickerClick={() => {}}
-            pickerValue={''}
-          /> */}
 
             <InputPicker
               isPicker={false}
               isQrCode={false}
               placeholder={t('Location')}
-              style={{  marginVertical: Platform.OS === 'ios' ? 10 : 0,}}
-              onPickerClick={() => { }}
+              style={{ marginVertical: Platform.OS === 'ios' ? 10 : 0 }}
+              onPickerClick={() => {}}
               pickerValue={location}
               autoCapitalize={'words'}
               onChangeText={val => {
@@ -354,8 +266,8 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
               isPicker={false}
               isQrCode={false}
               placeholder={t('Message')}
-              style={{ marginVertical: Platform.OS === 'ios' ? 10 : 0, }}
-              onPickerClick={() => { }}
+              style={{ marginVertical: Platform.OS === 'ios' ? 10 : 0 }}
+              onPickerClick={() => {}}
               pickerValue={message}
               autoCapitalize={'words'}
               onChangeText={val => {
@@ -376,16 +288,17 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
                 {t('Send notification')}
               </Text>
             </View>
-          </KeyboardScroll> 
+          </KeyboardScroll>
 
+          {/* Dynamic Button Labels */}
           <TouchableOpacity
             disabled={isLoading}
             style={styles.saveBtn}
             onPress={updateEventHandler}>
             <Text style={[styles.saveTxt, { fontSize: isIPad ? 20 : 18 }]}>
               {isLoading
-                ? t('Updating Packages...')
-                : t('Update Package')}
+                ? t(isHospitality ? 'Updating...' : 'Updating Packages...')
+                : t(isHospitality ? 'Update' : 'Update Package')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -396,7 +309,6 @@ const UpdatePackageModal: React.FC<SignatureProps> = ({
 
 const styles = StyleSheet.create({
   modalContainer: {
-    // flex: 1,
     position: 'absolute',
     bottom: 0,
     width: '100%',
@@ -409,7 +321,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    //padding: 20,
     paddingBottom: 20,
     height: '100%',
     maxHeight: '75%',
@@ -422,7 +333,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
     marginHorizontal: 17,
-
   },
   saveTxt: {
     fontSize: 18,
@@ -489,4 +399,5 @@ const styles = StyleSheet.create({
     tintColor: 'white',
   },
 });
+
 export { UpdatePackageModal };

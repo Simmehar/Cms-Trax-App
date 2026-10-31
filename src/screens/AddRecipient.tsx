@@ -1,4 +1,4 @@
-import React, { useContext, useState, useRef } from 'react';
+import React, { useContext, useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BackHeader } from '../components/Header';
 import { FONTS, IMAGES } from '../assets';
 import { ShipListModal } from '../components/ShipListModal';
@@ -32,8 +33,10 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
   const [shipName, setShipName] = useState<any>(null);
   const [departmentName, setDepartmentName] = useState<any>(null);
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [idUnit, setIdUnit] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isHospitality, setIsHospitality] = useState(false);
   const [name, setName] = useState({
     firstName: '',
     lastName: '',
@@ -43,6 +46,20 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
   const lastNameRef = useRef<TextInput>(null);
   const idUnitRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
+  const phoneRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    fetchBusinessType();
+  }, []);
+
+  const fetchBusinessType = async () => {
+    try {
+      const storedType = await AsyncStorage.getItem('BUSINESS_TYPE');
+      setIsHospitality(storedType === 'hotels-and-hospitality');
+    } catch (e) {
+      console.warn('Error reading BUSINESS_TYPE in AddRecipient', e);
+    }
+  };
 
   // Capitalize first letter of every word
   const capitalizeFirstLetter = (text: string) => {
@@ -66,57 +83,50 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
   };
 
   const submitHandler = () => {
-    let obj: any = {};
-
-    if (
-      !name.firstName ||
-      !name.lastName ||
-      !shipName?.name ||
-      !departmentName?.name
-    ) {
-      if (!name.firstName) {
-        obj.firstName = 'This field is required!';
-        Alert.alert(t('Please enter the first name'));
-        return;
-      }
-      if (!name.lastName) {
-        obj.lastName = 'This field is required!';
-        Alert.alert(t('Please enter the last name'));
-        return;
-      }
-      if (!shipName?.name) {
-        obj.ship = 'This field is required!';
-        Alert.alert(t('Please select the ship!'));
-        return;
-      }
-      if (!departmentName?.name) {
-        obj.department = 'This field is required!';
-        Alert.alert(t('Please select the division!'));
-        return;
-      }
+    if (!name.firstName?.trim()) {
+      Alert.alert(t('Please enter the first name'));
       return;
     }
 
-    if (email && !validateEmail(email)) {
-      obj.email = 'Please provide a valid email.';
-      Alert.alert(t('Please provide a valid email.'));
-      return;
-    }
-
-    if (name.firstName && !validateName(name.firstName)) {
-      obj.firstName =
-        "Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.";
+    if (!validateName(name.firstName)) {
       Alert.alert(
-        t("Name should be alphabets and only space - . and ' are allowed and must start with an alphabet."),
+        t(
+          "Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.",
+        ),
       );
       return;
     }
 
+    // Required field validation for non-hospitality
+    if (!isHospitality) {
+      if (!name.lastName?.trim()) {
+        Alert.alert(t('Please enter the last name'));
+        return;
+      }
+
+      if (!shipName?.name) {
+        Alert.alert(t('Please select the ship!'));
+        return;
+      }
+
+      if (!departmentName?.name) {
+        Alert.alert(t('Please select the division!'));
+        return;
+      }
+
+      // Email validation only for non-hospitality
+      if (email && !validateEmail(email)) {
+        Alert.alert(t('Please provide a valid email.'));
+        return;
+      }
+    }
+
+    // Validate last name if provided
     if (name.lastName && !validateName(name.lastName)) {
-      obj.lastName =
-        "Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.";
       Alert.alert(
-        t("Name should be alphabets and only space - . and ' are allowed and must start with an alphabet."),
+        t(
+          "Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.",
+        ),
       );
       return;
     }
@@ -124,25 +134,35 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
     Keyboard?.dismiss();
     setIsLoading(true);
 
+    // Build API payload conditionally
+    const payload: any = {
+      first_name: name.firstName,
+      last_name: name.lastName || '',
+      id_unit: idUnit,
+    };
+
+    if (!isHospitality) {
+      payload.ship_id = shipName?.id;
+      payload.dept = departmentName?.id;
+      if (email.trim()) payload.email = email.trim();
+    } else {
+      if (shipName?.id) payload.ship_id = shipName.id;
+      if (departmentName?.id) payload.dept = departmentName.id;
+      if (phoneNumber.trim()) payload.phone = phoneNumber.trim();
+    }
+    console.log('payload=================', payload)
+    console.log('Backend_URL',Backend_URL)
     axios
-      .post(
-        Backend_URL + '/create-customer',
-        {
-          first_name: name.firstName,
-          last_name: name.lastName,
-          ship_id: shipName.id,
-          dept: departmentName.id,
-          id_unit: idUnit,
-          ...(email && { email: email }),
-        },
-        { headers: { Authorization: 'Bearer ' + user?.token } },
-      )
+      .post(Backend_URL + '/create-customer', payload, {
+        headers: { Authorization: 'Bearer ' + user?.token },
+      })
       .then(response => {
         if (response?.data) {
           setSuccessVisible(true);
         }
       })
       .catch(error => {
+        console.log('error.data', error?.response?.data?.data)
         if (
           error?.response?.data?.data?.email?.[0] ===
           'user with this email already exists.'
@@ -159,7 +179,7 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
 
   return (
     <View style={styles.mainView}>
-      <BackHeader title={t('Add Recipient')} />
+      <BackHeader title={t(isHospitality ? 'Add Guest' : 'Add Recipient')} />
 
       <ShipListModal
         visible={visible}
@@ -179,8 +199,8 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
           visible={successVisible}
           content={{
             heading: t('GREAT WORK!'),
-            middle: `${name.firstName} ${name.lastName}`,
-            lable: t('is added as recipient.'),
+            middle: `${name.firstName} ${name.lastName}`.trim(),
+            lable: t(isHospitality ? 'Guest added successfully.' : 'is added as recipient.'),
           }}
           onClose={() => {
             setSuccessVisible(false);
@@ -189,11 +209,11 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
         />
       )}
 
-      {/* Inputs Scroll Area */}
+      {/* Input Fields Container */}
       <KeyboardScroll
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}>
-        {/* First Name Input */}
+        {/* First Name Field */}
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => firstNameRef.current?.focus()}
@@ -215,18 +235,20 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
           />
         </TouchableOpacity>
 
-        {/* Last Name Input */}
+        {/* Last Name Field */}
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => lastNameRef.current?.focus()}
           style={styles.inputContainer}>
           {name.lastName ? (
-            <Text style={styles.floatingLabel}>{t('Last Name*')}</Text>
+            <Text style={styles.floatingLabel}>
+              {t(isHospitality ? 'Last Name' : 'Last Name*')}
+            </Text>
           ) : null}
           <TextInput
             ref={lastNameRef}
             autoCapitalize="words"
-            placeholder={t('Last Name*')}
+            placeholder={t(isHospitality ? 'Last Name' : 'Last Name*')}
             placeholderTextColor="#000"
             style={styles.textInputField}
             value={name.lastName}
@@ -237,74 +259,80 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
           />
         </TouchableOpacity>
 
-        {/* Ship Picker Selector */}
-        <TouchableOpacity
-          style={styles.pickerContainer}
-          onPress={() => {
-            setActiveTab('Ship');
-            setVisible(true);
-          }}>
-          {shipName?.name ? (
-            <View style={{ flex: 1 }}>
-              <Text style={styles.floatingLabel}>
-                {t('Select Ship/building*')}
+        {/* Ship Selector (Visible only for non-hospitality) */}
+        {!isHospitality && (
+          <TouchableOpacity
+            style={styles.pickerContainer}
+            onPress={() => {
+              setActiveTab('Ship');
+              setVisible(true);
+            }}>
+            {shipName?.name ? (
+              <View style={{ flex: 1 }}>
+                <Text style={styles.floatingLabel}>
+                  {t('Select Ship/building')}
+                </Text>
+                <Text style={styles.pickerValueText}>{shipName?.name}</Text>
+              </View>
+            ) : (
+              <Text style={styles.pickerPlaceholderText}>
+                {t('Select Ship/Building')}
               </Text>
-              <Text style={styles.pickerValueText}>{shipName?.name}</Text>
-            </View>
-          ) : (
-            <Text style={styles.pickerPlaceholderText}>
-              {t('Select Ship/Building*')}
-            </Text>
-          )}
-          <Image
-            source={IMAGES.down_arrow}
-            style={[
-              styles.arrowIcon,
-              { marginTop: shipName?.name ? 8 : 0 },
-            ]}
-          />
-        </TouchableOpacity>
+            )}
+            <Image
+              source={IMAGES.down_arrow}
+              style={[
+                styles.arrowIcon,
+                { marginTop: shipName?.name ? 8 : 0 },
+              ]}
+            />
+          </TouchableOpacity>
+        )}
 
-        {/* Department Picker Selector */}
-        <TouchableOpacity
-          style={styles.pickerContainer}
-          onPress={() => {
-            setActiveTab('Division');
-            setVisible(true);
-          }}>
-          {departmentName?.name ? (
-            <View style={{ flex: 1 }}>
-              <Text style={styles.floatingLabel}>{t('Select Department*')}</Text>
-              <Text style={styles.pickerValueText}>
-                {departmentName?.name}
+        {/* Department Selector (Visible only for non-hospitality) */}
+        {!isHospitality && (
+          <TouchableOpacity
+            style={styles.pickerContainer}
+            onPress={() => {
+              setActiveTab('Division');
+              setVisible(true);
+            }}>
+            {departmentName?.name ? (
+              <View style={{ flex: 1 }}>
+                <Text style={styles.floatingLabel}>{t('Select Department*')}</Text>
+                <Text style={styles.pickerValueText}>
+                  {departmentName?.name}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.pickerPlaceholderText}>
+                {t('Select Department*')}
               </Text>
-            </View>
-          ) : (
-            <Text style={styles.pickerPlaceholderText}>
-              {t('Select Department*')}
-            </Text>
-          )}
-          <Image
-            source={IMAGES.down_arrow}
-            style={[
-              styles.arrowIcon,
-              { marginTop: departmentName?.name ? 8 : 0 },
-            ]}
-          />
-        </TouchableOpacity>
+            )}
+            <Image
+              source={IMAGES.down_arrow}
+              style={[
+                styles.arrowIcon,
+                { marginTop: departmentName?.name ? 8 : 0 },
+              ]}
+            />
+          </TouchableOpacity>
+        )}
 
-        {/* ID Unit Input */}
+        {/* ID Unit or Room Field */}
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => idUnitRef.current?.focus()}
           style={styles.inputContainer}>
           {idUnit ? (
-            <Text style={styles.floatingLabel}>{t('ID #/ Unit #*')}</Text>
+            <Text style={styles.floatingLabel}>
+              {t(isHospitality ? 'Room #' : 'ID #/ Unit #*')}
+            </Text>
           ) : null}
           <TextInput
             ref={idUnitRef}
             autoCapitalize="words"
-            placeholder={t('ID #/ Unit #*')}
+            placeholder={t(isHospitality ? 'Room #' : 'ID #/ Unit #*')}
             placeholderTextColor="#000"
             style={styles.textInputField}
             value={idUnit}
@@ -312,28 +340,51 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
           />
         </TouchableOpacity>
 
-        {/* Email Address Input */}
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => emailRef.current?.focus()}
-          style={styles.inputContainer}>
-          {email ? (
-            <Text style={styles.floatingLabel}>{t('Email Address')}</Text>
-          ) : null}
-          <TextInput
-            ref={emailRef}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholder={t('Email Address')}
-            placeholderTextColor="#000"
-            style={styles.textInputField}
-            value={email}
-            onChangeText={setEmail}
-          />
-        </TouchableOpacity>
+        {/* Phone Number Field (Hospitality only) */}
+        {isHospitality && (
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => phoneRef.current?.focus()}
+            style={styles.inputContainer}>
+            {phoneNumber ? (
+              <Text style={styles.floatingLabel}>{t('Phone Number')}</Text>
+            ) : null}
+            <TextInput
+              ref={phoneRef}
+              keyboardType="phone-pad"
+              placeholder={t('Phone Number')}
+              placeholderTextColor="#000"
+              style={styles.textInputField}
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+            />
+          </TouchableOpacity>
+        )}
+
+        {/* Email Address Field (Non-hospitality only) */}
+        {!isHospitality && (
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => emailRef.current?.focus()}
+            style={styles.inputContainer}>
+            {email ? (
+              <Text style={styles.floatingLabel}>{t('Email Address')}</Text>
+            ) : null}
+            <TextInput
+              ref={emailRef}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholder={t('Email Address')}
+              placeholderTextColor="#000"
+              style={styles.textInputField}
+              value={email}
+              onChangeText={setEmail}
+            />
+          </TouchableOpacity>
+        )}
       </KeyboardScroll>
 
-      {/* Fixed Bottom Button */}
+      {/* Action Button */}
       <View style={styles.bottomButtonContainer}>
         <TouchableOpacity
           style={styles.btnView}
@@ -342,7 +393,9 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
           {isLoading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.btntxt}>{t('Add Recipient')}</Text>
+            <Text style={styles.btntxt}>
+              {t(isHospitality ? 'Add Guest' : 'Add Recipient')}
+            </Text>
           )}
         </TouchableOpacity>
       </View>

@@ -1,6 +1,8 @@
 import React, {
+  forwardRef,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -8,6 +10,7 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Dimensions,
   Platform,
   StyleSheet,
@@ -78,6 +81,13 @@ const CODE_CAPTURE_MIN_SIGHTINGS = 1;
 
 const MAX_SESSION_RETRIES = 3;
 const SESSION_RETRY_DELAY_MS = 1500;
+
+// Graceful shutdown budget. The <Camera> must not be unmounted while the native
+// session is still running with a takePhoto/takeSnapshot in flight — tearing the
+// preview down in that state stalls the UI thread and the app appears to hang.
+const CLOSE_FRAME_IDLE_TIMEOUT_MS = 1200;
+const CLOSE_CAMERA_STOP_TIMEOUT_MS = 800;
+const CAPTURE_FRAME_IDLE_TIMEOUT_MS = 800;
 
 const ACCENT = '#61B3E4';
 const ACCENT_LOCKED = '#00FF88';
@@ -829,11 +839,16 @@ export function CornerMarkers({ bbox, locked }: { bbox: BBox; locked: boolean })
 // ─────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────
-const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
+export interface SmartDocumentScannerHandle {
+  /** Stops the camera cleanly, then calls onClose. Use for hardware back / onRequestClose. */
+  requestClose: () => void;
+}
+
+const SmartDocumentScanner = forwardRef<SmartDocumentScannerHandle, SmartDocumentScannerProps>(({
   onImageCaptured,
   onClose,
   scanMode,
-}) => {
+}, ref) => {
   const scanModeRef = useRef<ScanMode>(scanMode);
   useEffect(() => { scanModeRef.current = scanMode; }, [scanMode]);
 
@@ -887,6 +902,111 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
     isCodeAcceptable(code, scanModeRef.current) &&
     code.count >= CODE_CAPTURE_MIN_SIGHTINGS;
 
+  const mountedRef = useRef(true);
+  // Set once a close / successful capture has begun; blocks new frames & captures.
+  const closingRef = useRef(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const safeSetScanState = useCallback((s: ScanState) => {
+    if (mountedRef.current) setScanState(s);
+  }, []);
+  const safeSetRegions = useCallback((r: ScoredRegion[]) => {
+    if (mountedRef.current) setRegions(r);
+  }, []);
+  const safeSetPrimaryRegion = useCallback((r: ScoredRegion | null) => {
+    if (mountedRef.current) setPrimaryRegion(r);
+  }, []);
+  const safeSetBestCode = useCallback((c: ScannedCode | null) => {
+    if (mountedRef.current) setBestCode(c);
+  }, []);
+
+  const stopScanLoop = useCallback(() => {
+    loopActiveRef.current = false;
+    if (loopTimerRef.current) {
+      clearTimeout(loopTimerRef.current);
+      loopTimerRef.current = null;
+    }
+    if (captureTimerRef.current) {
+      clearTimeout(captureTimerRef.current);
+      captureTimerRef.current = null;
+    }
+  }, []);
+
+  // ── Native camera session lifecycle (fed by <Camera onStarted/onStopped>) ──
+  const cameraRunningRef = useRef(false);
+  const cameraStopWaitersRef = useRef<Array<() => void>>([]);
+
+  const onCameraStarted = useCallback(() => {
+    cameraRunningRef.current = true;
+  }, []);
+  const onCameraStopped = useCallback(() => {
+    cameraRunningRef.current = false;
+    const waiters = cameraStopWaitersRef.current;
+    cameraStopWaitersRef.current = [];
+    waiters.forEach(w => w());
+  }, []);
+
+  /** Resolves when the native session reports it stopped, or after timeoutMs. */
+  const waitForCameraStop = useCallback(
+    (timeoutMs: number) =>
+      new Promise<void>(resolve => {
+        if (!cameraRunningRef.current) {
+          resolve();
+          return;
+        }
+        let done = false;
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          if (timer) clearTimeout(timer);
+          resolve();
+        };
+        timer = setTimeout(finish, timeoutMs);
+        cameraStopWaitersRef.current.push(finish);
+      }),
+    [],
+  );
+
+  /** Waits for any in-flight preview frame (takePhoto/takeSnapshot + OCR) to finish. */
+  const waitForFrameIdle = useCallback(async (timeoutMs: number) => {
+    const deadline = Date.now() + timeoutMs;
+    while (isScanningRef.current && Date.now() < deadline) {
+      await new Promise<void>(r => setTimeout(r, 25));
+    }
+  }, []);
+
+  /**
+   * Stops the scan loop, lets the current frame finish, deactivates the camera and
+   * waits for the native session to stop. Callers only unmount / close the Modal
+   * after this resolves, which is what prevents the hang on close.
+   */
+  const shutdownCamera = useCallback(async () => {
+    loopActiveRef.current = false;
+    capturedRef.current = true;
+    stopScanLoop();
+    await waitForFrameIdle(CLOSE_FRAME_IDLE_TIMEOUT_MS);
+    if (!mountedRef.current) return;
+    setIsCameraActive(false);
+    await waitForCameraStop(CLOSE_CAMERA_STOP_TIMEOUT_MS);
+  }, [stopScanLoop, waitForFrameIdle, waitForCameraStop]);
+
+  const requestClose = useCallback(async () => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    if (mountedRef.current) setIsClosing(true);
+    try {
+      await shutdownCamera();
+    } catch {}
+    if (mountedRef.current) onClose();
+  }, [shutdownCamera, onClose]);
+
+  const requestCloseRef = useRef(requestClose);
+  useEffect(() => { requestCloseRef.current = requestClose; }, [requestClose]);
+  useImperativeHandle(ref, () => ({
+    requestClose: () => { requestCloseRef.current(); },
+  }), []);
+
   const applyZoomSmart = useCallback((target: number, min: number, max: number) => {
     const next = Math.max(min, Math.min(lerp(zoomRef.current, target, ZOOM_LERP_SPEED), max));
     if (Math.abs(next - zoomRef.current) < ZOOM_DEAD_BAND) return;
@@ -938,6 +1058,7 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
   // ── Camera error handler ─────────────────────────────────
   const handleCameraError = useCallback(
     (err: any) => {
+      if (!mountedRef.current) return;
       const msg: string = err?.message ?? String(err);
       console.warn('[Scanner] Camera error:', msg);
       setSessionError(msg);
@@ -946,22 +1067,49 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
         msg.includes('invalid-output-configuration') || msg.includes('session');
 
       if (isSessionError && retryCount < MAX_SESSION_RETRIES) {
+        loopActiveRef.current = false;
+        stopScanLoop();
         setIsCameraActive(false);
         setTimeout(() => {
+          if (!mountedRef.current) return;
           setCameraKey(k => k + 1);
           setRetryCount(c => c + 1);
           setIsCameraActive(true);
         }, SESSION_RETRY_DELAY_MS);
       }
     },
-    [retryCount],
+    [retryCount, stopScanLoop],
   );
 
   useEffect(() => {
-    setIsCameraActive(false);
-    const timer = setTimeout(() => setIsCameraActive(true), 120);
-    return () => clearTimeout(timer);
-  }, []);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      closingRef.current = true;
+      capturedRef.current = true;
+      stopScanLoop();
+      // Release anyone still waiting on the native session
+      const waiters = cameraStopWaitersRef.current;
+      cameraStopWaitersRef.current = [];
+      waiters.forEach(w => w());
+    };
+  }, [stopScanLoop]);
+
+  // Pause the camera + scan loop while the app is in the background and resume
+  // when it comes back; a running session in the background is another hang source.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', next => {
+      if (!mountedRef.current || closingRef.current) return;
+      if (next === 'active') {
+        capturedRef.current = false;
+        setIsCameraActive(true);
+      } else {
+        stopScanLoop();
+        setIsCameraActive(false);
+      }
+    });
+    return () => sub.remove();
+  }, [stopScanLoop]);
 
   useEffect(() => { regionsRef.current = regions; }, [regions]);
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
@@ -972,25 +1120,14 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
   const neutralZoom = device?.neutralZoom ?? 1.0;
 
   const resetConsensus = useCallback(() => {
+    if (!mountedRef.current) return;
     plateCandidatesRef.current = [];
     consensusPlateRef.current = null;
     plateStuckSinceRef.current = null;
     seenCodesRef.current = new Map();
     bestCodeRef.current = null;
-    setBestCode(null);
-  }, []);
-
-  const stopScanLoop = useCallback(() => {
-    loopActiveRef.current = false;
-    if (loopTimerRef.current) {
-      clearTimeout(loopTimerRef.current);
-      loopTimerRef.current = null;
-    }
-    if (captureTimerRef.current) {
-      clearTimeout(captureTimerRef.current);
-      captureTimerRef.current = null;
-    }
-  }, []);
+    safeSetBestCode(null);
+  }, [safeSetBestCode]);
 
   const deleteTempFile = async (path: string | null) => {
     if (!path) return;
@@ -1001,10 +1138,11 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
   };
 
   const triggerCapture = useCallback(async () => {
+    if (!mountedRef.current || closingRef.current) return;
     if (capturedRef.current || !cameraRef.current) return;
     capturedRef.current = true;
     stopScanLoop();
-    setScanState({ phase: 'capturing', guidance: t('Capturing image…') });
+    safeSetScanState({ phase: 'capturing', guidance: t('Capturing image…') });
 
     const rawCode = bestCodeRef.current;
     const codeAtCapture: ScannedCode | null =
@@ -1013,6 +1151,10 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
         : null;
 
     try {
+      // Let an in-flight preview frame finish so the photo output isn't busy.
+      await waitForFrameIdle(CAPTURE_FRAME_IDLE_TIMEOUT_MS);
+      if (!mountedRef.current || closingRef.current || !cameraRef.current) return;
+
       const tCap = Date.now();
       const photo = await cameraRef.current.takePhoto({
         qualityPrioritization: 'speed',
@@ -1022,10 +1164,21 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
       } as any);
       console.log(`[Scanner] capture ${Date.now() - tCap}ms`);
 
+      if (!mountedRef.current || closingRef.current) {
+        deleteTempFile(photo.path);
+        return;
+      }
+
       const imagePath = photo.path.startsWith('file://')
         ? photo.path
         : `file://${photo.path}`;
-      setScanState({ phase: 'done', guidance: t('Done!') });
+
+      // The parent closes the Modal as soon as onImageCaptured fires, which
+      // unmounts <Camera>. Stop the native session first so teardown is instant.
+      closingRef.current = true;
+      safeSetScanState({ phase: 'done', guidance: t('Done!') });
+      await shutdownCamera();
+
       onImageCaptured(
         imagePath,
         scanModeRef.current === 'plate' ? consensusPlateRef.current : null,
@@ -1033,16 +1186,19 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
       );
     } catch (err: any) {
       console.error('[Scanner] capture error:', err);
+      if (!mountedRef.current) return;
+      closingRef.current = false;
       capturedRef.current = false;
-      setScanState({ phase: 'scanning', guidance: t('Capture failed — try again') });
+      safeSetScanState({ phase: 'scanning', guidance: t('Capture failed — try again') });
       Alert.alert(t('Scan Failed'), err?.message ?? t('Could not capture.'));
-      startScanLoopRef.current();
+      if (mountedRef.current) startScanLoopRef.current();
     }
-  }, [onImageCaptured, stopScanLoop, t]);
+  }, [onImageCaptured, stopScanLoop, t, safeSetScanState, waitForFrameIdle, shutdownCamera]);
 
   useEffect(() => { triggerCaptureRef.current = triggerCapture; }, [triggerCapture]);
 
   const runScanFrame = useCallback(async () => {
+    if (!mountedRef.current || closingRef.current) return;
     const phase = scanStateRef.current.phase;
     if (
       isScanningRef.current ||
@@ -1059,17 +1215,22 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
     const strings = modeStrings(mode);
 
     const scheduleCapture = (guidance: string) => {
-      setScanState({ phase: 'locking', guidance });
+      if (!mountedRef.current) return;
+      safeSetScanState({ phase: 'locking', guidance });
       if (!captureTimerRef.current) {
         captureTimerRef.current = setTimeout(() => {
           captureTimerRef.current = null;
-          if (!capturedRef.current) triggerCapture();
+          if (!capturedRef.current && mountedRef.current) triggerCapture();
         }, CAPTURE_DELAY_MS);
       }
     };
 
     // ── FAST PATH: a valid barcode is already known → skip OCR entirely ──
     if (isCodeReady(bestCodeRef.current)) {
+      if (!mountedRef.current) {
+        isScanningRef.current = false;
+        return;
+      }
       const code = bestCodeRef.current!;
       scheduleCapture(`${kindLabel(code)} — ${codeDisplayText(code)}`);
       isScanningRef.current = false;
@@ -1077,6 +1238,10 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
     }
 
     try {
+      if (!mountedRef.current) {
+        isScanningRef.current = false;
+        return;
+      }
       const photo = await (Platform.OS === 'android'
         ? (cameraRef.current as any).takeSnapshot({
             quality: 30,
@@ -1089,13 +1254,24 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
             skipMetadata: true,
           }));
       currentPhotoPath = photo.path;
+      if (!mountedRef.current) {
+        if (currentPhotoPath) deleteTempFile(currentPhotoPath);
+        currentPhotoPath = null;
+        isScanningRef.current = false;
+        return;
+      }
       const mlkitPath = currentPhotoPath.startsWith('file://')
         ? currentPhotoPath
         : `file://${currentPhotoPath}`;
       const mlkitResult: MlkitOcrResult = await MlkitOcr.detectFromFile(mlkitPath);
-      // fire-and-forget cleanup so it doesn't block the next frame
-      deleteTempFile(currentPhotoPath);
-      currentPhotoPath = null;
+      if (currentPhotoPath) {
+        deleteTempFile(currentPhotoPath);
+        currentPhotoPath = null;
+      }
+      if (!mountedRef.current) {
+        isScanningRef.current = false;
+        return;
+      }
 
       // A barcode may have been confirmed while OCR was running
       const barcodeConfident = isCodeReady(bestCodeRef.current);
@@ -1105,15 +1281,19 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
       const imgH = photo.height ?? SH;
 
       if (!mlkitResult?.length) {
-        setScanState({
+        if (!mountedRef.current) {
+          isScanningRef.current = false;
+          return;
+        }
+        safeSetScanState({
           phase: 'scanning',
           guidance: barcodeConfident
             ? t('Code detected — capturing…')
             : t(strings.looking),
         });
         if (regionsRef.current.length) {
-          setRegions([]);
-          setPrimaryRegion(null);
+          safeSetRegions([]);
+          safeSetPrimaryRegion(null);
         }
         if (barcodeConfident) scheduleCapture(t('Code detected — capturing…'));
         isScanningRef.current = false;
@@ -1141,15 +1321,19 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
           };
         });
 
+      if (!mountedRef.current) {
+        isScanningRef.current = false;
+        return;
+      }
       scored.sort((a, b) => b.score - a.score);
       const topN = isPlate ? 2 : mode === 'generic' ? 3 : 5;
       const docBbox = mergeTopRegions(scored, topN, imgW, imgH);
       const primary = scored[0] ?? null;
-      setRegions(scored);
-      setPrimaryRegion(primary);
+      safeSetRegions(scored);
+      safeSetPrimaryRegion(primary);
 
       // ── Silent plate consensus (no on-screen text) ──
-      if (isPlate && docBbox) {
+      if (isPlate && docBbox && mountedRef.current) {
         const plateFocusRegion = computeExpectedPlateRegion(imgW, imgH);
         const candidate = extractPlateCandidateFromFocusedBlocks(
           scored.map(r => ({ bbox: r.bbox, text: r.text })),
@@ -1169,7 +1353,7 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
       }
 
       // ── Mode-accepted barcode/QR → capture ──
-      if (barcodeConfident) {
+      if (barcodeConfident && mountedRef.current) {
         scheduleCapture(
           `${kindLabel(bestCodeRef.current!)} — ${codeDisplayText(bestCodeRef.current!)}`,
         );
@@ -1178,7 +1362,7 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
       }
 
       // ── OCR-based flow ──
-      if (docBbox && primary) {
+      if (docBbox && primary && mountedRef.current) {
         const targetZoom = computeTargetZoom(
           docBbox, imgW, imgH, zoomRef.current, minZoom, maxZoom,
         );
@@ -1192,11 +1376,11 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
           Date.now() - plateStuckSinceRef.current > PLATE_STUCK_TIMEOUT_MS;
 
         if (ratio < REGION_TOO_SMALL) {
-          setScanState({ phase: 'scanning', guidance: t('Getting closer…') });
+          safeSetScanState({ phase: 'scanning', guidance: t('Getting closer…') });
         } else if (ratio > REGION_TOO_LARGE) {
-          setScanState({ phase: 'scanning', guidance: t('Move back slightly') });
+          safeSetScanState({ phase: 'scanning', guidance: t('Move back slightly') });
         } else if (stuckTooLong) {
-          setScanState({
+          safeSetScanState({
             phase: 'scanning',
             guidance: t('Move closer, avoid glare, or tap ⬤ to capture manually'),
           });
@@ -1207,10 +1391,10 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
         ) {
           scheduleCapture(t('Hold steady…'));
         } else {
-          setScanState({ phase: 'scanning', guidance: t('Hold steady…') });
+          safeSetScanState({ phase: 'scanning', guidance: t('Hold steady…') });
         }
-      } else {
-        setScanState({ phase: 'scanning', guidance: t(strings.align) });
+      } else if (mountedRef.current) {
+        safeSetScanState({ phase: 'scanning', guidance: t(strings.align) });
       }
     } catch (err: any) {
       if (
@@ -1224,23 +1408,24 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
     } finally {
       isScanningRef.current = false;
     }
-  }, [minZoom, maxZoom, t, triggerCapture, applyZoomSmart]);
+  }, [minZoom, maxZoom, t, triggerCapture, applyZoomSmart, safeSetScanState, safeSetRegions, safeSetPrimaryRegion]);
 
   useEffect(() => { runScanFrameRef.current = runScanFrame; }, [runScanFrame]);
 
   // Self-scheduling loop: next frame starts SCAN_INTERVAL_MS after the previous finishes
   const startScanLoop = useCallback(() => {
+    if (!mountedRef.current) return;
     stopScanLoop();
     capturedRef.current = false;
     resetConsensus();
     loopActiveRef.current = true;
 
     const tick = async () => {
-      if (!loopActiveRef.current || capturedRef.current) return;
+      if (!mountedRef.current || !loopActiveRef.current || capturedRef.current) return;
       try {
         await runScanFrameRef.current();
       } catch {}
-      if (loopActiveRef.current && !capturedRef.current) {
+      if (mountedRef.current && loopActiveRef.current && !capturedRef.current) {
         loopTimerRef.current = setTimeout(tick, SCAN_INTERVAL_MS);
       }
     };
@@ -1252,6 +1437,7 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
   useEffect(() => {
     if (!hasPermission) {
       requestPermission().then(granted => {
+        if (!mountedRef.current) return;
         if (!granted) {
           Alert.alert(
             t('Camera Permission Required'),
@@ -1315,7 +1501,10 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
         enableZoomGesture={false}
         codeScanner={codeScanner}
         onError={handleCameraError}
+        onStarted={onCameraStarted}
+        onStopped={onCameraStopped}
         onInitialized={() => {
+          if (!mountedRef.current) return;
           setSessionError(null);
           setRetryCount(0);
         }}
@@ -1368,18 +1557,19 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
         </View>
       )}
 
-      {isBusy && (
+      {(isBusy || isClosing) && (
         <View style={styles.busyOverlay}>
           <View style={styles.busyCard}>
             <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.busyTxt}>{t('Capturing…')}</Text>
+            <Text style={styles.busyTxt}>{isBusy ? t('Capturing…') : t('Closing…')}</Text>
           </View>
         </View>
       )}
 
       <TouchableOpacity
         style={styles.closeCircle}
-        onPress={() => { stopScanLoop(); onClose(); }}
+        onPress={() => { requestClose(); }}
+        disabled={isClosing}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       >
         <Text style={styles.closeTxt}>✕</Text>
@@ -1387,9 +1577,9 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
 
       <View style={styles.shutterRow}>
         <TouchableOpacity
-          style={[styles.shutterBtn, (isBusy || !!retryExhausted) && styles.shutterDisabled]}
+          style={[styles.shutterBtn, (isBusy || isClosing || !!retryExhausted) && styles.shutterDisabled]}
           onPress={triggerCapture}
-          disabled={isBusy || !!retryExhausted}
+          disabled={isBusy || isClosing || !!retryExhausted}
           activeOpacity={0.8}
         >
           <View style={styles.shutterInner} />
@@ -1409,7 +1599,9 @@ const SmartDocumentScanner: React.FC<SmartDocumentScannerProps> = ({
       )}
     </View>
   );
-};
+});
+
+SmartDocumentScanner.displayName = 'SmartDocumentScanner';
 
 const styles = StyleSheet.create({
   fullScreen: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },

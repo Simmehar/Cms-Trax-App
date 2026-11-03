@@ -1,4 +1,4 @@
-import React, { cloneElement, useContext, useEffect, useReducer, useState } from 'react';
+import React, { cloneElement, useContext, useEffect, useReducer, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import { ShipDetails } from '../components/ShipDetails';
 import { AddPackageModal, packageOption } from '../components/AddPackageModal';
 import { FONTS, ICONS, IMAGES } from '../assets';
 import SmartDocumentScanner, {
+  SmartDocumentScannerHandle,
   GeminiExtractionResult,
   EMPTY_EXTRACTION,
   callCloudVision,
@@ -116,6 +117,7 @@ const Home: React.FC = ({ navigation }: any) => {
 
   const [isVisible, setIsVisible] = useState(false);
   const [isScannerVisible, setIsScannerVisible] = useState(false);
+  const scannerRef = useRef<SmartDocumentScannerHandle>(null);
   const [shipName, setShipName] = useState<Ships | null>(null);
   const [latestGemini, setLatestGemini] = useState<GeminiExtractionResult | null>(null);
   const [isBottomModal, setIsBottomModal] = useState(true);
@@ -607,9 +609,14 @@ const Home: React.FC = ({ navigation }: any) => {
           visible={isScannerVisible}
           animationType="slide"
           statusBarTranslucent
-          onRequestClose={() => setIsScannerVisible(false)}
+          onRequestClose={() => {
+            // Android back: stop the camera cleanly before the Modal unmounts it.
+            if (scannerRef.current) scannerRef.current.requestClose();
+            else setIsScannerVisible(false);
+          }}
         >
           <SmartDocumentScanner
+            ref={scannerRef}
             onImageCaptured={handleImageCaptured}
             onClose={() => setIsScannerVisible(false)}
             scanMode={scanMode}

@@ -24,6 +24,8 @@ interface SuccessProps {
     lable: string;
   };
   isOnline?: boolean;
+  /** When false, Ok only calls onClose and the caller decides where to go. */
+  navigateToSearch?: boolean;
 }
 
 const SuccessModal: React.FC<SuccessProps> = ({
@@ -31,6 +33,7 @@ const SuccessModal: React.FC<SuccessProps> = ({
   onClose,
   content,
   isOnline,
+  navigateToSearch = true,
 }) => {
   const navigation = useNavigation<any>();
   const {setSearchActive} = useNavigationContext();
@@ -44,6 +47,7 @@ const SuccessModal: React.FC<SuccessProps> = ({
   const onPress = () => {
     onClose();
 
+    if (!navigateToSearch) return;
     setSearchActive(true);
     navigation.navigate('Search');
   };

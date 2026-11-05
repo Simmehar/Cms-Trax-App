@@ -10,11 +10,13 @@ import {
   Keyboard,
   ActivityIndicator,
   Platform,
+  DeviceEventEmitter,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BackHeader } from '../components/Header';
 import { FONTS, IMAGES } from '../assets';
-import { ShipListModal } from '../components/ShipListModal';
+import { ShipListModal, RECIPIENT_ADDED_EVENT } from '../components/ShipListModal';
+import { recipientSearchApi } from '../utilities/ApiCalls';
 import { SuccessModal } from '../components/SuccessModal';
 import { KeyboardScroll } from '../components/KeyboardScroll';
 import { isIPad } from '../utilities/securestorage';
@@ -23,9 +25,12 @@ import { Backend_URL } from '../util/apiCalls';
 import { AuthContext } from '../contexts';
 import { useTranslation } from 'react-i18next';
 
-const AddRecipient: React.FC = ({ navigation }: any) => {
+const AddRecipient: React.FC = ({ navigation, route }: any) => {
   const { t } = useTranslation();
   const { user } = useContext(AuthContext);
+  // Set when opened from a guest picker: go back to that screen (e.g. Home)
+  // after saving instead of the default Search screen.
+  const returnTo: string | undefined = route?.params?.returnTo;
 
   const [visible, setVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('');
@@ -80,6 +85,54 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
       .trim()
       .toLowerCase()
       .match(/^[a-z][a-z,. '-]*$/i);
+  };
+
+  /**
+   * Builds a recipient object (same shape as the /customers list) for the
+   * guest that was just created, so pickers can select it right away.
+   * Falls back to a name search when the create response has no id.
+   */
+  const buildCreatedRecipient = async (responseData: any) => {
+    const created =
+      responseData?.data ?? responseData?.customer ?? responseData ?? {};
+    const firstName = name.firstName.trim();
+    const lastName = (name.lastName || '').trim();
+
+    let recipient: any = {
+      id: created?.id,
+      first_name: created?.first_name ?? firstName,
+      last_name: created?.last_name ?? lastName,
+      email: created?.email ?? (email.trim() || null),
+      phone: created?.phone ?? (phoneNumber.trim() || null),
+      ship: created?.ship ?? shipName?.name ?? null,
+      ship_id: created?.ship_id ?? shipName?.id ?? null,
+      department_id: created?.department_id ?? departmentName?.id ?? null,
+      department_name: created?.department_name ?? departmentName?.name ?? null,
+      is_active: created?.is_active ?? true,
+      payable_amount: created?.payable_amount ?? '0',
+    };
+
+    if (recipient.id == null) {
+      try {
+        const results: any[] =
+          (await recipientSearchApi(
+            user,
+            encodeURIComponent(`${firstName} ${lastName}`.trim()),
+          )) || [];
+        const matches = results.filter(
+          r =>
+            (r?.first_name || '').trim().toLowerCase() === firstName.toLowerCase() &&
+            (r?.last_name || '').trim().toLowerCase() === lastName.toLowerCase(),
+        );
+        // Newest record (highest id) is the one just created.
+        const match = matches.sort((a, b) => (b?.id ?? 0) - (a?.id ?? 0))[0];
+        if (match) recipient = { ...recipient, ...match };
+      } catch (e) {
+        console.warn('Could not resolve newly created recipient', e);
+      }
+    }
+
+    return recipient;
   };
 
   const submitHandler = () => {
@@ -156,8 +209,11 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
       .post(Backend_URL + '/create-customer', payload, {
         headers: { Authorization: 'Bearer ' + user?.token },
       })
-      .then(response => {
+      .then(async response => {
         if (response?.data) {
+          const newRecipient = await buildCreatedRecipient(response.data);
+          // Lets the picker that opened this screen select the new guest.
+          DeviceEventEmitter.emit(RECIPIENT_ADDED_EVENT, newRecipient);
           setSuccessVisible(true);
         }
       })
@@ -202,9 +258,16 @@ const AddRecipient: React.FC = ({ navigation }: any) => {
             middle: `${name.firstName} ${name.lastName}`.trim(),
             lable: t(isHospitality ? 'Guest added successfully.' : 'is added as recipient.'),
           }}
+          navigateToSearch={!returnTo}
           onClose={() => {
             setSuccessVisible(false);
-            navigation?.goBack?.();
+            if (returnTo && typeof navigation?.popTo === 'function') {
+              // React Navigation 7: navigate() would push a fresh copy of the
+              // screen; popTo() returns to the existing one with its state.
+              navigation.popTo(returnTo);
+            } else {
+              navigation?.goBack?.();
+            }
           }}
         />
       )}

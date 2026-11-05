@@ -74,6 +74,7 @@ interface PackageContextType {
   >;
   shipList: Ships[];
   recipientList: RecipentObj[];
+  setRecipientList: any;
   packageList: Package[];
   departmentList: DeparmentObj[];
   carriers: CarrierObj[];
@@ -221,6 +222,7 @@ const PackageProvider: FC<PackageProviderProps> = ({children}) => {
     user,
     shipList,
     recipientList,
+    setRecipientList,
     carriers,
     packageType,
     packageStatus,

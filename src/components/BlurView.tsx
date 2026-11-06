@@ -246,8 +246,10 @@ const BLURView: React.FC<BlurProps> = ({ onClose }) => {
 
       <TouchableOpacity
         style={styles.cardView}
-        onPress={() => {
-          logout();
+        onPress={async () => {
+          // logout() resolves as soon as the stored session is cleared, so the
+          // Login screen cannot find it and bounce back to Home.
+          await logout();
           onItemPress('Login');
         }}>
         <Image source={IMAGES.red_power} style={styles.iconImg} />

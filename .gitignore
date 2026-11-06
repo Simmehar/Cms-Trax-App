@@ -77,3 +77,6 @@ yarn-error.log
 
 # Archives (GitHub rejects files over 100 MB; never commit project zips)
 /*.zip
+
+# Firebase service-account keys (only used by scripts/send-test-push.js) are secrets
+*service-account*.json

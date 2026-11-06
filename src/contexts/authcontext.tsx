@@ -5,7 +5,13 @@ import {
   deleteData,
   StoredData,
 } from '../utilities/securestorage';
+import axios from 'axios';
 import {api} from '../services/api.service';
+import {
+  clearDeviceToken,
+  getCachedFcmToken,
+} from '../services/notification.service';
+import {Backend_URL} from '../util/apiCalls';
 
 interface User {
   id: string;
@@ -23,6 +29,45 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Dedicated client: the global axios interceptors (session-expiry handling in
+// Login.tsx) must not turn a failed logout request into another logout.
+const logoutClient = axios.create({timeout: 5000});
+
+/**
+ * POST {Backend_URL}/logout with this device's push token, so the backend can
+ * end the session and stop sending notifications to this device.
+ * Never throws: logout has to complete locally even when the network or the
+ * session is already gone.
+ */
+const logoutFromBackend = async (
+  authToken: string | undefined,
+  deviceToken: string | null,
+): Promise<void> => {
+  if (!authToken || !Backend_URL) {
+    return;
+  }
+  try {
+    await logoutClient.post(
+      Backend_URL + '/logout',
+      deviceToken ? {device_token: deviceToken} : {},
+      {
+        headers: {
+          Authorization: 'Bearer ' + authToken,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+    __DEV__ && console.log('[Auth] backend logout ok');
+  } catch (error: any) {
+    __DEV__ &&
+      console.log(
+        '[Auth] backend logout failed',
+        error?.response?.status,
+        error?.response?.data || error?.message,
+      );
+  }
+};
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -57,8 +102,27 @@ const AuthProvider: FC<AuthProviderProps> = ({children}) => {
 
   const logout = async () => {
     const key = 'user.data';
+    const authToken =
+      user?.token && user.token !== 'expired' ? user.token : undefined;
+
+    // 1. Local session first, before any other async work, and resolve right
+    //    after it: the Logout button navigates to Login as soon as this
+    //    resolves, and Login bounces back to Home if it still finds a session.
     await deleteData(key);
-    setUser({token: '', firstname: '', id: '',currentplan:''});
+    setUser({token: '', firstname: '', id: '', currentplan: ''});
+
+    // 2. Best-effort cleanup that must not hold up the UI: tell the backend
+    //    (POST /logout with device_token) and drop this device's push token so
+    //    it stops receiving the previous user's notifications. The next login
+    //    sends a fresh device_token.
+    const cleanup = async () => {
+      const deviceToken = await getCachedFcmToken();
+      await logoutFromBackend(authToken, deviceToken);
+      await clearDeviceToken();
+    };
+    cleanup().catch(
+      error => __DEV__ && console.log('[Auth] logout cleanup failed', error),
+    );
   };
 
   const expire = async () => {

@@ -124,3 +124,11 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// Firebase: apply the Google Services plugin only when android/app/google-services.json
+// exists, so the build keeps working before the Firebase config file is added.
+if (file("google-services.json").exists()) {
+    apply plugin: "com.google.gms.google-services"
+} else {
+    logger.warn("[CMSTrax] android/app/google-services.json not found - Firebase push notifications are disabled for this build.")
+}

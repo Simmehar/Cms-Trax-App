@@ -7,9 +7,16 @@ require Pod::Executable.execute_command('node', ['-p',
 
 require_relative '../node_modules/react-native-permissions/scripts/setup'
 
-platform :ios, min_ios_version_supported
+# The app target already requires iOS 15.6; ML Kit 9 (react-native-mlkit-ocr) needs >= 15.5.
+platform :ios, '15.6'
 
 prepare_react_native_project!
+
+# React Native Firebase: resolve the Firebase iOS SDK through CocoaPods (not SPM, which
+# would require dynamic frameworks) and build the RNFB pods as static frameworks so they
+# link against Firebase's static frameworks without `use_frameworks!`.
+$RNFirebaseDisableSPM = true
+$RNFirebaseAsStaticFramework = true
 
 setup_permissions([
   'Camera',
@@ -23,6 +30,13 @@ end
 
 target 'CMSTrax' do
   config = use_native_modules!
+
+  # Firebase iOS SDK contains Swift pods (FirebaseCoreInternal) that need module maps
+  # for these Objective-C dependencies, and AppDelegate.swift imports FirebaseCore.
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseInstallations', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
 
   use_react_native!(
     :path => config[:reactNativePath],

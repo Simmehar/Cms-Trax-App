@@ -21,6 +21,7 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 
 import {loadBackendUrl} from './util/apiCalls';
 import { WithSplashScreen } from './components/splash';
+import {usePushNotifications} from './hooks/usePushNotifications';
 import './localization/i18n';
 // App.tsx ya index.js ke starting me
 
@@ -43,6 +44,9 @@ SQLite.enablePromise(false);
 
 const Routes = () => {
   const {user} = useAuth();
+
+  // Firebase push notifications: permission, token registration and listeners.
+  usePushNotifications();
 
   const [isAppReady, setIsAppReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);

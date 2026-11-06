@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "724591627672",
+    "project_id": "cms-trax",
+    "storage_bucket": "cms-trax.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:724591627672:android:432b9bc3454dc7c3192fed",
+        "android_client_info": {
+          "package_name": "com.cmstrax"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVXbWgyXf6cx32criMeOXGGin1HJ5-__o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -192,6 +192,7 @@ const AddRecipient: React.FC = ({ navigation, route }: any) => {
       first_name: name.firstName,
       last_name: name.lastName || '',
       id_unit: idUnit,
+      crewid: idUnit,
     };
 
     if (!isHospitality) {

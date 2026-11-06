@@ -1,0 +1,40 @@
+diff --git a/node_modules/react-native-mlkit-ocr/ios/MlkitOcr.m b/node_modules/react-native-mlkit-ocr/ios/MlkitOcr.m
+index e9606a0..d7f6c52 100644
+--- a/node_modules/react-native-mlkit-ocr/ios/MlkitOcr.m
++++ b/node_modules/react-native-mlkit-ocr/ios/MlkitOcr.m
+@@ -93,7 +93,7 @@ @implementation MlkitOcr
+             return;
+         }
+         
+-        MLKTextRecognizer *textRecognizer = [MLKTextRecognizer textRecognizer];
++        MLKTextRecognizer *textRecognizer = [MLKTextRecognizer textRecognizerWithOptions:[[MLKTextRecognizerOptions alloc] init]];
+         MLKVisionImage *handler = [[MLKVisionImage alloc] initWithImage:image];
+         
+         [textRecognizer processImage:handler completion:^(MLKText  *_Nullable result, NSError *_Nullable error) {
+@@ -141,7 +141,7 @@ @implementation MlkitOcr
+             return;
+         }
+         
+-        MLKTextRecognizer *textRecognizer = [MLKTextRecognizer textRecognizer];
++        MLKTextRecognizer *textRecognizer = [MLKTextRecognizer textRecognizerWithOptions:[[MLKTextRecognizerOptions alloc] init]];
+         MLKVisionImage *handler = [[MLKVisionImage alloc] initWithImage:image];
+         
+         [textRecognizer processImage:handler completion:^(MLKText *_Nullable result, NSError *_Nullable error) {
+diff --git a/node_modules/react-native-mlkit-ocr/react-native-mlkit-ocr.podspec b/node_modules/react-native-mlkit-ocr/react-native-mlkit-ocr.podspec
+index 334c87e..968081e 100644
+--- a/node_modules/react-native-mlkit-ocr/react-native-mlkit-ocr.podspec
++++ b/node_modules/react-native-mlkit-ocr/react-native-mlkit-ocr.podspec
+@@ -10,11 +10,11 @@ Pod::Spec.new do |s|
+   s.license      = package["license"]
+   s.authors      = package["author"]
+ 
+-  s.platforms    = { :ios => "10.0" }
++  s.platforms    = { :ios => "15.5" }
+   s.source       = { :git => "https://github.com/agoldis/react-native-mlkit-ocr.git", :tag => "#{s.version}" }
+ 
+   s.source_files = "ios/**/*.{h,m,mm}"
+   
+   s.dependency "React"
+-  s.dependency "GoogleMLKit/TextRecognition", "2.6.0"
++  s.dependency "GoogleMLKit/TextRecognition", "9.0.0"
+ end

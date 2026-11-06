@@ -168,7 +168,7 @@ const BusinessSelect: React.FC<Props> = ({ navigation }) => {
           </View>
 
           <Text style={styles.versionText}>
-            v1.9
+            v1.11
             {/* v1.0.15 */}
           </Text>
         </ScrollView>

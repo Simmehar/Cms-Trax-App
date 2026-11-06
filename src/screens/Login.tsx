@@ -25,6 +25,7 @@ import {
   useAuth,
 } from '../contexts/authcontext';
 import { api } from '../services/api.service';
+import { getDeviceTokenPayload } from '../services/notification.service';
 import { KeyboardScroll } from '../components/KeyboardScroll';
 import { CheckIpad, getData, saveData } from '../utilities/securestorage';
 import { useNavigationContext } from '../contexts/navigationcontext';
@@ -192,9 +193,14 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
       setShowLoader(true);
       Keyboard.dismiss();
 
-      const response = await api.post('/login', sendData, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      // The backend stores this device's push token from the login request
+      // (device_token + device_type); nothing else registers it.
+      const devicePayload = await getDeviceTokenPayload();
+      const response = await api.post(
+        '/login',
+        { ...sendData, ...devicePayload },
+        { headers: { 'Content-Type': 'application/json' } },
+      );
 
       console.log('response.data=========>', response?.data);
       if (response?.data) {
@@ -438,7 +444,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
               marginBottom: isPad ? 35 : 20,
               alignSelf: 'center',
             }}>
-            v1.9
+            v1.11
           </Text>
         )}
 

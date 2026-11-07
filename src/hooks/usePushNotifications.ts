@@ -10,6 +10,8 @@ import {
 interface Options {
   /** Called when the user taps a notification (background or quit state). */
   onNotificationOpened?: (message: RemoteMessage) => void;
+  /** Called for a message received while the app is in the foreground. */
+  onForegroundMessage?: (message: RemoteMessage) => void;
 }
 
 /**
@@ -21,7 +23,10 @@ interface Options {
  * The token reaches the backend only through the login request (Login.tsx uses
  * getDeviceTokenPayload()); a refreshed token is cached and sent at the next login.
  */
-export const usePushNotifications = ({onNotificationOpened}: Options = {}) => {
+export const usePushNotifications = ({
+  onNotificationOpened,
+  onForegroundMessage,
+}: Options = {}) => {
   useEffect(() => {
     const setup = async () => {
       const granted = await requestNotificationPermission();
@@ -37,7 +42,10 @@ export const usePushNotifications = ({onNotificationOpened}: Options = {}) => {
     };
     setup();
 
-    const unsubscribe = subscribeToNotifications({onNotificationOpened});
+    const unsubscribe = subscribeToNotifications({
+      onNotificationOpened,
+      onForegroundMessage,
+    });
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -19,6 +19,8 @@ import { ShipListModal, RECIPIENT_ADDED_EVENT } from '../components/ShipListModa
 import { recipientSearchApi } from '../utilities/ApiCalls';
 import { SuccessModal } from '../components/SuccessModal';
 import { KeyboardScroll } from '../components/KeyboardScroll';
+import CountryCodePicker, { getPhoneDigits } from '../components/CountryCodePicker';
+import WarningPopup from '../components/WarningPopup';
 import { isIPad } from '../utilities/securestorage';
 import axios from 'axios';
 import { Backend_URL } from '../util/apiCalls';
@@ -39,6 +41,19 @@ const AddRecipient: React.FC = ({ navigation, route }: any) => {
   const [departmentName, setDepartmentName] = useState<any>(null);
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [countryCode, setCountryCode] = useState('+1');
+  const phoneDigits = getPhoneDigits(countryCode);
+  // Validation warning popup: message plus the field to focus after OK
+  const [warning, setWarning] = useState<{ message: string; focus?: () => void } | null>(null);
+  const showWarning = (message: string, focus?: () => void) => {
+    Keyboard?.dismiss();
+    setWarning({ message, focus });
+  };
+  const handleCountryCode = (code: string) => {
+    setCountryCode(code);
+    // Drop digits that no longer fit the new country's number length
+    setPhoneNumber(prev => prev.slice(0, getPhoneDigits(code).max));
+  };
   const [idUnit, setIdUnit] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isHospitality, setIsHospitality] = useState(false);
@@ -103,7 +118,10 @@ const AddRecipient: React.FC = ({ navigation, route }: any) => {
       first_name: created?.first_name ?? firstName,
       last_name: created?.last_name ?? lastName,
       email: created?.email ?? (email.trim() || null),
-      phone: created?.phone ?? (phoneNumber.trim() || null),
+      phone:
+        created?.phone_number ??
+        created?.phone ??
+        (phoneNumber.trim() ? `${countryCode}${phoneNumber.trim()}` : null),
       ship: created?.ship ?? shipName?.name ?? null,
       ship_id: created?.ship_id ?? shipName?.id ?? null,
       department_id: created?.department_id ?? departmentName?.id ?? null,
@@ -137,15 +155,16 @@ const AddRecipient: React.FC = ({ navigation, route }: any) => {
 
   const submitHandler = () => {
     if (!name.firstName?.trim()) {
-      Alert.alert(t('Please enter the first name'));
+      showWarning(t('Please enter the first name'), () => firstNameRef.current?.focus());
       return;
     }
 
     if (!validateName(name.firstName)) {
-      Alert.alert(
+      showWarning(
         t(
           "Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.",
         ),
+        () => firstNameRef.current?.focus(),
       );
       return;
     }
@@ -153,35 +172,57 @@ const AddRecipient: React.FC = ({ navigation, route }: any) => {
     // Required field validation for non-hospitality
     if (!isHospitality) {
       if (!name.lastName?.trim()) {
-        Alert.alert(t('Please enter the last name'));
+        showWarning(t('Please enter the last name'), () => lastNameRef.current?.focus());
         return;
       }
 
       if (!shipName?.name) {
-        Alert.alert(t('Please select the ship!'));
+        showWarning(t('Please select the ship!'));
         return;
       }
 
       if (!departmentName?.name) {
-        Alert.alert(t('Please select the division!'));
+        showWarning(t('Please select the division!'));
         return;
       }
 
       // Email validation only for non-hospitality
       if (email && !validateEmail(email)) {
-        Alert.alert(t('Please provide a valid email.'));
+        showWarning(t('Please provide a valid email.'), () => emailRef.current?.focus());
         return;
       }
     }
 
     // Validate last name if provided
     if (name.lastName && !validateName(name.lastName)) {
-      Alert.alert(
+      showWarning(
         t(
           "Name should be alphabets and only space - . and ' are allowed and must start with an alphabet.",
         ),
+        () => lastNameRef.current?.focus(),
       );
       return;
+    }
+
+    // Phone is required and its length must match the selected country code
+    if (isHospitality && !phoneNumber.trim()) {
+      showWarning(t('Please enter the phone number'), () => phoneRef.current?.focus());
+      return;
+    }
+    if (isHospitality && phoneNumber.trim()) {
+      const len = phoneNumber.trim().length;
+      if (len < phoneDigits.min || len > phoneDigits.max) {
+        showWarning(
+          phoneDigits.min === phoneDigits.max
+            ? t('Phone number must be {{digits}} digits.', { digits: phoneDigits.min })
+            : t('Phone number must be between {{min}} and {{max}} digits.', {
+                min: phoneDigits.min,
+                max: phoneDigits.max,
+              }),
+          () => phoneRef.current?.focus(),
+        );
+        return;
+      }
     }
 
     Keyboard?.dismiss();
@@ -202,7 +243,7 @@ const AddRecipient: React.FC = ({ navigation, route }: any) => {
     } else {
       if (shipName?.id) payload.ship_id = shipName.id;
       if (departmentName?.id) payload.dept = departmentName.id;
-      if (phoneNumber.trim()) payload.phone = phoneNumber.trim();
+      if (phoneNumber.trim()) payload.phone_number = `${countryCode}${phoneNumber.trim()}`;
     }
     console.log('payload=================', payload)
     console.log('Backend_URL',Backend_URL)
@@ -272,6 +313,19 @@ const AddRecipient: React.FC = ({ navigation, route }: any) => {
           }}
         />
       )}
+
+      {/* Validation warning (required fields, name format, phone digits) */}
+      <WarningPopup
+        visible={!!warning}
+        title={t('Warning')}
+        message={warning?.message ?? ''}
+        buttonText={t('OK')}
+        onClose={() => {
+          const focus = warning?.focus;
+          setWarning(null);
+          focus?.();
+        }}
+      />
 
       {/* Input Fields Container */}
       <KeyboardScroll
@@ -411,17 +465,25 @@ const AddRecipient: React.FC = ({ navigation, route }: any) => {
             onPress={() => phoneRef.current?.focus()}
             style={styles.inputContainer}>
             {phoneNumber ? (
-              <Text style={styles.floatingLabel}>{t('Phone Number')}</Text>
+              <Text style={styles.floatingLabel}>{t('Phone Number*')}</Text>
             ) : null}
-            <TextInput
-              ref={phoneRef}
-              keyboardType="phone-pad"
-              placeholder={t('Phone Number')}
-              placeholderTextColor="#000"
-              style={styles.textInputField}
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-            />
+            <View style={styles.phoneRow}>
+              <CountryCodePicker
+                value={countryCode}
+                onSelect={handleCountryCode}
+                style={styles.countryCodePicker}
+              />
+              <TextInput
+                ref={phoneRef}
+                keyboardType="phone-pad"
+                placeholder={t('Phone Number*')}
+                placeholderTextColor="#000"
+                style={[styles.textInputField, styles.phoneInput]}
+                value={phoneNumber}
+                maxLength={phoneDigits.max}
+                onChangeText={text => setPhoneNumber(text.replace(/[^0-9]/g, ''))}
+              />
+            </View>
           </TouchableOpacity>
         )}
 
@@ -496,6 +558,21 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.PoppinsRegular,
     color: '#223890',
     marginBottom: 2,
+  },
+  phoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  countryCodePicker: {
+    borderBottomWidth: 0,
+    marginBottom: 0,
+    paddingRight: 8,
+    marginRight: 8,
+    borderRightWidth: 1,
+    borderRightColor: '#98989850',
+  },
+  phoneInput: {
+    flex: 1,
   },
   pickerContainer: {
     flexDirection: 'row',

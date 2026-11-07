@@ -23,6 +23,10 @@ interface headProps {
   onSearchText: (val: string) => void;
   onClear: () => void;
   isOnline?: boolean;
+  /** Tap on the bell; the bell is still shown when omitted. */
+  onNotificationPress?: () => void;
+  /** Unread notifications shown as a badge on the bell (hidden when 0). */
+  unreadCount?: number;
 }
 
 const Header: React.FC<headProps> = ({
@@ -31,6 +35,8 @@ const Header: React.FC<headProps> = ({
   onSearchText,
   onClear,
   isOnline,
+  onNotificationPress,
+  unreadCount = 0,
 }) => {
   const { searchActive, setSearchActive } = useNavigationContext();
   const [barCodeModalVisible, setBarCodeModalVisible] = useState(false);
@@ -168,6 +174,24 @@ const Header: React.FC<headProps> = ({
               </TouchableOpacity>
               <TouchableOpacity
                 style={isPad ? styles.iconCircleI : styles.iconCircle}
+                onPress={onNotificationPress}
+                accessibilityRole="button"
+                accessibilityLabel={t('Notifications')}>
+                <SvgXml
+                  xml={ICONS.header.notification}
+                  width={isPad ? 32 : '21.5'}
+                  height={isPad ? 32 : '21.5'}
+                />
+                {unreadCount > 0 && (
+                  <View style={isPad ? styles.badgeI : styles.badge}>
+                    <Text style={isPad ? styles.badgeTextI : styles.badgeText}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={isPad ? styles.iconCircleI : styles.iconCircle}
                 onPress={moreOption}>
                 <SvgXml
                   xml={ICONS.header.menu}
@@ -252,6 +276,46 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+  },
+  badge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: '#E12344',
+    borderWidth: 2,
+    borderColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeI: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    backgroundColor: '#E12344',
+    borderWidth: 2,
+    borderColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: '700',
+  },
+  badgeTextI: {
+    color: 'white',
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '700',
   },
   SearchIconCircle: {
     width: 28,

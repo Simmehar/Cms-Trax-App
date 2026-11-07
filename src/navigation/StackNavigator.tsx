@@ -10,6 +10,7 @@ import Checkout from '../screens/Checkout'; // Check if default or named {}
 import {CheckoutData} from '../screens/CheckoutData';
 import {AddRecipient} from '../screens/AddRecipient';
 import {RecentActivity} from '../screens/RecentActivity';
+import {Notifications} from '../screens/Notifications';
 import ScannerView from '../components/ScannerView'; // Check if default or named {}
 import OfflineCheckout from '../screens/OfflineCheckout';
 import ShowOfflineCheckout from '../screens/showOfflineCheckout';
@@ -77,6 +78,8 @@ const StackNavigator: React.FC<StackNavigatorProps> = ({isLoggedIn}) => {
       <Stack.Screen name="AddRecipient" component={AddRecipient} />
 
       <Stack.Screen name="RecentActivity" component={RecentActivity} />
+
+      <Stack.Screen name="Notifications" component={Notifications} />
 
       <Stack.Screen name="OfflineCheckout" component={OfflineCheckout} />
 

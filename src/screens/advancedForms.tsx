@@ -16,7 +16,7 @@ import DatePicker from 'react-native-date-picker';
 import { COLORS, FONTS, IMAGES } from "../assets";
 import Tabs from "../components/Tabs";
 import CommonInput from "../components/CommonInput";
-import CountryCodePicker from "../components/CountryCodePicker";
+import CountryCodePicker, { getPhoneDigits } from "../components/CountryCodePicker";
 import { open } from "../components/CameraController";
 import ImagePickerField from "../components/ImagePickerField";
 import { isIPad } from "../utilities/securestorage";
@@ -654,6 +654,22 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
         formData = addCustomerForm;
         requiredFields = ["phone"];
         requiresImages = false;
+        // Phone length must match the selected country code
+        if (addCustomerForm.phone.trim()) {
+          const { min, max } = getPhoneDigits(addCustomerForm.countryCode);
+          const len = addCustomerForm.phone.trim().length;
+          if (len < min || len > max) {
+            setCustomAlert({
+              visible: true,
+              type: "error",
+              message:
+                min === max
+                  ? t("Phone number must be {{digits}} digits.", { digits: min })
+                  : t("Phone number must be between {{min}} and {{max}} digits.", { min, max }),
+            });
+            return;
+          }
+        }
         const finalPhone = `${addCustomerForm.countryCode}${addCustomerForm.phone}`;
         formData = { ...addCustomerForm, phone: finalPhone };
         break;
@@ -1285,7 +1301,14 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
             <View style={{ flexDirection: "row", alignItems: "center", marginBottom: isIPad ? 24 : 18 }}>
               <CountryCodePicker
                 value={addCustomerForm.countryCode}
-                onSelect={(code) => setAddCustomerForm({ ...addCustomerForm, countryCode: code })}
+                onSelect={(code) =>
+                  setAddCustomerForm({
+                    ...addCustomerForm,
+                    countryCode: code,
+                    // Drop digits that no longer fit the new country's number length
+                    phone: addCustomerForm.phone.slice(0, getPhoneDigits(code).max),
+                  })
+                }
               />
               <View style={{ flex: 1 }}>
                 <CommonInput
@@ -1293,6 +1316,7 @@ const AdvancedForms = ({ navigation }: { navigation: any }) => {
                   value={addCustomerForm.phone}
                   onChangeText={(t) => setAddCustomerForm({ ...addCustomerForm, phone: t.replace(/[^0-9]/g, "") })}
                   keyboardType="numeric"
+                  maxLength={getPhoneDigits(addCustomerForm.countryCode).max}
                 />
               </View>
             </View>

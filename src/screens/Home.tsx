@@ -1,4 +1,4 @@
-import React, { cloneElement, useContext, useEffect, useReducer, useRef, useState } from 'react';
+import React, { cloneElement, useCallback, useContext, useEffect, useReducer, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -66,7 +66,12 @@ import SyncModal from '../components/SyncModal';
 import { useMode } from '../db/db.context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getLoggedToday, getTotalReceived } from '../utilities/ApiCalls';
+import {
+  getLoggedToday,
+  getTotalReceived,
+  getUnreadNotificationCount,
+  NOTIFICATIONS_CHANGED_EVENT,
+} from '../utilities/ApiCalls';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTranslation } from 'react-i18next';
@@ -392,8 +397,9 @@ const Home: React.FC = ({ navigation }: any) => {
           t('Something went wrong'),
           t(
             isHospitality
-              ? 'Service creation failed.'
-              : 'Package creation failed.',
+            ? 'Service creation failed.'
+            : 'Package creation failed.',
+            errorStr,
           ),
         );
       }, 100);
@@ -474,6 +480,32 @@ const Home: React.FC = ({ navigation }: any) => {
     }
   }, [isInternet]);
 
+  // Unread notifications shown as a badge on the header bell
+  const [unreadCount, setUnreadCount] = useState(0);
+  const refreshUnreadCount = useCallback(async () => {
+    if (!user?.token || user.token === 'expired') return;
+    try {
+      setUnreadCount(await getUnreadNotificationCount(user));
+    } catch (e: any) {
+      __DEV__ && console.log('unread count error', e?.response?.data || e?.message);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (isInternet) refreshUnreadCount();
+  }, [isInternet, refreshUnreadCount]);
+
+  useEffect(() => {
+    // Re-check when coming back to Home, when the Notifications screen marks
+    // items read, and when a push arrives while the app is open.
+    const unsubscribeFocus = navigation.addListener('focus', refreshUnreadCount);
+    const changed = DeviceEventEmitter.addListener(NOTIFICATIONS_CHANGED_EVENT, refreshUnreadCount);
+    return () => {
+      unsubscribeFocus();
+      changed.remove();
+    };
+  }, [navigation, refreshUnreadCount]);
+
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       fetchDashboard();
@@ -540,6 +572,8 @@ const Home: React.FC = ({ navigation }: any) => {
             onSearchText={() => { }}
             isOnline={isInternet}
             onClear={() => { }}
+            onNotificationPress={() => navigation.navigate('Notifications')}
+            unreadCount={unreadCount}
           />
         </View>
 

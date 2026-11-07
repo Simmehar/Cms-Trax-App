@@ -403,3 +403,86 @@ export const permissionConfirm = (alertMessage, cb) => {
     {cancelable: false},
   );
 };
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+/** Emitted (DeviceEventEmitter) whenever the unread count may have changed. */
+export const NOTIFICATIONS_CHANGED_EVENT = 'notificationsChanged';
+
+export interface AppNotification {
+  id: number;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  notification_type?: string;
+  data?: Record<string, any>;
+}
+
+export interface NotificationPage {
+  results: AppNotification[];
+  /** Total rows on the server (all pages). */
+  count: number;
+  /** Set when another page exists. */
+  next: string | null;
+}
+
+export interface NotificationListParams {
+  page?: number;
+  page_size?: number;
+  is_read?: boolean;
+}
+
+/** Tolerate small naming differences in the backend row shape. */
+const normalizeNotification = (raw: any): AppNotification => ({
+  id: Number(raw?.id),
+  title: raw?.title ?? raw?.subject ?? '',
+  message: raw?.message ?? raw?.body ?? raw?.description ?? '',
+  is_read: Boolean(raw?.is_read ?? raw?.read ?? false),
+  created_at: raw?.created_at ?? raw?.timestamp ?? '',
+  notification_type: raw?.notification_type ?? raw?.type,
+  data: raw?.data,
+});
+
+/** GET /notifications — paginated; pass is_read=false for unread only. */
+export const getNotifications = async (
+  user: StoredData,
+  params: NotificationListParams = {},
+): Promise<NotificationPage> => {
+  const res = await axios.get(Backend_URL + '/notifications', {
+    headers: { Authorization: 'Bearer ' + user?.token },
+    params,
+  });
+  const data = res.data;
+  // Either a DRF page { count, next, results } or a plain array.
+  const rows: any[] = Array.isArray(data)
+    ? data
+    : data?.results ?? data?.notifications ?? data?.data ?? [];
+  return {
+    results: rows.map(normalizeNotification),
+    count: Array.isArray(data) ? data.length : Number(data?.count ?? rows.length),
+    next: Array.isArray(data) ? null : data?.next ?? null,
+  };
+};
+
+/** GET /notifications/unread-count */
+export const getUnreadNotificationCount = async (user: StoredData): Promise<number> => {
+  const res = await axios.get(Backend_URL + '/notifications/unread-count', {
+    headers: { Authorization: 'Bearer ' + user?.token },
+  });
+  const d = res.data;
+  return Number(d?.unread_count ?? d?.count ?? d?.unread ?? 0) || 0;
+};
+
+/** POST /notifications/mark-read — specific ids, or everything with mark_all. */
+export const markNotificationsRead = async (
+  user: StoredData,
+  body: { notification_ids: number[] } | { mark_all: true },
+) => {
+  const res = await axios.post(Backend_URL + '/notifications/mark-read', body, {
+    headers: { Authorization: 'Bearer ' + user?.token },
+  });
+  return res.data;
+};

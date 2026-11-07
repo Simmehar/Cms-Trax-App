@@ -19,6 +19,7 @@ interface Props {
   numberofline?:Number;
   prefix?: string; // 👈 added for $ or other symbols
   editable?: boolean;
+  maxLength?: number;
 }
 
 const CommonInput: React.FC<Props> = ({
@@ -31,7 +32,8 @@ const CommonInput: React.FC<Props> = ({
   prefix,
   multiline,
   numberofline,
-  editable = true
+  editable = true,
+  maxLength,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const animatedIsFocused = new Animated.Value(value || isFocused ? 1 : 0);
@@ -89,6 +91,7 @@ const CommonInput: React.FC<Props> = ({
           autoCapitalize={autoCapitalize}
           secureTextEntry={secureTextEntry}
           editable={editable}
+          maxLength={maxLength}
         />
       </View>
     </View>
